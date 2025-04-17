@@ -1,4 +1,4 @@
-package com.howWeather.howWeather_backend.member.entity;
+package com.howWeather.howWeather_backend.domain.member.entity;
 
 import jakarta.persistence.*;
 import lombok.*;
