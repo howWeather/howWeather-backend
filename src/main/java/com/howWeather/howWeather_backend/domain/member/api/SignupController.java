@@ -23,4 +23,13 @@ public class SignupController {
 
         return ResponseEntity.ok("사용 가능한 이메일입니다.");
     }
+
+    @GetMapping("/loginid-exist-check")
+    public ResponseEntity<?> isLoginIdExist(@RequestParam String loginId) {
+        boolean loginIdAlreadyExist = signupService.isLoginIdAlreadyExist(loginId);
+
+        if (loginIdAlreadyExist)
+            return ResponseEntity.status(HttpStatus.CONFLICT).body("이미 사용 중인 아아디입니다.");
+        return ResponseEntity.ok("사용 가능한 아이디입니다.");
+    }
 }

@@ -16,4 +16,9 @@ public class SignupService {
     public boolean isEmailAlreadyExist(String email) {
         return memberRepository.findByEmail(email).isPresent();
     }
+
+    @Transactional
+    public boolean isLoginIdAlreadyExist(String loginId) {
+        return memberRepository.findByLoginId(loginId).isPresent();
+    }
 }
