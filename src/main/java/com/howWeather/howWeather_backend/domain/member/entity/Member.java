@@ -20,7 +20,7 @@ public class Member {
     @Column(name="member_email", unique = true, nullable = false)
     private String email;
 
-    @Column(name="member_nickname", nullable = false, length = 100)
+    @Column(name="member_nickname", nullable = false)
     private String nickname;
 
     @Column(name="member_constitution", nullable = false)
@@ -36,5 +36,5 @@ public class Member {
     private int gender;
 
     @Column(name="sensitivity", nullable = false)
-    private int sensitivity = -1; // init
+    private int sensitivity = -1;
 }
