@@ -1,5 +1,6 @@
 package com.howWeather.howWeather_backend.domain.member.api;
 
+import com.howWeather.howWeather_backend.domain.member.dto.DuplicateCheckDto;
 import com.howWeather.howWeather_backend.domain.member.dto.SignupRequestDto;
 import com.howWeather.howWeather_backend.domain.member.entity.Member;
 import com.howWeather.howWeather_backend.domain.member.repository.MemberRepository;
@@ -24,8 +25,8 @@ public class SignupController {
 
 
     @GetMapping("/email-exist-check")
-    public ResponseEntity<?> isEmailExist(@RequestParam String email) {
-        boolean emailAlreadyExist = signupService.isEmailAlreadyExist(email);
+    public ResponseEntity<?> isEmailExist(@RequestBody DuplicateCheckDto dto) {
+        boolean emailAlreadyExist = signupService.isEmailAlreadyExist(dto.getData());
 
         if (emailAlreadyExist)
             return ResponseEntity.status(HttpStatus.CONFLICT).body("이미 사용 중인 이메일입니다.");
@@ -34,8 +35,8 @@ public class SignupController {
     }
 
     @GetMapping("/loginid-exist-check")
-    public ResponseEntity<?> isLoginIdExist(@RequestParam String loginId) {
-        boolean loginIdAlreadyExist = signupService.isLoginIdAlreadyExist(loginId);
+    public ResponseEntity<?> isLoginIdExist(@RequestBody DuplicateCheckDto dto) {
+        boolean loginIdAlreadyExist = signupService.isLoginIdAlreadyExist(dto.getData());
 
         if (loginIdAlreadyExist)
             return ResponseEntity.status(HttpStatus.CONFLICT).body("이미 사용 중인 아아디입니다.");
@@ -68,7 +69,7 @@ public class SignupController {
                     .build();
 
             memberRepository.save(member);
-            return ResponseEntity.ok("회원가입이 성공하였습니다!");
+            return ResponseEntity.ok("회원가입에 성공하였습니다!");
         } catch(Exception e) {
             return ResponseEntity.internalServerError().body(e);
         }
