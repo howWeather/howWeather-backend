@@ -4,28 +4,35 @@ import com.howWeather.howWeather_backend.domain.member.dto.LoginRequestDto;
 import com.howWeather.howWeather_backend.domain.member.dto.SignupRequestDto;
 import com.howWeather.howWeather_backend.domain.member.entity.Member;
 import com.howWeather.howWeather_backend.domain.member.repository.MemberRepository;
+import com.howWeather.howWeather_backend.global.exception.LoginException;
 import com.howWeather.howWeather_backend.global.exception.UserAlreadyExistsException;
 import com.howWeather.howWeather_backend.global.jwt.JwtToken;
 import com.howWeather.howWeather_backend.global.jwt.JwtTokenProvider;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.AuthenticationException;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 
 @Slf4j
 @Service
 @RequiredArgsConstructor
 public class AuthService {
     private final MemberRepository memberRepository;
+    private final RedisTemplate<String, String> redisTemplate;
     private final PasswordEncoder passwordEncoder;
+    private final String BLACK_LIST = "blacklist:";
 
     @Transactional
     public boolean isEmailAlreadyExist(String email) {
@@ -80,15 +87,20 @@ public class AuthService {
         String password = loginRequestDto.getPassword();
         UsernamePasswordAuthenticationToken authenticationToken = new UsernamePasswordAuthenticationToken(id, password);
 
+        if (!isLoginIdAlreadyExist(loginRequestDto.getLoginId()))
+            throw new LoginException("로그인 실패: 아이디가 존재하지 않습니다.", "USER_NOT_FOUND");
+
         try {
             Authentication authentication = authenticationManagerBuilder.getObject().authenticate(authenticationToken);
             return jwtTokenProvider.generateToken(authentication);
+        } catch (UsernameNotFoundException e) {
+            throw new LoginException("로그인 실패: 아이디가 존재하지 않습니다.", "USER_NOT_FOUND");
+        } catch (BadCredentialsException e) {
+            throw new LoginException("로그인 실패: 비밀번호가 틀렸습니다.", "INVALID_CREDENTIALS");
         } catch (AuthenticationException e) {
-            // log.error("로그인 실패: 사용자 ID = {}, 에러 메시지 = {}", id, e.getMessage(), e);
-            throw new RuntimeException("로그인 실패: 인증에 실패했습니다.");
+            throw new LoginException("로그인 실패: 인증에 실패했습니다.", "AUTHENTICATION_FAILED");
         } catch (Exception e) {
-            // log.error("예상치 못한 오류 발생: 사용자 ID = {}, 에러 메시지 = {}", id, e.getMessage(), e);
-            throw new RuntimeException("예상치 못한 오류 발생");
+            throw new LoginException("서버 오류가 발생했습니다.", "UNKNOWN_ERROR");
         }
     }
 }
