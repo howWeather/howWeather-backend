@@ -40,7 +40,8 @@ public class SecurityConfig {
                 .cors(Customizer.withDefaults())
                 .authorizeHttpRequests((authorizeRequestsConfig)->
                         authorizeRequestsConfig
-                                .requestMatchers("/api/signup/**", "/api/auth/**").permitAll()
+                                .requestMatchers("/api/auth/email-exist-check", "/api/auth/login",
+                                        "/api/auth/signup", "/api/auth/loginid-exist-check").permitAll()
                                 .anyRequest().authenticated()
                 )
                 .addFilterBefore(
