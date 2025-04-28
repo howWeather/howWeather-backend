@@ -1,5 +1,9 @@
-package com.howWeather.howWeather_backend.global;
+package com.howWeather.howWeather_backend.global.config;
 
+import com.howWeather.howWeather_backend.global.custom.CustomAccessDeniedHandler;
+import com.howWeather.howWeather_backend.global.custom.CustomAuthEntryPoint;
+import com.howWeather.howWeather_backend.global.jwt.JwtFilter;
+import com.howWeather.howWeather_backend.global.jwt.JwtTokenProvider;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -11,6 +15,7 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
@@ -19,20 +24,33 @@ import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 @EnableWebSecurity
 @RequiredArgsConstructor
 public class SecurityConfig {
+    private final JwtTokenProvider jwtTokenProvider;
+    private final CustomAuthEntryPoint customAuthEntryPoint;
+    private final CustomAccessDeniedHandler customAccessDeniedHandler;
+
     @Bean
     public PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();
     }
 
     @Bean
-    public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+    public SecurityFilterChain securityFilterChain(HttpSecurity http, HttpSecurity httpSecurity) throws Exception {
         http
                 .csrf(AbstractHttpConfigurer::disable)
                 .cors(Customizer.withDefaults())
                 .authorizeHttpRequests((authorizeRequestsConfig)->
                         authorizeRequestsConfig
-                                .requestMatchers("/api/signup/**").permitAll()
+                                .requestMatchers("/api/signup/**", "/api/auth/**").permitAll()
                                 .anyRequest().authenticated()
+                )
+                .addFilterBefore(
+                        new JwtFilter(jwtTokenProvider),
+                        UsernamePasswordAuthenticationFilter.class
+                )
+                .exceptionHandling(handler ->
+                        handler
+                                .authenticationEntryPoint(customAuthEntryPoint)
+                                .accessDeniedHandler(customAccessDeniedHandler)
                 )
                 .sessionManagement((session)-> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS));
         return http.build();
