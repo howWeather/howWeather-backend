@@ -22,6 +22,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
@@ -32,7 +33,6 @@ public class AuthService {
     private final MemberRepository memberRepository;
     private final RedisTemplate<String, String> redisTemplate;
     private final PasswordEncoder passwordEncoder;
-    private final String BLACK_LIST = "blacklist:";
 
     @Transactional
     public boolean isEmailAlreadyExist(String email) {
@@ -103,4 +103,19 @@ public class AuthService {
             throw new LoginException("서버 오류가 발생했습니다.", "UNKNOWN_ERROR");
         }
     }
+
+    @Transactional
+    public void logout(String token) {
+        if (jwtTokenProvider.validateToken(token)) {
+            String redisKey = "blacklist:" + token;
+            Date expiration = jwtTokenProvider.getExpiration(token);
+            long now = System.currentTimeMillis();
+            long ttl = (expiration.getTime() - now) / 1000;
+
+            redisTemplate.opsForValue().set(redisKey, token, ttl, TimeUnit.SECONDS);
+        } else {
+            throw new RuntimeException("Invalid token");
+        }
+    }
+
 }
