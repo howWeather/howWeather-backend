@@ -6,10 +6,12 @@ import com.howWeather.howWeather_backend.domain.member.dto.SignupRequestDto;
 import com.howWeather.howWeather_backend.domain.member.service.AuthService;
 import com.howWeather.howWeather_backend.global.exception.UserAlreadyExistsException;
 import com.howWeather.howWeather_backend.global.jwt.JwtToken;
+import com.howWeather.howWeather_backend.global.jwt.JwtTokenProvider;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 import javax.validation.Valid;
@@ -19,15 +21,28 @@ import javax.validation.Valid;
 @RequiredArgsConstructor
 @RequestMapping("/api/auth")
 public class AuthController {
+    private final JwtTokenProvider jwtTokenProvider;
     private final AuthService authService;
 
     @PostMapping("/login")
     public JwtToken login(@Valid @RequestBody LoginRequestDto loginRequestDto) {
-        String id = loginRequestDto.getLoginId();
-        String password = loginRequestDto.getPassword();
-        JwtToken jwtToken = authService.login(loginRequestDto);
+        return authService.login(loginRequestDto);
+    }
 
-        return jwtToken;
+    @PostMapping("/logout")
+    public ResponseEntity<?> logout(Authentication authentication) {
+        String token = JwtTokenProvider.extractTokenFromRequest();
+
+        if (token != null && jwtTokenProvider.validateToken(token)) {
+            try {
+                authService.logout(token);
+                return ResponseEntity.ok("로그아웃 성공");
+            } catch (Exception e) {
+                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("로그아웃 처리 중 오류 발생");
+            }
+        } else {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("유효하지 않은 토큰");
+        }
     }
 
     @PostMapping("/signup")
