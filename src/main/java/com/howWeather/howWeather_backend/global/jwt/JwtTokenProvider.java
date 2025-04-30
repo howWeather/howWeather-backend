@@ -4,8 +4,11 @@ import io.jsonwebtoken.*;
 import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
 import jakarta.servlet.http.HttpServletRequest;
+import lombok.AllArgsConstructor;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
@@ -21,6 +24,7 @@ import java.security.Key;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Date;
+import java.util.List;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -31,8 +35,10 @@ public class JwtTokenProvider {
     private static final String BEARER_TYPE = "Bearer";
 
     private final Key key;
+    private final RedisTemplate<String, String> redisTemplate;
 
-    public JwtTokenProvider(@Value("${jwt.secret}") String secretKey) {
+    public JwtTokenProvider(@Value("${jwt.secret}") String secretKey, RedisTemplate<String, String> redisTemplate) {
+        this.redisTemplate = redisTemplate;
         byte[] keyBytes = Decoders.BASE64.decode(secretKey);
         this.key = Keys.hmacShaKeyFor(keyBytes);
     }
@@ -45,7 +51,7 @@ public class JwtTokenProvider {
         long now = System.currentTimeMillis();
         String username = authentication.getName();
         String accessToken = makeAccessToken(now, username, authorities);
-        String refreshToken = makeRefreshToken(now);
+        String refreshToken = makeRefreshToken(now, username, authorities);
 
         return JwtToken.builder()
                 .grantType(BEARER_TYPE)
@@ -63,29 +69,78 @@ public class JwtTokenProvider {
                 .compact();
     }
 
-    private String makeRefreshToken(long now) {
+    private String makeRefreshToken(long now, String username, String authorities) {
         Date refreshTokenExpirationTime = new Date(now + REFRESH_TOKEN_EXPIRATION_TIME);
         return Jwts.builder()
+                .claim("auth", authorities)
+                .setSubject(username)
                 .setExpiration(refreshTokenExpirationTime)
                 .signWith(key, SignatureAlgorithm.HS256)
                 .compact();
     }
 
-    public Authentication getAuthentication(String accessToken) {
-        Claims claims = parseClaims(accessToken);
 
-        if (claims.get("auth") == null) {
-            throw new BadCredentialsException("권한 정보가 없는 토큰입니다.");
+    public JwtToken reissueAccessToken(String refreshToken) {
+        String redisKey = "blacklist:" + refreshToken;
+        if (Boolean.TRUE.equals(redisTemplate.hasKey(redisKey))) {
+            throw new RuntimeException("이미 로그아웃된 리프레시 토큰입니다.");
         }
 
-        Collection<? extends GrantedAuthority> authorities = Arrays.stream(claims.get("auth")
-                .toString().split(","))
-                .map(SimpleGrantedAuthority::new)
-                .toList();
+        if (!validateToken(refreshToken)) {
+            throw new IllegalArgumentException("리프레시 토큰이 유효하지 않습니다.");
+        }
 
-        UserDetails principal = new User(claims.getSubject(), "", authorities);
-        return new UsernamePasswordAuthenticationToken(principal, "", authorities);
+        Claims claims = parseClaims(refreshToken);
+        if (claims == null || claims.getSubject() == null) {
+            throw new IllegalArgumentException("리프레시 토큰의 정보가 잘못되었습니다.");
+        }
+
+        String username = claims.getSubject();
+        String authorities = claims.get("auth") != null ? claims.get("auth").toString() : "";
+
+        long now = System.currentTimeMillis();
+        Date accessTokenExpirationTime = new Date(now + ACCESS_TOKEN_EXPIRATION_TIME);
+
+        String newAccessToken = Jwts.builder()
+                .setSubject(username)
+                .claim("auth", authorities)
+                .setExpiration(accessTokenExpirationTime)
+                .signWith(key, SignatureAlgorithm.HS256)
+                .compact();
+
+        return JwtToken.builder()
+                .grantType(BEARER_TYPE)
+                .accessToken(newAccessToken)
+                .refreshToken(refreshToken)
+                .build();
     }
+
+    public Authentication getAuthentication(String token) {
+        Claims claims = parseClaims(token);
+        if (claims == null || claims.getSubject() == null) {
+            System.out.println("claims = " + claims);
+            if (claims.getSubject() == null) System.out.println("getSubgect == null" );
+            throw new IllegalArgumentException("잘못된 리프레시 토큰.");
+        }
+
+        String username = claims.getSubject();
+        String authorities = claims.get("auth") != null ? claims.get("auth").toString() : "";
+
+        if (username == null || username.isEmpty()) {
+            throw new IllegalArgumentException("사용자 이름이 비어있습니다.");
+        }
+        if (authorities == null || authorities.isEmpty()) {
+            throw new IllegalArgumentException("권한 정보가 비어있습니다.");
+        }
+
+        List<GrantedAuthority> grantedAuthorities = Arrays.stream(authorities.split(","))
+                .map(SimpleGrantedAuthority::new)
+                .collect(Collectors.toList());
+        User user = new User(username, "", grantedAuthorities);
+
+        return new UsernamePasswordAuthenticationToken(user, token, grantedAuthorities);
+    }
+
 
     public Claims parseClaims(String token) {
         try {
@@ -100,16 +155,17 @@ public class JwtTokenProvider {
             Jwts.parserBuilder().setSigningKey(key).build().parseClaimsJws(token);
             return true;
         } catch (SecurityException | MalformedJwtException e) {
-            log.info("유효하지 않은 토큰입니다.", e);
+            log.error("유효하지 않은 토큰입니다.", e);
         } catch (ExpiredJwtException e) {
-            log.info("만료된 토큰입니다.", e);
+            log.error("만료된 토큰입니다.", e);
         } catch (UnsupportedJwtException e) {
-            log.info("지원되지 않는 토큰입니다.", e);
+            log.error("지원되지 않는 토큰입니다.", e);
         } catch (IllegalArgumentException e) {
-            log.info("토큰의 claims이 비어 있습니다.", e);
+            log.error("토큰의 claims이 비어 있습니다.", e);
         }
         return false;
     }
+
 
     public Date getExpiration(String token) {
         Claims claims = Jwts.parser()
@@ -129,7 +185,7 @@ public class JwtTokenProvider {
         String authHeader = request.getHeader("Authorization");
 
         if (authHeader != null && authHeader.startsWith("Bearer ")) {
-            return authHeader.substring(7);
+            return authHeader.substring(7).trim();
         }
 
         return null;
