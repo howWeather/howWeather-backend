@@ -33,16 +33,8 @@ public class AuthService {
     private final MemberRepository memberRepository;
     private final RedisTemplate<String, String> redisTemplate;
     private final PasswordEncoder passwordEncoder;
-
-    @Transactional
-    public boolean isEmailAlreadyExist(String email) {
-        return memberRepository.findByEmail(email).isPresent();
-    }
-
-    @Transactional
-    public boolean isLoginIdAlreadyExist(String loginId) {
-        return memberRepository.findByLoginId(loginId).isPresent();
-    }
+    private final AuthenticationManagerBuilder authenticationManagerBuilder;
+    private final JwtTokenProvider jwtTokenProvider;
 
     @Transactional
     public void signup(SignupRequestDto signupRequestDto) {
@@ -78,8 +70,15 @@ public class AuthService {
         }
     }
 
-    private final AuthenticationManagerBuilder authenticationManagerBuilder;
-    private final JwtTokenProvider jwtTokenProvider;
+    @Transactional
+    public boolean isEmailAlreadyExist(String email) {
+        return memberRepository.findByEmail(email).isPresent();
+    }
+
+    @Transactional
+    public boolean isLoginIdAlreadyExist(String loginId) {
+        return memberRepository.findByLoginId(loginId).isPresent();
+    }
 
     @Transactional
     public JwtToken login(LoginRequestDto loginRequestDto) {
