@@ -6,6 +6,9 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.util.ArrayList;
+import java.util.List;
+
 @Data
 @Builder
 @NoArgsConstructor
@@ -50,4 +53,6 @@ public class SignupRequestDto {
     @Min(value = 1, message = "선택한 연령대 정보가 유효하지 않습니다.")
     @Max(value = 3, message = "선택한 연령대 정보가 유효하지 않습니다.")
     private int ageGroup;
+
+    private List<String> roles = new ArrayList<>();
 }
