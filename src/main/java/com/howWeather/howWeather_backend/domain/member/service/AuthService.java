@@ -105,17 +105,23 @@ public class AuthService {
     }
 
     @Transactional
-    public void logout(String token) {
-        if (jwtTokenProvider.validateToken(token)) {
-            String redisKey = "blacklist:" + token;
-            Date expiration = jwtTokenProvider.getExpiration(token);
-            long now = System.currentTimeMillis();
-            long ttl = (expiration.getTime() - now) / 1000;
-
-            redisTemplate.opsForValue().set(redisKey, token, ttl, TimeUnit.SECONDS);
+    public void logout(String accessToken, String refreshToken) {
+        if (jwtTokenProvider.validateToken(accessToken)) {
+            String accessTokenKey = "blacklist:" + accessToken;
+            Date expiration = jwtTokenProvider.getExpiration(accessToken);
+            long ttl = (expiration.getTime() - System.currentTimeMillis()) / 1000;
+            redisTemplate.opsForValue().set(accessTokenKey, accessToken, ttl, TimeUnit.SECONDS);
         } else {
-            throw new RuntimeException("Invalid token");
+            throw new RuntimeException("Invalid access token");
+        }
+
+        if (jwtTokenProvider.validateToken(refreshToken)) {
+            String refreshTokenKey = "blacklist:" + refreshToken;
+            Date expiration = jwtTokenProvider.getExpiration(refreshToken);
+            long ttl = (expiration.getTime() - System.currentTimeMillis()) / 1000;
+            redisTemplate.opsForValue().set(refreshTokenKey, refreshToken, ttl, TimeUnit.SECONDS);
+        } else {
+            throw new RuntimeException("Invalid refresh token");
         }
     }
-
 }
