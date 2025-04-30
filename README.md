@@ -11,7 +11,8 @@
 - 데이터 암호화 및 개인정보 보호 기능 (AES)
 
 ### 🛠 기술 스택
-- Java  17, Spring Boot 3.4.4
-- PostgreSQL 17
-- Docker, AWS EC2
+- Java 17, Spring Boot 3.4.4  
+- PostgreSQL 17  
+- Redis (JWT 토큰 블랙리스트 처리)  
+- Docker, AWS EC2  
 - GitHub Actions (CI/CD)
