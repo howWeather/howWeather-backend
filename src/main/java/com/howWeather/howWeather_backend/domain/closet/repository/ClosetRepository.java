@@ -1,4 +1,4 @@
-package com.howWeather.howWeather_backend.domain.repository;
+package com.howWeather.howWeather_backend.domain.closet.repository;
 
 import com.howWeather.howWeather_backend.domain.member.entity.Member;
 import org.springframework.data.jpa.repository.JpaRepository;
