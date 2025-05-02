@@ -6,7 +6,7 @@ import com.howWeather.howWeather_backend.domain.closet.entity.Upper;
 import com.howWeather.howWeather_backend.domain.closet.dto.AddClothesDto;
 import com.howWeather.howWeather_backend.domain.closet.dto.ClothDto;
 import com.howWeather.howWeather_backend.domain.member.entity.Member;
-import com.howWeather.howWeather_backend.domain.repository.ClosetRepository;
+import com.howWeather.howWeather_backend.domain.closet.repository.ClosetRepository;
 import com.howWeather.howWeather_backend.global.exception.CustomException;
 import com.howWeather.howWeather_backend.global.exception.ErrorCode;
 import lombok.AllArgsConstructor;
@@ -29,6 +29,8 @@ public class ClosetService {
             }
 
             Closet closet = getCloset(member);
+            
+            // TODO : 상의와 아우터 기능을 동시에 하는 의상에 대한 처리 로직 추가
             addUpperClothes(closet, addClothesDto.getUppers());
             addOuterClothes(closet, addClothesDto.getOuters());
 
@@ -38,7 +40,6 @@ public class ClosetService {
             throw new CustomException(ErrorCode.UNKNOWN_ERROR, "의상 등록 중 서버 오류가 발생했습니다.");
         }
     }
-
 
     @Transactional(readOnly = true)
     public Closet getCloset(Member member) {

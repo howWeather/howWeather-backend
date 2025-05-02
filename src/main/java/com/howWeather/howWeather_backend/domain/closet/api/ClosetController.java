@@ -10,7 +10,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 @Slf4j
@@ -23,9 +23,10 @@ public class ClosetController {
     @PostMapping("/register")
     @CheckAuthenticatedUser
     ResponseEntity<ApiResponse<String>> registerCloth(@RequestHeader("Authorization") String accessTokenHeader,
-                                                      @Valid @RequestBody AddClothesDto addClothesDto) {
-        Member member = (Member) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+                                                      @Valid @RequestBody AddClothesDto addClothesDto,
+                                                      @AuthenticationPrincipal Member member) {
         closetService.registerCloset(member, addClothesDto);
         return ApiResponse.success(HttpStatus.OK, "의상 등록에 성공하였습니다.");
     }
+
 }
