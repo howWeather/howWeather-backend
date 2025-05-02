@@ -15,7 +15,11 @@ public enum ErrorCode {
     TOKEN_EXPIRED("토큰이 만료되었습니다.", HttpStatus.UNAUTHORIZED),
     TOKEN_REISSUE_FAILED("토큰 재발급에 실패했습니다.", HttpStatus.UNAUTHORIZED),
     LOGIN_ID_ALREADY_EXISTS("이미 사용 중인 아이디입니다.", HttpStatus.CONFLICT),
-    EMAIL_ALREADY_EXISTS("이미 사용 중인 이메일입니다.", HttpStatus.CONFLICT);
+    EMAIL_ALREADY_EXISTS("이미 사용 중인 이메일입니다.", HttpStatus.CONFLICT),
+    TOKEN_REVOKED("해당 토큰은 로그아웃되어 사용할 수 없습니다.", HttpStatus.UNAUTHORIZED),
+    INVALID_ACCESS_TOKEN("유효하지 않은 Access Token입니다.", HttpStatus.UNAUTHORIZED),
+    INVALID_REFRESH_TOKEN("유효하지 않은 Refresh Token입니다.", HttpStatus.UNAUTHORIZED),
+    INVALID_INPUT("입력 항목이 조건을 충족하지 않습니다", HttpStatus.BAD_REQUEST);
 
     private final String message;
     private final HttpStatus httpStatus;
@@ -24,5 +28,4 @@ public enum ErrorCode {
         this.message = message;
         this.httpStatus = httpStatus;
     }
-
 }
