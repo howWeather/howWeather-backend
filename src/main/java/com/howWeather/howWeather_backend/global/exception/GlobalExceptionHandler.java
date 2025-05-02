@@ -1,26 +1,41 @@
 package com.howWeather.howWeather_backend.global.exception;
 
+import com.howWeather.howWeather_backend.global.Response.ApiResponse;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.ControllerAdvice;
+
+import java.util.List;
+import java.util.stream.Collectors;
 
 @ControllerAdvice
 public class GlobalExceptionHandler {
 
-    @ExceptionHandler(UserAlreadyExistsException.class)
-    public ResponseEntity<?> handleUserAlreadyExistsException(UserAlreadyExistsException e) {
-        return ResponseEntity.badRequest().body(e.getMessage());
+    @ExceptionHandler(CustomException.class)
+    public ResponseEntity<ApiResponse<Void>> handleCustomException(CustomException e) {
+        return ResponseEntity
+                .status(e.getHttpStatus())
+                .body(ApiResponse.fail(e));
     }
 
     @ExceptionHandler(Exception.class)
-    public ResponseEntity<?> handleException(Exception e) {
-        return ResponseEntity.internalServerError().body("서버 오류가 발생했습니다.");
+    public ResponseEntity<ApiResponse<Void>> handleGenericException(Exception e) {
+        CustomException customException = new CustomException(ErrorCode.UNKNOWN_ERROR);
+        return ResponseEntity
+                .status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(ApiResponse.fail(customException));
     }
 
-    @ExceptionHandler(LoginException.class)
-    public ResponseEntity<String> handleLoginException(LoginException e) {
-        return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                .body(e.getMessage() + " (Error Code: " + e.getErrorCode() + ")");
+    @ExceptionHandler(MethodArgumentNotValidException.class)
+    public ResponseEntity<ApiResponse<String>> handleMethodArgumentNotValidException(MethodArgumentNotValidException ex) {
+        List<String> errors = ex.getBindingResult().getFieldErrors().stream()
+                .map(fieldError -> fieldError.getField() + ": " + fieldError.getDefaultMessage())
+                .collect(Collectors.toList());
+
+        return ResponseEntity
+                .status(HttpStatus.BAD_REQUEST)
+                .body(ApiResponse.fail(new CustomException(ErrorCode.INVALID_INPUT, String.join(", ", errors))));
     }
 }

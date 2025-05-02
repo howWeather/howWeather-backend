@@ -4,6 +4,9 @@ import com.howWeather.howWeather_backend.domain.member.dto.DuplicateCheckDto;
 import com.howWeather.howWeather_backend.domain.member.dto.LoginRequestDto;
 import com.howWeather.howWeather_backend.domain.member.dto.SignupRequestDto;
 import com.howWeather.howWeather_backend.domain.member.service.AuthService;
+import com.howWeather.howWeather_backend.global.Response.ApiResponse;
+import com.howWeather.howWeather_backend.global.exception.CustomException;
+import com.howWeather.howWeather_backend.global.exception.ErrorCode;
 import com.howWeather.howWeather_backend.global.exception.UserAlreadyExistsException;
 import com.howWeather.howWeather_backend.global.jwt.CheckAuthenticatedUser;
 import com.howWeather.howWeather_backend.global.jwt.JwtToken;
@@ -26,69 +29,68 @@ public class AuthController {
     private final AuthService authService;
 
     @PostMapping("/signup")
-    public ResponseEntity<?> signup(@Valid @RequestBody SignupRequestDto signupRequestDto) {
-        try {
-            authService.signup(signupRequestDto);
-            return ResponseEntity.ok("회원가입에 성공하였습니다!");
-        } catch (UserAlreadyExistsException e) {
-            return ResponseEntity.status(HttpStatus.CONFLICT).body(e.getMessage());
-        } catch (Exception e) {
-            return ResponseEntity.internalServerError().body("서버 오류가 발생했습니다.");
-        }
+    public ResponseEntity<ApiResponse<String>> signup(@Valid @RequestBody SignupRequestDto signupRequestDto) {
+        authService.signup(signupRequestDto);
+        return ApiResponse.success(HttpStatus.OK, "회원가입에 성공하였습니다.");
     }
 
     @PostMapping("/login")
-    public JwtToken login(@Valid @RequestBody LoginRequestDto loginRequestDto) {
-        return authService.login(loginRequestDto);
+    public ResponseEntity<ApiResponse<JwtToken>> login(@Valid @RequestBody LoginRequestDto loginRequestDto) {
+        JwtToken token = authService.login(loginRequestDto);
+        return ApiResponse.loginSuccess(HttpStatus.OK, token, token.getAccessToken());
     }
 
     @PostMapping("/logout")
     @CheckAuthenticatedUser
-    public ResponseEntity<?> logout(@RequestHeader("Authorization") String accessToken,
-                                    @RequestHeader("Refresh-Token") String refreshToken) {
+    public ResponseEntity<ApiResponse<String>> logout(@RequestHeader("Authorization") String accessTokenHeader,
+                                                      @RequestHeader("Refresh-Token") String refreshTokenHeader) {
 
-        String accessTokenValue = accessToken.startsWith("Bearer ") ? accessToken.substring(7).trim() : accessToken.trim();
-        String refreshTokenValue = refreshToken.startsWith("Bearer ") ? refreshToken.substring(7).trim() : refreshToken.trim();
-        try {
-            authService.logout(accessTokenValue, refreshTokenValue);
-            return ResponseEntity.ok("로그아웃 성공");
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("로그아웃 처리 중 오류 발생" + e.getMessage());
+        if (accessTokenHeader == null || !accessTokenHeader.startsWith("Bearer ") ||
+                refreshTokenHeader == null || !refreshTokenHeader.startsWith("Bearer ")) {
+            throw new CustomException(ErrorCode.INVALID_TOKEN);
         }
+
+        String accessToken = accessTokenHeader.substring(7).trim();
+        String refreshToken = refreshTokenHeader.substring(7).trim();
+
+        if (!jwtTokenProvider.validateToken(accessToken) || !jwtTokenProvider.validateToken(refreshToken)) {
+            throw new CustomException(ErrorCode.INVALID_TOKEN);
+        }
+
+        authService.logout(accessToken, refreshToken);
+        return ApiResponse.success(HttpStatus.OK, "로그아웃에 성공하였습니다.");
     }
 
     @PostMapping("/reissue")
-    public ResponseEntity<?> reissueToken(@RequestHeader("Authorization") String refreshToken) {
-        if (refreshToken == null || !refreshToken.startsWith("Bearer ")) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("리프레시 토큰을 제공해주세요.");
+    public ResponseEntity<ApiResponse<JwtToken>> reissueToken(@RequestHeader("Authorization") String refreshTokenHeader) {
+        if (refreshTokenHeader == null || !refreshTokenHeader.startsWith("Bearer ")) {
+            throw new CustomException(ErrorCode.INVALID_TOKEN);
         }
 
-        String token = refreshToken.substring(7); // "Bearer " 제거
-
-        try {
-            JwtToken newTokens = jwtTokenProvider.reissueAccessToken(token);
-            return ResponseEntity.ok(newTokens);
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("토큰 재발급 실패: " + e.getMessage());
-        }
+        String refreshToken = refreshTokenHeader.substring(7).trim();
+        JwtToken newTokens = jwtTokenProvider.reissueAccessToken(refreshToken);
+        return ApiResponse.success(HttpStatus.OK, newTokens);
     }
 
     @GetMapping("/email-exist-check")
-    public ResponseEntity<?> isEmailExist(@RequestBody DuplicateCheckDto dto) {
-        boolean emailAlreadyExist = authService.isEmailAlreadyExist(dto.getData());
+    public ResponseEntity<ApiResponse<String>> isEmailExist(@RequestParam("email") String email) {
+        boolean emailAlreadyExist = authService.isEmailAlreadyExist(email);
 
-        if (emailAlreadyExist)
-            return ResponseEntity.status(HttpStatus.CONFLICT).body("이미 사용 중인 이메일입니다.");
-
-        return ResponseEntity.ok("사용 가능한 이메일입니다.");
+        if (emailAlreadyExist) {
+            throw new CustomException(ErrorCode.EMAIL_ALREADY_EXISTS);
+        }
+        return ApiResponse.success(HttpStatus.OK, "사용 가능한 이메일입니다.");
     }
+
 
     @GetMapping("/loginid-exist-check")
-    public ResponseEntity<?> isLoginIdExist(@RequestBody DuplicateCheckDto dto) {
-        boolean loginIdAlreadyExist = authService.isLoginIdAlreadyExist(dto.getData());
+    public ResponseEntity<ApiResponse<String>> isLoginIdExist(@RequestParam("loginId") String loginId) {
+        boolean loginIdAlreadyExist = authService.isLoginIdAlreadyExist(loginId);
 
-        if (loginIdAlreadyExist)
-            return ResponseEntity.status(HttpStatus.CONFLICT).body("이미 사용 중인 아아디입니다.");
-        return ResponseEntity.ok("사용 가능한 아이디입니다.");
+        if (loginIdAlreadyExist) {
+            throw new CustomException(ErrorCode.LOGIN_ID_ALREADY_EXISTS);
+        }
+        return ApiResponse.success(HttpStatus.OK, "사용 가능한 아이디입니다.");
     }
+
 }

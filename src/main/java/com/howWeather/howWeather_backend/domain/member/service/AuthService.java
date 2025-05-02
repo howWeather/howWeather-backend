@@ -4,6 +4,8 @@ import com.howWeather.howWeather_backend.domain.member.dto.LoginRequestDto;
 import com.howWeather.howWeather_backend.domain.member.dto.SignupRequestDto;
 import com.howWeather.howWeather_backend.domain.member.entity.Member;
 import com.howWeather.howWeather_backend.domain.member.repository.MemberRepository;
+import com.howWeather.howWeather_backend.global.exception.CustomException;
+import com.howWeather.howWeather_backend.global.exception.ErrorCode;
 import com.howWeather.howWeather_backend.global.exception.LoginException;
 import com.howWeather.howWeather_backend.global.exception.UserAlreadyExistsException;
 import com.howWeather.howWeather_backend.global.jwt.JwtToken;
@@ -38,17 +40,16 @@ public class AuthService {
 
     @Transactional
     public void signup(SignupRequestDto signupRequestDto) {
-        if (memberRepository.findByEmail(signupRequestDto.getEmail()).isPresent()) {
-            throw new UserAlreadyExistsException("이미 사용 중인 이메일입니다.");
+        if (isEmailAlreadyExist(signupRequestDto.getEmail())) {
+            throw new CustomException(ErrorCode.EMAIL_ALREADY_EXISTS);
         }
 
-        if (memberRepository.findByLoginId(signupRequestDto.getLoginId()).isPresent()) {
-            throw new UserAlreadyExistsException("이미 사용 중인 아아디입니다.");
+        if (isLoginIdAlreadyExist(signupRequestDto.getLoginId())) {
+            throw new CustomException(ErrorCode.LOGIN_ID_ALREADY_EXISTS);
         }
 
         String encodedPassword = passwordEncoder.encode(signupRequestDto.getPassword());
-        List<String> roles = new ArrayList<>();
-        roles.add("USER");
+        List<String> roles = List.of("USER");
 
         try {
             Member member = Member.builder()
@@ -65,17 +66,17 @@ public class AuthService {
                     .build();
 
             memberRepository.save(member);
-        } catch(Exception e) {
-            throw new RuntimeException("서버 오류가 발생했습니다. 다시 시도해 주세요.", e);
+        } catch (Exception e) {
+            throw new CustomException(ErrorCode.UNKNOWN_ERROR, "회원가입 중 서버 오류가 발생했습니다.");
         }
     }
 
-    @Transactional
+    @Transactional(readOnly = true)
     public boolean isEmailAlreadyExist(String email) {
         return memberRepository.findByEmail(email).isPresent();
     }
 
-    @Transactional
+    @Transactional(readOnly = true)
     public boolean isLoginIdAlreadyExist(String loginId) {
         return memberRepository.findByLoginId(loginId).isPresent();
     }
@@ -86,41 +87,43 @@ public class AuthService {
         String password = loginRequestDto.getPassword();
         UsernamePasswordAuthenticationToken authenticationToken = new UsernamePasswordAuthenticationToken(id, password);
 
-        if (!isLoginIdAlreadyExist(loginRequestDto.getLoginId()))
-            throw new LoginException("로그인 실패: 아이디가 존재하지 않습니다.", "USER_NOT_FOUND");
+        if (!isLoginIdAlreadyExist(id)) {
+            throw new LoginException(ErrorCode.USER_NOT_FOUND, "아이디가 존재하지 않습니다.");
+        }
 
         try {
             Authentication authentication = authenticationManagerBuilder.getObject().authenticate(authenticationToken);
             return jwtTokenProvider.generateToken(authentication);
         } catch (UsernameNotFoundException e) {
-            throw new LoginException("로그인 실패: 아이디가 존재하지 않습니다.", "USER_NOT_FOUND");
+            throw new LoginException(ErrorCode.USER_NOT_FOUND, "아이디가 존재하지 않습니다.");
         } catch (BadCredentialsException e) {
-            throw new LoginException("로그인 실패: 비밀번호가 틀렸습니다.", "INVALID_CREDENTIALS");
+            throw new LoginException(ErrorCode.INVALID_CREDENTIALS, "비밀번호가 틀렸습니다.");
         } catch (AuthenticationException e) {
-            throw new LoginException("로그인 실패: 인증에 실패했습니다.", "AUTHENTICATION_FAILED");
+            throw new LoginException(ErrorCode.AUTHENTICATION_FAILED, "인증에 실패했습니다.");
         } catch (Exception e) {
-            throw new LoginException("서버 오류가 발생했습니다.", "UNKNOWN_ERROR");
+            throw new LoginException(ErrorCode.UNKNOWN_ERROR, "로그인 중 서버 오류가 발생했습니다.");
         }
     }
 
     @Transactional
     public void logout(String accessToken, String refreshToken) {
-        if (jwtTokenProvider.validateToken(accessToken)) {
-            String accessTokenKey = "blacklist:" + accessToken;
-            Date expiration = jwtTokenProvider.getExpiration(accessToken);
-            long ttl = (expiration.getTime() - System.currentTimeMillis()) / 1000;
-            redisTemplate.opsForValue().set(accessTokenKey, accessToken, ttl, TimeUnit.SECONDS);
-        } else {
-            throw new RuntimeException("Invalid access token");
-        }
+        blacklistToken(accessToken, "access");
+        blacklistToken(refreshToken, "refresh");
+    }
 
-        if (jwtTokenProvider.validateToken(refreshToken)) {
-            String refreshTokenKey = "blacklist:" + refreshToken;
-            Date expiration = jwtTokenProvider.getExpiration(refreshToken);
-            long ttl = (expiration.getTime() - System.currentTimeMillis()) / 1000;
-            redisTemplate.opsForValue().set(refreshTokenKey, refreshToken, ttl, TimeUnit.SECONDS);
+    private void blacklistToken(String token, String tokenType) {
+        if (jwtTokenProvider.validateToken(token)) {
+            String key = "blacklist:" + token;
+            Date expiration = jwtTokenProvider.getExpiration(token);
+            long ttl = Math.max((expiration.getTime() - System.currentTimeMillis()) / 1000, 1);
+            redisTemplate.opsForValue().set(key, token, ttl, TimeUnit.SECONDS);
         } else {
-            throw new RuntimeException("Invalid refresh token");
+            if ("access".equals(tokenType)) {
+                throw new CustomException(ErrorCode.INVALID_ACCESS_TOKEN);
+            } else {
+                throw new CustomException(ErrorCode.INVALID_REFRESH_TOKEN);
+            }
         }
     }
+
 }
