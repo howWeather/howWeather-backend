@@ -1,19 +1,9 @@
 package com.howWeather.howWeather_backend.global.exception;
 
-public class LoginException extends RuntimeException {
-    private final String errorCode;
+import lombok.Getter;
 
-    public LoginException(String message) {
-        super(message);
-        this.errorCode = "LOGIN_ERROR";
-    }
-
-    public LoginException(String message, String errorCode) {
-        super(message);
-        this.errorCode = errorCode;
-    }
-
-    public String getErrorCode() {
-        return errorCode;
+public class LoginException extends CustomException {
+    public LoginException(ErrorCode errorCode, String message) {
+        super(errorCode, message);
     }
 }
