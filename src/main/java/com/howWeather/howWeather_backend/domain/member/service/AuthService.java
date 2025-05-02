@@ -5,7 +5,7 @@ import com.howWeather.howWeather_backend.domain.member.dto.LoginRequestDto;
 import com.howWeather.howWeather_backend.domain.member.dto.SignupRequestDto;
 import com.howWeather.howWeather_backend.domain.member.entity.Member;
 import com.howWeather.howWeather_backend.domain.member.repository.MemberRepository;
-import com.howWeather.howWeather_backend.domain.repository.ClosetRepository;
+import com.howWeather.howWeather_backend.domain.closet.repository.ClosetRepository;
 import com.howWeather.howWeather_backend.global.exception.CustomException;
 import com.howWeather.howWeather_backend.global.exception.ErrorCode;
 import com.howWeather.howWeather_backend.global.exception.LoginException;
