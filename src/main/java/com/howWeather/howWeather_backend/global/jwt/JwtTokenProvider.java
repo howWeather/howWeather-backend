@@ -1,5 +1,7 @@
 package com.howWeather.howWeather_backend.global.jwt;
 
+import com.howWeather.howWeather_backend.domain.member.entity.Member;
+import com.howWeather.howWeather_backend.global.custom.CustomUserDetailsService;
 import io.jsonwebtoken.*;
 import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
@@ -36,9 +38,11 @@ public class JwtTokenProvider {
 
     private final Key key;
     private final RedisTemplate<String, String> redisTemplate;
+    private final CustomUserDetailsService customUserDetailsService;
 
-    public JwtTokenProvider(@Value("${jwt.secret}") String secretKey, RedisTemplate<String, String> redisTemplate) {
+    public JwtTokenProvider(@Value("${jwt.secret}") String secretKey, RedisTemplate<String, String> redisTemplate, CustomUserDetailsService customUserDetailsService) {
         this.redisTemplate = redisTemplate;
+        this.customUserDetailsService = customUserDetailsService;
         byte[] keyBytes = Decoders.BASE64.decode(secretKey);
         this.key = Keys.hmacShaKeyFor(keyBytes);
     }
@@ -115,30 +119,36 @@ public class JwtTokenProvider {
                 .build();
     }
 
+//    public Authentication getAuthentication(String token) {
+//        Claims claims = parseClaims(token);
+//        String loginId = claims.getSubject();
+//
+//        UserDetails userDetails = customUserDetailsService.loadUserByUsername(loginId);
+//
+//        System.out.println("userDetails = " + userDetails);
+//        return new UsernamePasswordAuthenticationToken(userDetails, token, userDetails.getAuthorities());
+//    }
+
+
     public Authentication getAuthentication(String token) {
         Claims claims = parseClaims(token);
         if (claims == null || claims.getSubject() == null) {
-            System.out.println("claims = " + claims);
-            if (claims.getSubject() == null) System.out.println("getSubgect == null" );
             throw new IllegalArgumentException("잘못된 리프레시 토큰.");
         }
 
-        String username = claims.getSubject();
+        String username = claims.getSubject(); // == loginId
         String authorities = claims.get("auth") != null ? claims.get("auth").toString() : "";
 
-        if (username == null || username.isEmpty()) {
+        if (username.isEmpty()) {
             throw new IllegalArgumentException("사용자 이름이 비어있습니다.");
         }
-        if (authorities == null || authorities.isEmpty()) {
+        if (authorities.isEmpty()) {
             throw new IllegalArgumentException("권한 정보가 비어있습니다.");
         }
 
-        List<GrantedAuthority> grantedAuthorities = Arrays.stream(authorities.split(","))
-                .map(SimpleGrantedAuthority::new)
-                .collect(Collectors.toList());
-        User user = new User(username, "", grantedAuthorities);
+        Member member = (Member) customUserDetailsService.loadUserByUsername(username);
 
-        return new UsernamePasswordAuthenticationToken(user, token, grantedAuthorities);
+        return new UsernamePasswordAuthenticationToken(member, token, member.getAuthorities());
     }
 
 
