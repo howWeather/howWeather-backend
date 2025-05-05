@@ -1,10 +1,14 @@
 package com.howWeather.howWeather_backend.domain.closet.service;
 
+import com.howWeather.howWeather_backend.domain.closet.dto.ClothDetailDto;
+import com.howWeather.howWeather_backend.domain.closet.dto.ClothListDto;
 import com.howWeather.howWeather_backend.domain.closet.entity.Closet;
 import com.howWeather.howWeather_backend.domain.closet.entity.Outer;
 import com.howWeather.howWeather_backend.domain.closet.entity.Upper;
 import com.howWeather.howWeather_backend.domain.closet.dto.AddClothesDto;
 import com.howWeather.howWeather_backend.domain.closet.dto.ClothDto;
+import com.howWeather.howWeather_backend.domain.closet.repository.OuterRepository;
+import com.howWeather.howWeather_backend.domain.closet.repository.UpperRepository;
 import com.howWeather.howWeather_backend.domain.member.entity.Member;
 import com.howWeather.howWeather_backend.domain.closet.repository.ClosetRepository;
 import com.howWeather.howWeather_backend.global.exception.CustomException;
@@ -14,12 +18,15 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 
 @Service
 @AllArgsConstructor
 public class ClosetService {
     private final ClosetRepository closetRepository;
+    private final UpperRepository upperRepository;
+    private final OuterRepository outerRepository;
 
     @Transactional
     public void registerCloset(Member member, AddClothesDto addClothesDto) {
@@ -98,6 +105,59 @@ public class ClosetService {
 
         if (c.getThickness() < 1 || c.getThickness() > 3) {
             throw new CustomException(ErrorCode.INVALID_THICKNESS);
+        }
+    }
+
+    @Transactional
+    public ClothListDto findUppersByName(Member member, String name) {
+        try {
+            Closet closet = getCloset(member);
+            List<ClothDetailDto> detailList = closet.getUpperList().stream()
+                    .filter(upper -> upper.isActive() && upper.getUpperName().equals(name))
+                    .map(upper -> {
+                        ClothDetailDto dto = new ClothDetailDto();
+                        dto.setColor(upper.getColor());
+                        dto.setThickness(upper.getThickness());
+                        return dto;
+                    })
+                    .collect(Collectors.toList());
+
+            ClothListDto result = new ClothListDto();
+            result.setClothName(name);
+            result.setClothList(detailList);
+
+            return result;
+
+        } catch (CustomException e) {
+            throw e;
+        } catch (Exception e) {
+            throw new CustomException(ErrorCode.UNKNOWN_ERROR, "상의 의상 조회 중 서버 오류가 발생했습니다.");
+        }
+    }
+
+    @Transactional
+    public ClothListDto findOutersByName(Member member, String name) {
+        try {
+            Closet closet = getCloset(member);
+            List<ClothDetailDto> detailList = closet.getOuterList().stream()
+                    .filter(outer -> outer.isActive() && outer.getOuterName().equals(name))
+                    .map(outer -> {
+                        ClothDetailDto dto = new ClothDetailDto();
+                        dto.setColor(outer.getColor());
+                        dto.setThickness(outer.getThickness());
+                        return dto;
+                    })
+                    .collect(Collectors.toList());
+
+            ClothListDto result = new ClothListDto();
+            result.setClothName(name);
+            result.setClothList(detailList);
+            return result;
+
+        } catch (CustomException e) {
+            throw e;
+        } catch (Exception e) {
+            throw new CustomException(ErrorCode.UNKNOWN_ERROR, "아우터 의상 조회 중 서버 오류가 발생했습니다.");
         }
     }
 }
