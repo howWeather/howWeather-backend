@@ -25,6 +25,8 @@ public class Outer {
 
     private boolean isActive;
 
+    private boolean isLayerFlexible;
+
     @Setter
     @ManyToOne(fetch = LAZY)
     @JoinColumn(name = "closet_id")

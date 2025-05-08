@@ -17,7 +17,7 @@ public class Upper {
     @Column(name="upper_id")
     private Long id;
 
-    private Long outerType;
+    private Long upperType;
 
     private int color;
 
@@ -25,13 +25,15 @@ public class Upper {
 
     private boolean isActive;
 
+    private boolean isLayerFlexible;
+
     @Setter
     @ManyToOne(fetch = LAZY)
     @JoinColumn(name = "closet_id")
     private Closet closet;
 
     public static boolean isDuplicate(Upper existingUpper, Upper newUpper) {
-        return existingUpper.getOuterType() == newUpper.getOuterType() &&
+        return existingUpper.getUpperType() == newUpper.getUpperType() &&
                 existingUpper.getColor() == newUpper.getColor() &&
                 existingUpper.getThickness() == newUpper.getThickness();
     }

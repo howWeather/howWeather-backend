@@ -11,11 +11,12 @@ import com.howWeather.howWeather_backend.domain.member.entity.Member;
 import com.howWeather.howWeather_backend.domain.closet.repository.ClosetRepository;
 import com.howWeather.howWeather_backend.global.exception.CustomException;
 import com.howWeather.howWeather_backend.global.exception.ErrorCode;
+import java.util.List;
+import java.util.ArrayList;
+
 import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
-import java.util.List;
 import java.util.stream.Collectors;
 
 
@@ -28,6 +29,9 @@ public class ClosetService {
     private static final Long MAX_UPPER_ID = 9L;
     private static final String UPPER = "uppers";
     private static final String OUTER = "outers";
+    private final List<Long> layerFlexibleUpper = new ArrayList<>(List.of(9L));
+    private final List<Long> layerFlexibleOuter = new ArrayList<>(List.of(3L));
+
 
     @Transactional
     public void registerCloset(Member member, AddClothesDto addClothesDto) {
@@ -57,11 +61,14 @@ public class ClosetService {
         for (ClothRegisterDto c : uppers) {
             validateClothDto(c, UPPER);
 
+            boolean isLayerFlexible = layerFlexibleUpper.contains(c.getClothType());
+
             Upper newUpper = Upper.builder()
-                    .outerType(c.getClothType())
+                    .upperType(c.getClothType())
                     .color(c.getColor())
                     .thickness(c.getThickness())
                     .isActive(true)
+                    .isLayerFlexible(isLayerFlexible)
                     .build();
 
             boolean isDuplicate = closet.getUpperList().stream()
@@ -77,11 +84,14 @@ public class ClosetService {
         for (ClothRegisterDto c : outers) {
             validateClothDto(c, OUTER);
 
+            boolean isLayerFlexible = layerFlexibleOuter.contains(c.getClothType());
+
             Outer newOuter = Outer.builder()
                     .outerType(c.getClothType())
                     .color(c.getColor())
                     .thickness(c.getThickness())
                     .isActive(true)
+                    .isLayerFlexible(isLayerFlexible)
                     .build();
 
             boolean isDuplicate = closet.getOuterList().stream()
@@ -117,7 +127,7 @@ public class ClosetService {
         try {
             Closet closet = getCloset(member);
             List<ClothDetailDto> detailList = closet.getUpperList().stream()
-                    .filter(upper -> upper.isActive() && upper.getOuterType().equals(upperTypeId))
+                    .filter(upper -> upper.isActive() && upper.getUpperType().equals(upperTypeId))
                     .map(upper -> {
                         ClothDetailDto dto = new ClothDetailDto();
                         dto.setId(upper.getId());
