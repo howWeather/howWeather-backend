@@ -4,6 +4,8 @@ import com.howWeather.howWeather_backend.domain.closet.dto.*;
 import com.howWeather.howWeather_backend.domain.closet.entity.Closet;
 import com.howWeather.howWeather_backend.domain.closet.entity.Outer;
 import com.howWeather.howWeather_backend.domain.closet.entity.Upper;
+import com.howWeather.howWeather_backend.domain.closet.repository.OuterRepository;
+import com.howWeather.howWeather_backend.domain.closet.repository.UpperRepository;
 import com.howWeather.howWeather_backend.domain.member.entity.Member;
 import com.howWeather.howWeather_backend.domain.closet.repository.ClosetRepository;
 import com.howWeather.howWeather_backend.global.exception.CustomException;
@@ -12,6 +14,7 @@ import java.util.List;
 import java.util.ArrayList;
 
 import lombok.AllArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -20,9 +23,12 @@ import java.util.stream.Collectors;
 
 
 @Service
+@Slf4j
 @AllArgsConstructor
 public class ClosetService {
     private final ClosetRepository closetRepository;
+    private final UpperRepository upperRepository;
+    private final OuterRepository outerRepository;
     private static final Long MIN_CLOTH_ID = 1L;
     private static final Long MAX_OUTER_ID = 18L;
     private static final Long MAX_UPPER_ID = 9L;
@@ -108,7 +114,7 @@ public class ClosetService {
         else if (type.equals(OUTER)) maxIdx = MAX_OUTER_ID;
         else throw new CustomException(ErrorCode.INVALID_CLOTH_REQUEST);
 
-        if (c.getClothType() < MIN_CLOTH_ID || c.getClothType() > maxIdx){
+        if (c.getClothType() < MIN_CLOTH_ID || c.getClothType() > maxIdx) {
             throw new CustomException(ErrorCode.INVALID_CLOTH_REQUEST);
         }
 
@@ -121,7 +127,7 @@ public class ClosetService {
         }
     }
 
-    @Transactional
+    @Transactional(readOnly = true)
     public List<ClothListDto> findActiveUppers(Member member) {
         try {
             Closet closet = getCloset(member);
@@ -184,7 +190,7 @@ public class ClosetService {
         }
     }
 
-    @Transactional
+    @Transactional(readOnly = true)
     public List<ClothListDto> findActiveOuters(Member member) {
         try {
             Closet closet = getCloset(member);
@@ -246,4 +252,36 @@ public class ClosetService {
             throw new CustomException(ErrorCode.UNKNOWN_ERROR, "아우터 의상 조회 중 서버 오류가 발생했습니다.");
         }
     }
+
+
+    @Transactional
+    public void deleteUpper(Long clothId, Member member) {
+        try {
+            Closet closet = getCloset(member);
+            Upper upper = upperRepository.findByIdAndCloset(clothId, closet)
+                    .orElseThrow(() -> new CustomException(ErrorCode.CLOTH_NOT_FOUND, "해당 상의를 찾을 수 없습니다."));
+            upperRepository.delete(upper);
+        } catch (CustomException e) {
+            throw e;
+        } catch (Exception e) {
+            log.error("상의 삭제 중 예외 발생: {}", e.getMessage(), e);
+            throw new CustomException(ErrorCode.UNKNOWN_ERROR, "상의 삭제 중 오류가 발생했습니다.");
+        }
+    }
+
+    @Transactional
+    public void deleteOuter(Long clothId, Member member) {
+        try {
+            Closet closet = getCloset(member);
+            Outer outer = outerRepository.findByIdAndCloset(clothId, closet)
+                    .orElseThrow(() -> new CustomException(ErrorCode.CLOTH_NOT_FOUND, "해당 아우터를 찾을 수 없습니다."));
+            outerRepository.delete(outer);
+        } catch (CustomException e) {
+            throw e;
+        } catch (Exception e) {
+            log.error("아우터 삭제 중 예외 발생: {}", e.getMessage(), e);
+            throw new CustomException(ErrorCode.UNKNOWN_ERROR, "아우터 삭제 중 오류가 발생했습니다.");
+        }
+    }
+
 }
