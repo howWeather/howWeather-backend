@@ -25,7 +25,8 @@ public enum ErrorCode {
     INVALID_CLOTH_NAME("의상명이 잘못되었습니다", HttpStatus.BAD_REQUEST),
     INVALID_COLOR("색상값이 잘못되었습니다.", HttpStatus.BAD_REQUEST),
     INVALID_THICKNESS("두께값이 잘못되었습니다.", HttpStatus.BAD_REQUEST),
-    INVALID_CLOTH_ID("의상 유형이 잘못되었습니다.", HttpStatus.BAD_REQUEST);
+    INVALID_CLOTH_ID("의상 유형이 잘못되었습니다.", HttpStatus.BAD_REQUEST),
+    CLOTH_NOT_FOUND("해당 의상을 찾을 수 없습니다", HttpStatus.NOT_FOUND);
 
 
     private final String message;
