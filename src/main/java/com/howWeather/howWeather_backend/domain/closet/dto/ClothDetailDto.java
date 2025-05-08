@@ -4,7 +4,8 @@ import lombok.Data;
 
 @Data
 public class ClothDetailDto {
-    private long id;
+    private long clothType;
     private int color;
     private int thickness;
+    private long clothId;
 }

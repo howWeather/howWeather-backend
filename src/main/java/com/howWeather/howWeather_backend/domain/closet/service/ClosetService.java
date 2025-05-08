@@ -29,8 +29,8 @@ public class ClosetService {
     private static final Long MAX_UPPER_ID = 9L;
     private static final String UPPER = "uppers";
     private static final String OUTER = "outers";
-    private final List<Long> layerFlexibleUpper = new ArrayList<>(List.of(9L));
-    private final List<Long> layerFlexibleOuter = new ArrayList<>(List.of(3L));
+    private final List<Long> layerFlexibleUpper = new ArrayList<>(List.of(9L)); // 아우터로 할 수 있는 상의
+    private final List<Long> layerFlexibleOuter = new ArrayList<>(List.of(3L)); // 상의로 할 수 있는 아우터
 
 
     @Transactional
@@ -123,24 +123,50 @@ public class ClosetService {
     }
 
     @Transactional
-    public ClothListDto findActiveUppersByType(Member member, Long upperTypeId) {
+    public List<ClothListDto> findActiveUppersByType(Member member) {
         try {
             Closet closet = getCloset(member);
-            List<ClothDetailDto> detailList = closet.getUpperList().stream()
-                    .filter(upper -> upper.isActive() && upper.getUpperType().equals(upperTypeId))
+            List<ClothListDto> resultList = new ArrayList<>();
+
+            List<ClothDetailDto> upperDetails = closet.getUpperList().stream()
+                    .filter(Upper::isActive)
                     .map(upper -> {
                         ClothDetailDto dto = new ClothDetailDto();
-                        dto.setId(upper.getId());
+                        dto.setClothType(upper.getUpperType());
                         dto.setColor(upper.getColor());
                         dto.setThickness(upper.getThickness());
+                        dto.setClothId(upper.getId());
                         return dto;
                     })
                     .collect(Collectors.toList());
 
-            ClothListDto result = new ClothListDto();
-            result.setCategory("uppers");
-            result.setClothList(detailList);
-            return result;
+            ClothListDto upperDto = new ClothListDto();
+            upperDto.setCategory("uppers");
+            upperDto.setClothList(upperDetails);
+            resultList.add(upperDto);
+
+            boolean hasLayerFlexibleOuter = closet.getOuterList().stream()
+                    .anyMatch(outer -> outer.isActive() && layerFlexibleOuter.contains(outer.getOuterType()));
+
+            if (hasLayerFlexibleOuter) {
+                List<ClothDetailDto> outerDetails = closet.getOuterList().stream()
+                        .filter(outer -> outer.isActive() && layerFlexibleOuter.contains(outer.getOuterType()))
+                        .map(outer -> {
+                            ClothDetailDto dto = new ClothDetailDto();
+                            dto.setClothType(outer.getOuterType());
+                            dto.setColor(outer.getColor());
+                            dto.setThickness(outer.getThickness());
+                            dto.setClothId(outer.getId());
+                            return dto;
+                        })
+                        .collect(Collectors.toList());
+
+                ClothListDto outerDto = new ClothListDto();
+                outerDto.setCategory("outers");
+                outerDto.setClothList(outerDetails);
+                resultList.add(outerDto);
+            }
+            return resultList;
 
         } catch (CustomException e) {
             throw e;
@@ -149,25 +175,52 @@ public class ClosetService {
         }
     }
 
+
     @Transactional
-    public ClothListDto findActiveOutersById(Member member, Long outerTypeId) {
+    public List<ClothListDto> findActiveOutersById(Member member) {
         try {
             Closet closet = getCloset(member);
-            List<ClothDetailDto> detailList = closet.getOuterList().stream()
-                    .filter(outer -> outer.isActive() && outer.getOuterType().equals(outerTypeId))
+            List<ClothListDto> resultList = new ArrayList<>();
+
+            List<ClothDetailDto> outerDetails = closet.getOuterList().stream()
+                    .filter(Outer::isActive)
                     .map(outer -> {
                         ClothDetailDto dto = new ClothDetailDto();
                         dto.setColor(outer.getColor());
-                        dto.setId(outer.getId());
+                        dto.setClothType(outer.getOuterType());
                         dto.setThickness(outer.getThickness());
+                        dto.setClothId(outer.getId());
                         return dto;
                     })
                     .collect(Collectors.toList());
 
-            ClothListDto result = new ClothListDto();
-            result.setCategory("outers");
-            result.setClothList(detailList);
-            return result;
+            ClothListDto outerDto = new ClothListDto();
+            outerDto.setCategory("outers");
+            outerDto.setClothList(outerDetails);
+            resultList.add(outerDto);
+
+            boolean hasLayerFlexibleOuter = closet.getUpperList().stream()
+                    .anyMatch(upper -> upper.isActive() && layerFlexibleUpper.contains(upper.getUpperType()));
+
+            if (hasLayerFlexibleOuter) {
+                List<ClothDetailDto> upperDetails = closet.getUpperList().stream()
+                        .filter(upper -> upper.isActive() && layerFlexibleUpper.contains(upper.getUpperType()))
+                        .map(upper -> {
+                            ClothDetailDto dto = new ClothDetailDto();
+                            dto.setColor(upper.getColor());
+                            dto.setClothType(upper.getUpperType());
+                            dto.setClothId(upper.getId());
+                            dto.setThickness(upper.getThickness());
+                            return dto;
+                        })
+                        .collect(Collectors.toList());
+
+                ClothListDto upperDto = new ClothListDto();
+                upperDto.setCategory("uppers");
+                upperDto.setClothList(upperDetails);
+                resultList.add(upperDto);
+            }
+            return resultList;
 
         } catch (CustomException e) {
             throw e;
@@ -175,4 +228,6 @@ public class ClosetService {
             throw new CustomException(ErrorCode.UNKNOWN_ERROR, "아우터 의상 조회 중 서버 오류가 발생했습니다.");
         }
     }
+
+
 }
