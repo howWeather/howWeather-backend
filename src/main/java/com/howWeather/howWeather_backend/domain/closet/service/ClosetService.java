@@ -7,8 +7,6 @@ import com.howWeather.howWeather_backend.domain.closet.entity.Outer;
 import com.howWeather.howWeather_backend.domain.closet.entity.Upper;
 import com.howWeather.howWeather_backend.domain.closet.dto.AddClothesDto;
 import com.howWeather.howWeather_backend.domain.closet.dto.ClothRegisterDto;
-import com.howWeather.howWeather_backend.domain.closet.repository.OuterRepository;
-import com.howWeather.howWeather_backend.domain.closet.repository.UpperRepository;
 import com.howWeather.howWeather_backend.domain.member.entity.Member;
 import com.howWeather.howWeather_backend.domain.closet.repository.ClosetRepository;
 import com.howWeather.howWeather_backend.global.exception.CustomException;
@@ -25,8 +23,11 @@ import java.util.stream.Collectors;
 @AllArgsConstructor
 public class ClosetService {
     private final ClosetRepository closetRepository;
-    private final UpperRepository upperRepository;
-    private final OuterRepository outerRepository;
+    private static final Long MIN_CLOTH_ID = 1L;
+    private static final Long MAX_OUTER_ID = 18L;
+    private static final Long MAX_UPPER_ID = 9L;
+    private static final String UPPER = "uppers";
+    private static final String OUTER = "outers";
 
     @Transactional
     public void registerCloset(Member member, AddClothesDto addClothesDto) {
@@ -36,8 +37,6 @@ public class ClosetService {
             }
 
             Closet closet = getCloset(member);
-            
-            // TODO : 상의와 아우터 기능을 동시에 하는 의상에 대한 처리 로직 추가
             addUpperClothes(closet, addClothesDto.getUppers());
             addOuterClothes(closet, addClothesDto.getOuters());
 
@@ -56,12 +55,12 @@ public class ClosetService {
 
     private void addUpperClothes(Closet closet, List<ClothRegisterDto> uppers) {
         for (ClothRegisterDto c : uppers) {
-            validateClothDto(c);
+            validateClothDto(c, UPPER);
 
             Upper newUpper = Upper.builder()
+                    .outerType(c.getClothType())
                     .color(c.getColor())
                     .thickness(c.getThickness())
-                    .upperName(c.getClothName())
                     .isActive(true)
                     .build();
 
@@ -76,12 +75,12 @@ public class ClosetService {
 
     private void addOuterClothes(Closet closet, List<ClothRegisterDto> outers) {
         for (ClothRegisterDto c : outers) {
-            validateClothDto(c);
-            
+            validateClothDto(c, OUTER);
+
             Outer newOuter = Outer.builder()
+                    .outerType(c.getClothType())
                     .color(c.getColor())
                     .thickness(c.getThickness())
-                    .outerName(c.getClothName())
                     .isActive(true)
                     .build();
 
@@ -94,9 +93,14 @@ public class ClosetService {
         }
     }
 
-    private void validateClothDto(ClothRegisterDto c) {
-        if (c.getClothName() == null || c.getClothName().trim().isEmpty()) {
-            throw new CustomException(ErrorCode.INVALID_CLOTH_NAME);
+    private void validateClothDto(ClothRegisterDto c, String type) {
+        long maxIdx = 0;
+        if (type.equals(UPPER)) maxIdx = MAX_UPPER_ID;
+        else if (type.equals(OUTER)) maxIdx = MAX_OUTER_ID;
+        else throw new CustomException(ErrorCode.INVALID_CLOTH_REQUEST);
+
+        if (c.getClothType() < MIN_CLOTH_ID || c.getClothType() > maxIdx){
+            throw new CustomException(ErrorCode.INVALID_CLOTH_REQUEST);
         }
 
         if (c.getColor() < 1 || c.getColor() > 11) {
@@ -109,24 +113,23 @@ public class ClosetService {
     }
 
     @Transactional
-    public ClothListDto findUppersByName(Member member, String name) {
+    public ClothListDto findActiveUppersByType(Member member, Long upperTypeId) {
         try {
             Closet closet = getCloset(member);
             List<ClothDetailDto> detailList = closet.getUpperList().stream()
-                    .filter(upper -> upper.isActive() && upper.getUpperName().equals(name))
+                    .filter(upper -> upper.isActive() && upper.getOuterType().equals(upperTypeId))
                     .map(upper -> {
                         ClothDetailDto dto = new ClothDetailDto();
-                        dto.setColor(upper.getColor());
                         dto.setId(upper.getId());
+                        dto.setColor(upper.getColor());
                         dto.setThickness(upper.getThickness());
                         return dto;
                     })
                     .collect(Collectors.toList());
 
             ClothListDto result = new ClothListDto();
-            result.setClothName(name);
+            result.setCategory("uppers");
             result.setClothList(detailList);
-
             return result;
 
         } catch (CustomException e) {
@@ -137,11 +140,11 @@ public class ClosetService {
     }
 
     @Transactional
-    public ClothListDto findOutersByName(Member member, String name) {
+    public ClothListDto findActiveOutersById(Member member, Long outerTypeId) {
         try {
             Closet closet = getCloset(member);
             List<ClothDetailDto> detailList = closet.getOuterList().stream()
-                    .filter(outer -> outer.isActive() && outer.getOuterName().equals(name))
+                    .filter(outer -> outer.isActive() && outer.getOuterType().equals(outerTypeId))
                     .map(outer -> {
                         ClothDetailDto dto = new ClothDetailDto();
                         dto.setColor(outer.getColor());
@@ -152,7 +155,7 @@ public class ClosetService {
                     .collect(Collectors.toList());
 
             ClothListDto result = new ClothListDto();
-            result.setClothName(name);
+            result.setCategory("outers");
             result.setClothList(detailList);
             return result;
 

@@ -14,8 +14,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.List;
-
 @Slf4j
 @RestController
 @RequiredArgsConstructor
@@ -34,19 +32,18 @@ public class ClosetController {
 
     @GetMapping("/search-upper")
     public ResponseEntity<ClothListDto> getUpperClothesByName(@RequestHeader("Authorization") String accessTokenHeader,
-                                                               @RequestParam String name,
+                                                               @RequestParam Long clothId,
                                                                @AuthenticationPrincipal Member member) {
-        ClothListDto clothes = closetService.findUppersByName(member, name);
+        ClothListDto clothes = closetService.findActiveUppersByType(member, clothId);
         return ResponseEntity.ok(clothes);
     }
 
     @GetMapping("/search-outer")
     public ResponseEntity<ClothListDto> getOuterClothesByName(@RequestHeader("Authorization") String accessTokenHeader,
-                                                         @RequestParam String name,
+                                                         @RequestParam Long clothId,
                                                          @AuthenticationPrincipal Member member) {
-        ClothListDto clothes = closetService.findOutersByName(member, name);
+        ClothListDto clothes = closetService.findActiveOutersById(member, clothId);
         return ResponseEntity.ok(clothes);
     }
-
 
 }
