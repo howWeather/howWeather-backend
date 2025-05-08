@@ -160,7 +160,7 @@ public class ClosetService {
             throw new CustomException(ErrorCode.UNKNOWN_ERROR, "상의 조회 중 서버 오류가 발생했습니다.");
         }
     }
-    
+
     @Transactional(readOnly = true)
     public ClothListDto findActiveOuters(Member member) {
         try {

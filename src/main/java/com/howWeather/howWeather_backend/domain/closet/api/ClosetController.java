@@ -34,23 +34,13 @@ public class ClosetController {
         return ApiResponse.success(HttpStatus.OK, "의상 등록에 성공하였습니다.");
     }
 
-    @GetMapping("/uppers")
+    @GetMapping("")
     @CheckAuthenticatedUser
-    public ResponseEntity<List<ClothListDto>> getUpperClothesByName(
+    public ResponseEntity<List<ClothListDto>> getClothList(
             @RequestHeader("Authorization") String accessTokenHeader,
             @AuthenticationPrincipal Member member) {
-
-        List<ClothListDto> clothes = closetService.findActiveUppers(member);
-        return ResponseEntity.ok(clothes);
-    }
-
-    @GetMapping("/outers")
-    @CheckAuthenticatedUser
-    public ResponseEntity<List<ClothListDto>> getOuterClothesByName(
-            @RequestHeader("Authorization") String accessTokenHeader,
-            @AuthenticationPrincipal Member member) {
-        List<ClothListDto> clothes = closetService.findActiveOuters(member);
-        return ResponseEntity.ok(clothes);
+        List<ClothListDto> allClothes = closetService.getAllClothes(member);
+        return ResponseEntity.ok(allClothes);
     }
 
     @PatchMapping("/update-upper/{clothId}")
