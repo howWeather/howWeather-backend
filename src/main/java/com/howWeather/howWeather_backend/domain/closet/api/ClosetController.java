@@ -26,26 +26,29 @@ public class ClosetController {
 
     @PostMapping("/register")
     @CheckAuthenticatedUser
-    public ResponseEntity<ApiResponse<String>> registerCloth(@RequestHeader("Authorization") String accessTokenHeader,
-                                                      @Valid @RequestBody AddClothesDto addClothesDto,
-                                                      @AuthenticationPrincipal Member member) {
+    public ResponseEntity<ApiResponse<String>> registerCloth(
+            @RequestHeader("Authorization") String accessTokenHeader,
+            @Valid @RequestBody AddClothesDto addClothesDto,
+            @AuthenticationPrincipal Member member) {
         closetService.registerCloset(member, addClothesDto);
         return ApiResponse.success(HttpStatus.OK, "의상 등록에 성공하였습니다.");
     }
 
-    @GetMapping("/search-upper")
+    @GetMapping("/get-upper")
     @CheckAuthenticatedUser
-    public ResponseEntity<List<ClothListDto>> getUpperClothesByName(@RequestHeader("Authorization") String accessTokenHeader,
-                                                               @AuthenticationPrincipal Member member) {
+    public ResponseEntity<List<ClothListDto>> getUpperClothesByName(
+            @RequestHeader("Authorization") String accessTokenHeader,
+            @AuthenticationPrincipal Member member) {
 
         List<ClothListDto> clothes = closetService.findActiveUppers(member);
         return ResponseEntity.ok(clothes);
     }
 
-    @GetMapping("/search-outer")
+    @GetMapping("/get-outer")
     @CheckAuthenticatedUser
-    public ResponseEntity<List<ClothListDto>> getOuterClothesByName(@RequestHeader("Authorization") String accessTokenHeader,
-                                                                    @AuthenticationPrincipal Member member) {
+    public ResponseEntity<List<ClothListDto>> getOuterClothesByName(
+            @RequestHeader("Authorization") String accessTokenHeader,
+            @AuthenticationPrincipal Member member) {
         List<ClothListDto> clothes = closetService.findActiveOuters(member);
         return ResponseEntity.ok(clothes);
     }
@@ -59,9 +62,8 @@ public class ClosetController {
             @AuthenticationPrincipal Member member) {
 
         closetService.updateUpper(clothId, updateDto, member);
-        return ApiResponse.success(HttpStatus.OK, "의상을 성공적으로 수정하였습니다.");
+        return ApiResponse.success(HttpStatus.OK, "상의를 성공적으로 수정하였습니다.");
     }
-
 
     @PatchMapping("/update-outer/{clothId}")
     @CheckAuthenticatedUser
@@ -72,7 +74,26 @@ public class ClosetController {
             @AuthenticationPrincipal Member member) {
 
         closetService.updateOuter(clothId, updateDto, member);
-        return ApiResponse.success(HttpStatus.OK, "의상을 성공적으로 수정하였습니다.");
+        return ApiResponse.success(HttpStatus.OK, "아우터를 성공적으로 수정하였습니다.");
     }
 
+    @DeleteMapping("/delete-upper/{clothId}")
+    @CheckAuthenticatedUser
+    public ResponseEntity<ApiResponse<String>> deleteUpper(
+            @RequestHeader("Authorization") String accessTokenHeader,
+            @PathVariable Long clothId,
+            @AuthenticationPrincipal Member member) {
+        closetService.deleteUpper(clothId, member);
+        return ApiResponse.success(HttpStatus.NO_CONTENT, "상의를 성공적으로 삭제하였습니다.");
+    }
+
+    @DeleteMapping("/delete-outer/{clothId}")
+    @CheckAuthenticatedUser
+    public ResponseEntity<ApiResponse<String>> deleteOuter(
+            @RequestHeader("Authorization") String accessTokenHeader,
+            @PathVariable Long clothId,
+            @AuthenticationPrincipal Member member) {
+        closetService.deleteOuter(clothId, member);
+        return ApiResponse.success(HttpStatus.NO_CONTENT, "아우터를 성공적으로 삭제하였습니다.");
+    }
 }
