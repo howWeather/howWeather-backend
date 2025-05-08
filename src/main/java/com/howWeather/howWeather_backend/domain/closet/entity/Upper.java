@@ -27,6 +27,15 @@ public class Upper {
 
     private boolean isLayerFlexible;
 
+    public void patchAttributes(Integer color, Integer thickness) {
+        if (color != null) {
+            this.color = color;
+        }
+        if (thickness != null) {
+            this.thickness = thickness;
+        }
+    }
+
     @Setter
     @ManyToOne(fetch = LAZY)
     @JoinColumn(name = "closet_id")
