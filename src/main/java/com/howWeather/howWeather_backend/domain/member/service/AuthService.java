@@ -1,13 +1,14 @@
 package com.howWeather.howWeather_backend.domain.member.service;
 
+import com.howWeather.howWeather_backend.domain.closet.entity.Closet;
 import com.howWeather.howWeather_backend.domain.member.dto.LoginRequestDto;
 import com.howWeather.howWeather_backend.domain.member.dto.SignupRequestDto;
 import com.howWeather.howWeather_backend.domain.member.entity.Member;
 import com.howWeather.howWeather_backend.domain.member.repository.MemberRepository;
+import com.howWeather.howWeather_backend.domain.closet.repository.ClosetRepository;
 import com.howWeather.howWeather_backend.global.exception.CustomException;
 import com.howWeather.howWeather_backend.global.exception.ErrorCode;
 import com.howWeather.howWeather_backend.global.exception.LoginException;
-import com.howWeather.howWeather_backend.global.exception.UserAlreadyExistsException;
 import com.howWeather.howWeather_backend.global.jwt.JwtToken;
 import com.howWeather.howWeather_backend.global.jwt.JwtTokenProvider;
 import lombok.RequiredArgsConstructor;
@@ -23,7 +24,6 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
@@ -37,6 +37,7 @@ public class AuthService {
     private final PasswordEncoder passwordEncoder;
     private final AuthenticationManagerBuilder authenticationManagerBuilder;
     private final JwtTokenProvider jwtTokenProvider;
+    private final ClosetRepository closetRepository;
 
     @Transactional
     public void signup(SignupRequestDto signupRequestDto) {
@@ -66,6 +67,11 @@ public class AuthService {
                     .build();
 
             memberRepository.save(member);
+
+            Closet closet = Closet.builder().build();
+            closet.setMember(member);
+            closetRepository.save(closet);
+
         } catch (Exception e) {
             throw new CustomException(ErrorCode.UNKNOWN_ERROR, "회원가입 중 서버 오류가 발생했습니다.");
         }

@@ -1,5 +1,6 @@
 package com.howWeather.howWeather_backend.domain.member.entity;
 
+import com.howWeather.howWeather_backend.domain.closet.entity.Closet;
 import jakarta.persistence.*;
 import lombok.*;
 import org.springframework.security.core.GrantedAuthority;
@@ -11,6 +12,7 @@ import java.util.Collection;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import static jakarta.persistence.FetchType.*;
 import static jakarta.persistence.FetchType.LAZY;
 
 @Entity @Table(name = "member")
@@ -51,7 +53,11 @@ public class Member implements UserDetails {
     @Column(name="sensitivity", nullable = false)
     private int sensitivity = -1;
 
-    @ElementCollection(fetch = FetchType.EAGER)
+    @Setter
+    @OneToOne(mappedBy = "member", fetch = LAZY)
+    private Closet closet;
+
+    @ElementCollection(fetch = EAGER)
     @Builder.Default
     private List<String> roles = new ArrayList<>();
 

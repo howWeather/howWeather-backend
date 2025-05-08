@@ -19,7 +19,15 @@ public enum ErrorCode {
     TOKEN_REVOKED("해당 토큰은 로그아웃되어 사용할 수 없습니다.", HttpStatus.UNAUTHORIZED),
     INVALID_ACCESS_TOKEN("유효하지 않은 Access Token입니다.", HttpStatus.UNAUTHORIZED),
     INVALID_REFRESH_TOKEN("유효하지 않은 Refresh Token입니다.", HttpStatus.UNAUTHORIZED),
-    INVALID_INPUT("입력 항목이 조건을 충족하지 않습니다", HttpStatus.BAD_REQUEST);
+    INVALID_INPUT("입력 항목이 조건을 충족하지 않습니다", HttpStatus.BAD_REQUEST),
+    CLOSET_NOT_FOUND("사용자의 옷장이 존재하지 않습니다. 옷장을 만들어주세요.", HttpStatus.NOT_FOUND),
+    INVALID_CLOTH_REQUEST("등록할 의상 정보가 없습니다.", HttpStatus.BAD_REQUEST),
+    INVALID_CLOTH_NAME("의상명이 잘못되었습니다", HttpStatus.BAD_REQUEST),
+    INVALID_COLOR("색상값이 잘못되었습니다.", HttpStatus.BAD_REQUEST),
+    INVALID_THICKNESS("두께값이 잘못되었습니다.", HttpStatus.BAD_REQUEST),
+    INVALID_CLOTH_ID("의상 유형이 잘못되었습니다.", HttpStatus.BAD_REQUEST),
+    CLOTH_NOT_FOUND("해당 의상을 찾을 수 없습니다", HttpStatus.NOT_FOUND);
+
 
     private final String message;
     private final HttpStatus httpStatus;
