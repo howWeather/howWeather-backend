@@ -8,8 +8,8 @@ import java.util.List;
 @Data
 public class AddClothesDto {
     @Valid
-    private List<ClothDto> uppers;
+    private List<ClothRegisterDto> uppers;
 
     @Valid
-    private List<ClothDto> outers;
+    private List<ClothRegisterDto> outers;
 }

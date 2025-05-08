@@ -7,7 +7,7 @@ import jakarta.validation.constraints.NotNull;
 import lombok.Data;
 
 @Data
-public class ClothDto {
+public class ClothRegisterDto {
     @NotBlank
     private String clothName;
 
