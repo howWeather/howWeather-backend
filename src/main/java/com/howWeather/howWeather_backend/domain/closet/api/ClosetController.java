@@ -43,6 +43,25 @@ public class ClosetController {
         return ResponseEntity.ok(allClothes);
     }
 
+    @GetMapping("/selectable-uppers")
+    @CheckAuthenticatedUser
+    public ResponseEntity<List<ClothListDto>> getSelectableUppers(
+            @RequestHeader("Authorization") String accessTokenHeader,
+            @AuthenticationPrincipal Member member) {
+
+        List<ClothListDto> clothes = closetService.getPotentialUppers(member);
+        return ResponseEntity.ok(clothes);
+    }
+    
+    @GetMapping("/selectable-outers")
+    @CheckAuthenticatedUser
+    public ResponseEntity<List<ClothListDto>> getSelectableOuters(
+            @RequestHeader("Authorization") String accessTokenHeader,
+            @AuthenticationPrincipal Member member) {
+        List<ClothListDto> clothes = closetService.getPotentialOuters(member);
+        return ResponseEntity.ok(clothes);
+    }
+
     @PatchMapping("/update-upper/{clothId}")
     @CheckAuthenticatedUser
     public ResponseEntity<ApiResponse<String>> updateUpper(
