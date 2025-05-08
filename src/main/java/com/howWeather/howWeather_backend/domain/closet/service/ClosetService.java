@@ -10,16 +10,16 @@ import com.howWeather.howWeather_backend.domain.member.entity.Member;
 import com.howWeather.howWeather_backend.domain.closet.repository.ClosetRepository;
 import com.howWeather.howWeather_backend.global.exception.CustomException;
 import com.howWeather.howWeather_backend.global.exception.ErrorCode;
-import java.util.List;
-import java.util.ArrayList;
+
+import java.util.*;
 
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.Map;
 import java.util.function.Function;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 
@@ -130,10 +130,16 @@ public class ClosetService {
 
     @Transactional(readOnly = true)
     public List<ClothListDto> getAllClothes(Member member) {
-        List<ClothListDto> clothList = new ArrayList<>();
-        clothList.add(findActiveUppers(member));
-        clothList.add(findActiveOuters(member));
-        return clothList;
+        try {
+            List<ClothListDto> clothList = new ArrayList<>();
+            clothList.add(findActiveUppers(member));
+            clothList.add(findActiveOuters(member));
+            return clothList;
+        } catch (CustomException e) {
+            throw e;
+        } catch (Exception e) {
+            throw new CustomException(ErrorCode.UNKNOWN_ERROR, "의상 조회 중 서버 오류가 발생했습니다.");
+        }
     }
 
     @Transactional(readOnly = true)
@@ -186,35 +192,65 @@ public class ClosetService {
         }
     }
 
-    private <T> ClothListDto findActiveClothes(
-            Member member,
-            String category,
-            List<T> clothes,
-            Function<T, Boolean> isActiveFunc,
-            Function<T, Long> typeFunc,
-            Function<T, ClothDetailDto> toDtoFunc
-    ) {
-        Closet closet = getCloset(member);
-        ClothListDto result = new ClothListDto();
-        result.setCategory(category);
+    @Transactional(readOnly = true)
+    public List<ClothListDto> getPotentialUppers(Member member) {
+        try {
+            List<ClothListDto> result = new ArrayList<>();
+            result.add(findActiveUppers(member));
+            result.add(findLayerFlexibleOuters(member));
 
-        Map<Long, List<T>> grouped = clothes.stream()
-                .filter(isActiveFunc::apply)
-                .collect(Collectors.groupingBy(typeFunc));
+            return result;
+        } catch (CustomException e) {
+            throw e;
+        } catch (Exception e) {
+            throw new CustomException(ErrorCode.UNKNOWN_ERROR, "아우터 조회 중 서버 오류가 발생했습니다.");
+        }
 
-        List<GroupedClothDto> groupedList = grouped.entrySet().stream()
-                .map(entry -> {
-                    List<ClothDetailDto> items = entry.getValue().stream()
-                            .map(toDtoFunc)
-                            .collect(Collectors.toList());
-                    return new GroupedClothDto(entry.getKey(), items);
-                })
-                .collect(Collectors.toList());
-
-        result.setClothList(groupedList);
-        return result;
     }
 
+    @Transactional(readOnly = true)
+    public List<ClothListDto> getPotentialOuters(Member member) {
+        try {
+            List<ClothListDto> result = new ArrayList<>();
+            result.add(findActiveOuters(member));
+            result.add(findLayerFlexibleUppers(member));
+
+            return result;
+
+        } catch (CustomException e) {
+            throw e;
+        } catch (Exception e) {
+            throw new CustomException(ErrorCode.UNKNOWN_ERROR, "아우터 조회 중 서버 오류가 발생했습니다.");
+        }
+    }
+
+    @Transactional(readOnly = true)
+    public ClothListDto findLayerFlexibleOuters(Member member) { // 상의가 될 수 있는 아우터
+        Closet closet = getCloset(member);
+
+        return findLayerFlexibleClothes(
+                OUTER,
+                closet.getOuterList(),
+                layerFlexibleOuter,
+                Outer::isActive,
+                Outer::getOuterType,
+                this::mapOuterToDto
+        );
+    }
+
+    @Transactional(readOnly = true)
+    public ClothListDto findLayerFlexibleUppers(Member member) { // 아우터가 될 수 있는 상의
+        Closet closet = getCloset(member);
+
+        return findLayerFlexibleClothes(
+                UPPER,
+                closet.getUpperList(),
+                layerFlexibleUpper,
+                Upper::isActive,
+                Upper::getUpperType,
+                this::mapUpperToDto
+        );
+    }
 
     @Transactional
     public void updateUpper(Long clothId, UpdateClothDto updateDto, Member member) {
@@ -254,7 +290,6 @@ public class ClosetService {
         }
     }
 
-
     @Transactional
     public void deleteUpper(Long clothId, Member member) {
         try {
@@ -283,5 +318,80 @@ public class ClosetService {
             log.error("아우터 삭제 중 예외 발생: {}", e.getMessage(), e);
             throw new CustomException(ErrorCode.UNKNOWN_ERROR, "아우터 삭제 중 오류가 발생했습니다.");
         }
+    }
+
+    private <T> ClothListDto findActiveClothes(
+            Member member,
+            String category,
+            List<T> clothes,
+            Function<T, Boolean> isActiveFunc,
+            Function<T, Long> typeFunc,
+            Function<T, ClothDetailDto> toDtoFunc
+    ) {
+        Closet closet = getCloset(member);
+        ClothListDto result = new ClothListDto();
+        result.setCategory(category);
+
+        Map<Long, List<T>> grouped = clothes.stream()
+                .filter(isActiveFunc::apply)
+                .collect(Collectors.groupingBy(typeFunc));
+
+        List<GroupedClothDto> groupedList = grouped.entrySet().stream()
+                .map(entry -> {
+                    List<ClothDetailDto> items = entry.getValue().stream()
+                            .map(toDtoFunc)
+                            .collect(Collectors.toList());
+                    return new GroupedClothDto(entry.getKey(), items);
+                })
+                .collect(Collectors.toList());
+
+        result.setClothList(groupedList);
+        return result;
+    }
+
+    private <T> ClothListDto findLayerFlexibleClothes(
+            String category,
+            List<T> clothes,
+            List<Long> layerFlexibleTypes,
+            Predicate<T> isActivePredicate,
+            Function<T, Long> typeExtractor,
+            Function<T, ClothDetailDto> dtoMapper
+    ) {
+        Map<Long, List<T>> groupedClothes = clothes.stream()
+                .filter(isActivePredicate)
+                .filter(c -> layerFlexibleTypes.contains(typeExtractor.apply(c)))
+                .collect(Collectors.groupingBy(typeExtractor));
+
+        List<GroupedClothDto> groupedDtoList = groupedClothes.entrySet().stream()
+                .map(entry -> {
+                    List<ClothDetailDto> items = entry.getValue().stream()
+                            .map(dtoMapper)
+                            .collect(Collectors.toList());
+                    return new GroupedClothDto(entry.getKey(), items);
+                })
+                .collect(Collectors.toList());
+
+        ClothListDto result = new ClothListDto();
+        result.setCategory(category);
+        result.setClothList(groupedDtoList);
+        return result;
+    }
+
+    private ClothDetailDto mapUpperToDto(Upper upper) {
+        ClothDetailDto dto = new ClothDetailDto();
+        dto.setClothId(upper.getId());
+        dto.setColor(upper.getColor());
+        dto.setThickness(upper.getThickness());
+        dto.setClothType(upper.getUpperType());
+        return dto;
+    }
+
+    private ClothDetailDto mapOuterToDto(Outer outer) {
+        ClothDetailDto dto = new ClothDetailDto();
+        dto.setClothId(outer.getId());
+        dto.setColor(outer.getColor());
+        dto.setThickness(outer.getThickness());
+        dto.setClothType(outer.getOuterType());
+        return dto;
     }
 }
