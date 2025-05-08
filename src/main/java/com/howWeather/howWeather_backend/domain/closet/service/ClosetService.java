@@ -6,7 +6,7 @@ import com.howWeather.howWeather_backend.domain.closet.entity.Closet;
 import com.howWeather.howWeather_backend.domain.closet.entity.Outer;
 import com.howWeather.howWeather_backend.domain.closet.entity.Upper;
 import com.howWeather.howWeather_backend.domain.closet.dto.AddClothesDto;
-import com.howWeather.howWeather_backend.domain.closet.dto.ClothDto;
+import com.howWeather.howWeather_backend.domain.closet.dto.ClothRegisterDto;
 import com.howWeather.howWeather_backend.domain.closet.repository.OuterRepository;
 import com.howWeather.howWeather_backend.domain.closet.repository.UpperRepository;
 import com.howWeather.howWeather_backend.domain.member.entity.Member;
@@ -54,8 +54,8 @@ public class ClosetService {
                 .orElseThrow(() -> new CustomException(ErrorCode.CLOSET_NOT_FOUND, "해당 유저의 옷장이 존재하지 않습니다."));
     }
 
-    private void addUpperClothes(Closet closet, List<ClothDto> uppers) {
-        for (ClothDto c : uppers) {
+    private void addUpperClothes(Closet closet, List<ClothRegisterDto> uppers) {
+        for (ClothRegisterDto c : uppers) {
             validateClothDto(c);
 
             Upper newUpper = Upper.builder()
@@ -74,8 +74,8 @@ public class ClosetService {
         }
     }
 
-    private void addOuterClothes(Closet closet, List<ClothDto> outers) {
-        for (ClothDto c : outers) {
+    private void addOuterClothes(Closet closet, List<ClothRegisterDto> outers) {
+        for (ClothRegisterDto c : outers) {
             validateClothDto(c);
             
             Outer newOuter = Outer.builder()
@@ -94,7 +94,7 @@ public class ClosetService {
         }
     }
 
-    private void validateClothDto(ClothDto c) {
+    private void validateClothDto(ClothRegisterDto c) {
         if (c.getClothName() == null || c.getClothName().trim().isEmpty()) {
             throw new CustomException(ErrorCode.INVALID_CLOTH_NAME);
         }
@@ -117,6 +117,7 @@ public class ClosetService {
                     .map(upper -> {
                         ClothDetailDto dto = new ClothDetailDto();
                         dto.setColor(upper.getColor());
+                        dto.setId(upper.getId());
                         dto.setThickness(upper.getThickness());
                         return dto;
                     })
@@ -144,6 +145,7 @@ public class ClosetService {
                     .map(outer -> {
                         ClothDetailDto dto = new ClothDetailDto();
                         dto.setColor(outer.getColor());
+                        dto.setId(outer.getId());
                         dto.setThickness(outer.getThickness());
                         return dto;
                     })
