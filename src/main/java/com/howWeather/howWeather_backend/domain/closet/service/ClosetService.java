@@ -1,12 +1,9 @@
 package com.howWeather.howWeather_backend.domain.closet.service;
 
-import com.howWeather.howWeather_backend.domain.closet.dto.ClothDetailDto;
-import com.howWeather.howWeather_backend.domain.closet.dto.ClothListDto;
+import com.howWeather.howWeather_backend.domain.closet.dto.*;
 import com.howWeather.howWeather_backend.domain.closet.entity.Closet;
 import com.howWeather.howWeather_backend.domain.closet.entity.Outer;
 import com.howWeather.howWeather_backend.domain.closet.entity.Upper;
-import com.howWeather.howWeather_backend.domain.closet.dto.AddClothesDto;
-import com.howWeather.howWeather_backend.domain.closet.dto.ClothRegisterDto;
 import com.howWeather.howWeather_backend.domain.member.entity.Member;
 import com.howWeather.howWeather_backend.domain.closet.repository.ClosetRepository;
 import com.howWeather.howWeather_backend.global.exception.CustomException;
@@ -17,6 +14,8 @@ import java.util.ArrayList;
 import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.util.Map;
 import java.util.stream.Collectors;
 
 
@@ -123,50 +122,60 @@ public class ClosetService {
     }
 
     @Transactional
-    public List<ClothListDto> findActiveUppersByType(Member member) {
+    public List<ClothListDto> findActiveUppers(Member member) {
         try {
             Closet closet = getCloset(member);
-            List<ClothListDto> resultList = new ArrayList<>();
+            List<ClothListDto> result = new ArrayList<>();
 
-            List<ClothDetailDto> upperDetails = closet.getUpperList().stream()
+            Map<Long, List<Upper>> groupedUppers = closet.getUpperList().stream()
                     .filter(Upper::isActive)
-                    .map(upper -> {
-                        ClothDetailDto dto = new ClothDetailDto();
-                        dto.setClothType(upper.getUpperType());
-                        dto.setColor(upper.getColor());
-                        dto.setThickness(upper.getThickness());
-                        dto.setClothId(upper.getId());
-                        return dto;
+                    .collect(Collectors.groupingBy(Upper::getUpperType));
+
+            List<GroupedClothDto> upperGroupedList = groupedUppers.entrySet().stream()
+                    .map(entry -> {
+                        List<ClothDetailDto> items = entry.getValue().stream().map(upper -> {
+                            ClothDetailDto dto = new ClothDetailDto();
+                            dto.setClothId(upper.getId());
+                            dto.setColor(upper.getColor());
+                            dto.setThickness(upper.getThickness());
+                            dto.setClothType(upper.getUpperType());
+                            return dto;
+                        }).collect(Collectors.toList());
+                        return new GroupedClothDto(entry.getKey(), items);
                     })
                     .collect(Collectors.toList());
 
             ClothListDto upperDto = new ClothListDto();
             upperDto.setCategory("uppers");
-            upperDto.setClothList(upperDetails);
-            resultList.add(upperDto);
+            upperDto.setClothList(upperGroupedList);
+            result.add(upperDto);
 
-            boolean hasLayerFlexibleOuter = closet.getOuterList().stream()
-                    .anyMatch(outer -> outer.isActive() && layerFlexibleOuter.contains(outer.getOuterType()));
 
-            if (hasLayerFlexibleOuter) {
-                List<ClothDetailDto> outerDetails = closet.getOuterList().stream()
-                        .filter(outer -> outer.isActive() && layerFlexibleOuter.contains(outer.getOuterType()))
-                        .map(outer -> {
+            Map<Long, List<Outer>> groupedLayerOuters = closet.getOuterList().stream()
+                    .filter(outer -> outer.isActive() && layerFlexibleOuter.contains(outer.getOuterType()))
+                    .collect(Collectors.groupingBy(Outer::getOuterType));
+
+            List<GroupedClothDto> layerOuterGroupedList = groupedLayerOuters.entrySet().stream()
+                    .map(entry -> {
+                        List<ClothDetailDto> items = entry.getValue().stream().map(outer -> {
                             ClothDetailDto dto = new ClothDetailDto();
-                            dto.setClothType(outer.getOuterType());
+                            dto.setClothId(outer.getId());
                             dto.setColor(outer.getColor());
                             dto.setThickness(outer.getThickness());
-                            dto.setClothId(outer.getId());
+                            dto.setClothType(outer.getOuterType());
                             return dto;
-                        })
-                        .collect(Collectors.toList());
+                        }).collect(Collectors.toList());
+                        return new GroupedClothDto(entry.getKey(), items);
+                    })
+                    .collect(Collectors.toList());
 
-                ClothListDto outerDto = new ClothListDto();
-                outerDto.setCategory("outers");
-                outerDto.setClothList(outerDetails);
-                resultList.add(outerDto);
+            if (!layerOuterGroupedList.isEmpty()) {
+                ClothListDto layerOuterDto = new ClothListDto();
+                layerOuterDto.setCategory(OUTER);
+                layerOuterDto.setClothList(layerOuterGroupedList);
+                result.add(layerOuterDto);
             }
-            return resultList;
+            return result;
 
         } catch (CustomException e) {
             throw e;
@@ -175,51 +184,60 @@ public class ClosetService {
         }
     }
 
-
     @Transactional
-    public List<ClothListDto> findActiveOutersById(Member member) {
+    public List<ClothListDto> findActiveOuters(Member member) {
         try {
             Closet closet = getCloset(member);
             List<ClothListDto> resultList = new ArrayList<>();
 
-            List<ClothDetailDto> outerDetails = closet.getOuterList().stream()
+            Map<Long, List<Outer>> groupedOuters = closet.getOuterList().stream()
                     .filter(Outer::isActive)
-                    .map(outer -> {
-                        ClothDetailDto dto = new ClothDetailDto();
-                        dto.setColor(outer.getColor());
-                        dto.setClothType(outer.getOuterType());
-                        dto.setThickness(outer.getThickness());
-                        dto.setClothId(outer.getId());
-                        return dto;
+                    .collect(Collectors.groupingBy(Outer::getOuterType));
+
+            List<GroupedClothDto> outerGroupedList = groupedOuters.entrySet().stream()
+                    .map(entry -> {
+                        List<ClothDetailDto> items = entry.getValue().stream().map(outer -> {
+                            ClothDetailDto dto = new ClothDetailDto();
+                            dto.setClothId(outer.getId());
+                            dto.setColor(outer.getColor());
+                            dto.setThickness(outer.getThickness());
+                            dto.setClothType(outer.getOuterType());
+                            return dto;
+                        }).collect(Collectors.toList());
+                        return new GroupedClothDto(entry.getKey(), items);
                     })
                     .collect(Collectors.toList());
 
             ClothListDto outerDto = new ClothListDto();
             outerDto.setCategory("outers");
-            outerDto.setClothList(outerDetails);
+            outerDto.setClothList(outerGroupedList);
             resultList.add(outerDto);
 
-            boolean hasLayerFlexibleOuter = closet.getUpperList().stream()
-                    .anyMatch(upper -> upper.isActive() && layerFlexibleUpper.contains(upper.getUpperType()));
+            Map<Long, List<Upper>> groupedLayerUppers = closet.getUpperList().stream()
+                    .filter(upper -> upper.isActive() && layerFlexibleUpper.contains(upper.getUpperType()))
+                    .collect(Collectors.groupingBy(Upper::getUpperType));
 
-            if (hasLayerFlexibleOuter) {
-                List<ClothDetailDto> upperDetails = closet.getUpperList().stream()
-                        .filter(upper -> upper.isActive() && layerFlexibleUpper.contains(upper.getUpperType()))
-                        .map(upper -> {
-                            ClothDetailDto dto = new ClothDetailDto();
-                            dto.setColor(upper.getColor());
-                            dto.setClothType(upper.getUpperType());
-                            dto.setClothId(upper.getId());
-                            dto.setThickness(upper.getThickness());
-                            return dto;
+            if (!groupedLayerUppers.isEmpty()) {
+                List<GroupedClothDto> upperGroupedList = groupedLayerUppers.entrySet().stream()
+                        .map(entry -> {
+                            List<ClothDetailDto> items = entry.getValue().stream().map(upper -> {
+                                ClothDetailDto dto = new ClothDetailDto();
+                                dto.setClothId(upper.getId());
+                                dto.setColor(upper.getColor());
+                                dto.setThickness(upper.getThickness());
+                                dto.setClothType(upper.getUpperType());
+                                return dto;
+                            }).collect(Collectors.toList());
+                            return new GroupedClothDto(entry.getKey(), items);
                         })
                         .collect(Collectors.toList());
 
                 ClothListDto upperDto = new ClothListDto();
-                upperDto.setCategory("uppers");
-                upperDto.setClothList(upperDetails);
+                upperDto.setCategory(UPPER);
+                upperDto.setClothList(upperGroupedList);
                 resultList.add(upperDto);
             }
+
             return resultList;
 
         } catch (CustomException e) {
@@ -228,6 +246,4 @@ public class ClosetService {
             throw new CustomException(ErrorCode.UNKNOWN_ERROR, "아우터 의상 조회 중 서버 오류가 발생했습니다.");
         }
     }
-
-
 }

@@ -37,7 +37,7 @@ public class ClosetController {
     public ResponseEntity<List<ClothListDto>> getUpperClothesByName(@RequestHeader("Authorization") String accessTokenHeader,
                                                                @AuthenticationPrincipal Member member) {
 
-        List<ClothListDto> clothes = closetService.findActiveUppersByType(member);
+        List<ClothListDto> clothes = closetService.findActiveUppers(member);
         return ResponseEntity.ok(clothes);
     }
 
@@ -45,10 +45,7 @@ public class ClosetController {
     @CheckAuthenticatedUser
     public ResponseEntity<List<ClothListDto>> getOuterClothesByName(@RequestHeader("Authorization") String accessTokenHeader,
                                                                     @AuthenticationPrincipal Member member) {
-        List<ClothListDto> clothes = closetService.findActiveOutersById(member);
+        List<ClothListDto> clothes = closetService.findActiveOuters(member);
         return ResponseEntity.ok(clothes);
     }
-
-
-
 }
