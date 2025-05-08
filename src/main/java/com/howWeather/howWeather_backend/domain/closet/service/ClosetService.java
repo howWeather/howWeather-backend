@@ -253,6 +253,44 @@ public class ClosetService {
         }
     }
 
+    @Transactional
+    public void updateUpper(Long clothId, UpdateClothDto updateDto, Member member) {
+        try {
+            Closet closet = getCloset(member);
+
+            Upper upper = closet.getUpperList().stream()
+                    .filter(u -> u.getId().equals(clothId))
+                    .findFirst()
+                    .orElseThrow(() -> new CustomException(ErrorCode.CLOTH_NOT_FOUND, "해당 상의를 찾을 수 없습니다."));
+
+            upper.patchAttributes(updateDto.getColor(), updateDto.getThickness());
+        } catch (CustomException e) {
+            throw e;
+        } catch (Exception e) {
+            log.error("상의 수정 중 예외 발생: {}", e.getMessage(), e);
+            throw new CustomException(ErrorCode.UNKNOWN_ERROR, "상의 수정 중 오류가 발생했습니다.");
+        }
+    }
+
+    @Transactional
+    public void updateOuter(Long clothId, UpdateClothDto updateDto, Member member) {
+        try {
+            Closet closet = getCloset(member);
+
+            Outer outer = closet.getOuterList().stream()
+                    .filter(o -> o.getId().equals(clothId))
+                    .findFirst()
+                    .orElseThrow(() -> new CustomException(ErrorCode.CLOTH_NOT_FOUND, "해당 아우터를 찾을 수 없습니다."));
+
+            outer.patchAttributes(updateDto.getColor(), updateDto.getThickness());
+        } catch (CustomException e) {
+            throw e;
+        } catch (Exception e) {
+            log.error("아우터 수정 중 예외 발생: {}", e.getMessage(), e);
+            throw new CustomException(ErrorCode.UNKNOWN_ERROR, "아우터 수정 중 오류가 발생했습니다.");
+        }
+    }
+
 
     @Transactional
     public void deleteUpper(Long clothId, Member member) {
@@ -283,5 +321,4 @@ public class ClosetService {
             throw new CustomException(ErrorCode.UNKNOWN_ERROR, "아우터 삭제 중 오류가 발생했습니다.");
         }
     }
-
 }

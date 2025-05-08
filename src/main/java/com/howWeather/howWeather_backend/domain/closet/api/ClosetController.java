@@ -53,29 +53,29 @@ public class ClosetController {
         return ResponseEntity.ok(clothes);
     }
 
-//    @PatchMapping("/update-upper/{clothId}")
-//    @CheckAuthenticatedUser
-//    public ResponseEntity<ApiResponse<String>> updateUpper(
-//            @RequestHeader("Authorization") String accessTokenHeader,
-//            @PathVariable Long clothId,
-//            @RequestBody UpdateClothDto updateDto,
-//            @AuthenticationPrincipal Member member) {
-//
-//        closetService.updateUpper(clothId, updateDto, member);
-//        return ApiResponse.success(HttpStatus.OK, "상의를 성공적으로 수정하였습니다.");
-//    }
-//
-//    @PatchMapping("/update-outer/{clothId}")
-//    @CheckAuthenticatedUser
-//    public ResponseEntity<ApiResponse<String>> updateOuter(
-//            @RequestHeader("Authorization") String accessTokenHeader,
-//            @PathVariable Long clothId,
-//            @RequestBody UpdateClothDto updateDto,
-//            @AuthenticationPrincipal Member member) {
-//
-//        closetService.updateOuter(clothId, updateDto, member);
-//        return ApiResponse.success(HttpStatus.OK, "아우터를 성공적으로 수정하였습니다.");
-//    }
+    @PatchMapping("/update-upper/{clothId}")
+    @CheckAuthenticatedUser
+    public ResponseEntity<ApiResponse<String>> updateUpper(
+            @RequestHeader("Authorization") String accessTokenHeader,
+            @PathVariable Long clothId,
+            @Valid @RequestBody UpdateClothDto updateDto,
+            @AuthenticationPrincipal Member member) {
+
+        closetService.updateUpper(clothId, updateDto, member);
+        return ApiResponse.success(HttpStatus.OK, "상의를 성공적으로 수정하였습니다.");
+    }
+
+    @PatchMapping("/update-outer/{clothId}")
+    @CheckAuthenticatedUser
+    public ResponseEntity<ApiResponse<String>> updateOuter(
+            @RequestHeader("Authorization") String accessTokenHeader,
+            @PathVariable Long clothId,
+            @Valid @RequestBody UpdateClothDto updateDto,
+            @AuthenticationPrincipal Member member) {
+
+        closetService.updateOuter(clothId, updateDto, member);
+        return ApiResponse.success(HttpStatus.OK, "아우터를 성공적으로 수정하였습니다.");
+    }
 
     @DeleteMapping("/delete-upper/{clothId}")
     @CheckAuthenticatedUser
