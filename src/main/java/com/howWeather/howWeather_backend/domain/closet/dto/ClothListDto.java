@@ -7,5 +7,5 @@ import java.util.List;
 @Data
 public class ClothListDto {
     private String category;
-    private List<ClothDetailDto> clothList;
+    private List<GroupedClothDto> clothList;
 }
