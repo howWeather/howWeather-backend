@@ -19,6 +19,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Map;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 
@@ -128,130 +129,92 @@ public class ClosetService {
     }
 
     @Transactional(readOnly = true)
-    public List<ClothListDto> findActiveUppers(Member member) {
-        try {
-            Closet closet = getCloset(member);
-            List<ClothListDto> result = new ArrayList<>();
-
-            Map<Long, List<Upper>> groupedUppers = closet.getUpperList().stream()
-                    .filter(Upper::isActive)
-                    .collect(Collectors.groupingBy(Upper::getUpperType));
-
-            List<GroupedClothDto> upperGroupedList = groupedUppers.entrySet().stream()
-                    .map(entry -> {
-                        List<ClothDetailDto> items = entry.getValue().stream().map(upper -> {
-                            ClothDetailDto dto = new ClothDetailDto();
-                            dto.setClothId(upper.getId());
-                            dto.setColor(upper.getColor());
-                            dto.setThickness(upper.getThickness());
-                            dto.setClothType(upper.getUpperType());
-                            return dto;
-                        }).collect(Collectors.toList());
-                        return new GroupedClothDto(entry.getKey(), items);
-                    })
-                    .collect(Collectors.toList());
-
-            ClothListDto upperDto = new ClothListDto();
-            upperDto.setCategory("uppers");
-            upperDto.setClothList(upperGroupedList);
-            result.add(upperDto);
-
-
-            Map<Long, List<Outer>> groupedLayerOuters = closet.getOuterList().stream()
-                    .filter(outer -> outer.isActive() && layerFlexibleOuter.contains(outer.getOuterType()))
-                    .collect(Collectors.groupingBy(Outer::getOuterType));
-
-            List<GroupedClothDto> layerOuterGroupedList = groupedLayerOuters.entrySet().stream()
-                    .map(entry -> {
-                        List<ClothDetailDto> items = entry.getValue().stream().map(outer -> {
-                            ClothDetailDto dto = new ClothDetailDto();
-                            dto.setClothId(outer.getId());
-                            dto.setColor(outer.getColor());
-                            dto.setThickness(outer.getThickness());
-                            dto.setClothType(outer.getOuterType());
-                            return dto;
-                        }).collect(Collectors.toList());
-                        return new GroupedClothDto(entry.getKey(), items);
-                    })
-                    .collect(Collectors.toList());
-
-            if (!layerOuterGroupedList.isEmpty()) {
-                ClothListDto layerOuterDto = new ClothListDto();
-                layerOuterDto.setCategory(OUTER);
-                layerOuterDto.setClothList(layerOuterGroupedList);
-                result.add(layerOuterDto);
-            }
-            return result;
-
-        } catch (CustomException e) {
-            throw e;
-        } catch (Exception e) {
-            throw new CustomException(ErrorCode.UNKNOWN_ERROR, "상의 의상 조회 중 서버 오류가 발생했습니다.");
-        }
+    public List<ClothListDto> getAllClothes(Member member) {
+        List<ClothListDto> clothList = new ArrayList<>();
+        clothList.add(findActiveUppers(member));
+        clothList.add(findActiveOuters(member));
+        return clothList;
     }
 
     @Transactional(readOnly = true)
-    public List<ClothListDto> findActiveOuters(Member member) {
+    public ClothListDto findActiveUppers(Member member) {
         try {
-            Closet closet = getCloset(member);
-            List<ClothListDto> resultList = new ArrayList<>();
-
-            Map<Long, List<Outer>> groupedOuters = closet.getOuterList().stream()
-                    .filter(Outer::isActive)
-                    .collect(Collectors.groupingBy(Outer::getOuterType));
-
-            List<GroupedClothDto> outerGroupedList = groupedOuters.entrySet().stream()
-                    .map(entry -> {
-                        List<ClothDetailDto> items = entry.getValue().stream().map(outer -> {
-                            ClothDetailDto dto = new ClothDetailDto();
-                            dto.setClothId(outer.getId());
-                            dto.setColor(outer.getColor());
-                            dto.setThickness(outer.getThickness());
-                            dto.setClothType(outer.getOuterType());
-                            return dto;
-                        }).collect(Collectors.toList());
-                        return new GroupedClothDto(entry.getKey(), items);
-                    })
-                    .collect(Collectors.toList());
-
-            ClothListDto outerDto = new ClothListDto();
-            outerDto.setCategory("outers");
-            outerDto.setClothList(outerGroupedList);
-            resultList.add(outerDto);
-
-            Map<Long, List<Upper>> groupedLayerUppers = closet.getUpperList().stream()
-                    .filter(upper -> upper.isActive() && layerFlexibleUpper.contains(upper.getUpperType()))
-                    .collect(Collectors.groupingBy(Upper::getUpperType));
-
-            if (!groupedLayerUppers.isEmpty()) {
-                List<GroupedClothDto> upperGroupedList = groupedLayerUppers.entrySet().stream()
-                        .map(entry -> {
-                            List<ClothDetailDto> items = entry.getValue().stream().map(upper -> {
-                                ClothDetailDto dto = new ClothDetailDto();
-                                dto.setClothId(upper.getId());
-                                dto.setColor(upper.getColor());
-                                dto.setThickness(upper.getThickness());
-                                dto.setClothType(upper.getUpperType());
-                                return dto;
-                            }).collect(Collectors.toList());
-                            return new GroupedClothDto(entry.getKey(), items);
-                        })
-                        .collect(Collectors.toList());
-
-                ClothListDto upperDto = new ClothListDto();
-                upperDto.setCategory(UPPER);
-                upperDto.setClothList(upperGroupedList);
-                resultList.add(upperDto);
-            }
-
-            return resultList;
-
+            return findActiveClothes(
+                    member,
+                    UPPER,
+                    getCloset(member).getUpperList(),
+                    Upper::isActive,
+                    Upper::getUpperType,
+                    upper -> {
+                        ClothDetailDto dto = new ClothDetailDto();
+                        dto.setClothId(upper.getId());
+                        dto.setColor(upper.getColor());
+                        dto.setThickness(upper.getThickness());
+                        dto.setClothType(upper.getUpperType());
+                        return dto;
+                    }
+            );
         } catch (CustomException e) {
             throw e;
         } catch (Exception e) {
-            throw new CustomException(ErrorCode.UNKNOWN_ERROR, "아우터 의상 조회 중 서버 오류가 발생했습니다.");
+            throw new CustomException(ErrorCode.UNKNOWN_ERROR, "상의 조회 중 서버 오류가 발생했습니다.");
         }
     }
+    
+    @Transactional(readOnly = true)
+    public ClothListDto findActiveOuters(Member member) {
+        try {
+            return findActiveClothes(
+                    member,
+                    OUTER,
+                    getCloset(member).getOuterList(),
+                    Outer::isActive,
+                    Outer::getOuterType,
+                    outer -> {
+                        ClothDetailDto dto = new ClothDetailDto();
+                        dto.setClothId(outer.getId());
+                        dto.setColor(outer.getColor());
+                        dto.setThickness(outer.getThickness());
+                        dto.setClothType(outer.getOuterType());
+                        return dto;
+                    }
+            );
+        } catch (CustomException e) {
+            throw e;
+        } catch (Exception e) {
+            throw new CustomException(ErrorCode.UNKNOWN_ERROR, "아우터 조회 중 서버 오류가 발생했습니다.");
+        }
+    }
+
+    private <T> ClothListDto findActiveClothes(
+            Member member,
+            String category,
+            List<T> clothes,
+            Function<T, Boolean> isActiveFunc,
+            Function<T, Long> typeFunc,
+            Function<T, ClothDetailDto> toDtoFunc
+    ) {
+        Closet closet = getCloset(member);
+        ClothListDto result = new ClothListDto();
+        result.setCategory(category);
+
+        Map<Long, List<T>> grouped = clothes.stream()
+                .filter(isActiveFunc::apply)
+                .collect(Collectors.groupingBy(typeFunc));
+
+        List<GroupedClothDto> groupedList = grouped.entrySet().stream()
+                .map(entry -> {
+                    List<ClothDetailDto> items = entry.getValue().stream()
+                            .map(toDtoFunc)
+                            .collect(Collectors.toList());
+                    return new GroupedClothDto(entry.getKey(), items);
+                })
+                .collect(Collectors.toList());
+
+        result.setClothList(groupedList);
+        return result;
+    }
+
 
     @Transactional
     public void updateUpper(Long clothId, UpdateClothDto updateDto, Member member) {
