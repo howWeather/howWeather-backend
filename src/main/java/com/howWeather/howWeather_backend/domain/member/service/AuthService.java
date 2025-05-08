@@ -3,6 +3,7 @@ package com.howWeather.howWeather_backend.domain.member.service;
 import com.howWeather.howWeather_backend.domain.closet.entity.Closet;
 import com.howWeather.howWeather_backend.domain.member.dto.LoginRequestDto;
 import com.howWeather.howWeather_backend.domain.member.dto.ProfileDto;
+import com.howWeather.howWeather_backend.domain.member.dto.ProfileUpdateDto;
 import com.howWeather.howWeather_backend.domain.member.dto.SignupRequestDto;
 import com.howWeather.howWeather_backend.domain.member.entity.Member;
 import com.howWeather.howWeather_backend.domain.member.repository.MemberRepository;
@@ -145,11 +146,23 @@ public class AuthService {
                     .gender(member.getGender())
                     .build();
 
-        }  catch (CustomException e) {
+        } catch (CustomException e) {
             throw e;
         } catch (Exception e) {
             log.error("프로필 조회 중 에러 발상: {}", e.getMessage(), e);
             throw new CustomException(ErrorCode.UNKNOWN_ERROR, "프로필 조회 중 오류가 발생했습니다.");
+        }
+    }
+
+    @Transactional
+    public void updateProfile(Member member, ProfileUpdateDto dto) {
+        try {
+            member.updateProfile(dto.getNickname(), dto.getBodyType(), dto.getAgeGroup());
+        } catch (CustomException e) {
+            throw e;
+        } catch (Exception e) {
+            log.error("프로필 수정 중 에러 발상: {}", e.getMessage(), e);
+            throw new CustomException(ErrorCode.UNKNOWN_ERROR, "프로필 수정 중 오류가 발생했습니다.");
         }
     }
 }

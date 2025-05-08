@@ -72,4 +72,16 @@ public class Member implements UserDetails {
     public String getUsername() {
         return loginId;
     }
+
+    public void updateProfile(String nickname, Integer bodyType, Integer ageGroup) {
+        if (nickname != null && !nickname.isBlank()) {
+            this.nickname = nickname;
+        }
+        if (bodyType != null) {
+            this.bodyType = bodyType;
+        }
+        if (ageGroup != null) {
+            this.ageGroup = ageGroup;
+        }
+    }
 }
