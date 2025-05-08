@@ -1,6 +1,7 @@
 package com.howWeather.howWeather_backend.domain.closet.api;
 
 import com.howWeather.howWeather_backend.domain.closet.dto.ClothListDto;
+import com.howWeather.howWeather_backend.domain.closet.dto.UpdateClothDto;
 import com.howWeather.howWeather_backend.domain.closet.service.ClosetService;
 import com.howWeather.howWeather_backend.domain.closet.dto.AddClothesDto;
 import com.howWeather.howWeather_backend.domain.member.entity.Member;
@@ -25,7 +26,7 @@ public class ClosetController {
 
     @PostMapping("/register")
     @CheckAuthenticatedUser
-    ResponseEntity<ApiResponse<String>> registerCloth(@RequestHeader("Authorization") String accessTokenHeader,
+    public ResponseEntity<ApiResponse<String>> registerCloth(@RequestHeader("Authorization") String accessTokenHeader,
                                                       @Valid @RequestBody AddClothesDto addClothesDto,
                                                       @AuthenticationPrincipal Member member) {
         closetService.registerCloset(member, addClothesDto);
@@ -48,4 +49,30 @@ public class ClosetController {
         List<ClothListDto> clothes = closetService.findActiveOuters(member);
         return ResponseEntity.ok(clothes);
     }
+
+    @PatchMapping("/update-upper/{clothId}")
+    @CheckAuthenticatedUser
+    public ResponseEntity<ApiResponse<String>> updateUpper(
+            @RequestHeader("Authorization") String accessTokenHeader,
+            @PathVariable Long clothId,
+            @RequestBody UpdateClothDto updateDto,
+            @AuthenticationPrincipal Member member) {
+
+        closetService.updateUpper(clothId, updateDto, member);
+        return ApiResponse.success(HttpStatus.OK, "의상을 성공적으로 수정하였습니다.");
+    }
+
+
+    @PatchMapping("/update-outer/{clothId}")
+    @CheckAuthenticatedUser
+    public ResponseEntity<ApiResponse<String>> updateOuter(
+            @RequestHeader("Authorization") String accessTokenHeader,
+            @PathVariable Long clothId,
+            @RequestBody UpdateClothDto updateDto,
+            @AuthenticationPrincipal Member member) {
+
+        closetService.updateOuter(clothId, updateDto, member);
+        return ApiResponse.success(HttpStatus.OK, "의상을 성공적으로 수정하였습니다.");
+    }
+
 }
