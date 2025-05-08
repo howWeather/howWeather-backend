@@ -17,7 +17,7 @@ public class Outer {
     @Column(name="outer_id")
     private Long id;
 
-    private String outerName;
+    private Long outerType;
 
     private int color;
 
@@ -31,7 +31,7 @@ public class Outer {
     private Closet closet;
 
     public static boolean isDuplicate(Outer existingOuter, Outer newOuter) {
-        return existingOuter.getOuterName().equals(newOuter.getOuterName()) &&
+        return existingOuter.getOuterType() == newOuter.getOuterType() &&
                 existingOuter.getColor() == newOuter.getColor() &&
                 existingOuter.getThickness() == newOuter.getThickness();
     }

@@ -17,7 +17,7 @@ public class Upper {
     @Column(name="upper_id")
     private Long id;
 
-    private String upperName;
+    private Long outerType;
 
     private int color;
 
@@ -31,7 +31,7 @@ public class Upper {
     private Closet closet;
 
     public static boolean isDuplicate(Upper existingUpper, Upper newUpper) {
-        return existingUpper.getUpperName().equals(newUpper.getUpperName()) &&
+        return existingUpper.getOuterType() == newUpper.getOuterType() &&
                 existingUpper.getColor() == newUpper.getColor() &&
                 existingUpper.getThickness() == newUpper.getThickness();
     }

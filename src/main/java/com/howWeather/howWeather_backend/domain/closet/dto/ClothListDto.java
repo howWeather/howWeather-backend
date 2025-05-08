@@ -6,7 +6,6 @@ import java.util.List;
 
 @Data
 public class ClothListDto {
-    private String clothName;
+    private String category;
     private List<ClothDetailDto> clothList;
-
 }
