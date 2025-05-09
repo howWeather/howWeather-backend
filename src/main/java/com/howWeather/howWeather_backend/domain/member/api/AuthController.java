@@ -96,7 +96,7 @@ public class AuthController {
         return ApiResponse.success(HttpStatus.OK, "사용 가능한 아이디입니다.");
     }
 
-    @PostMapping("/change-password")
+    @PostMapping("/update-password")
     @CheckAuthenticatedUser
     public ResponseEntity<ApiResponse<String>> passwordChange(@RequestHeader("Authorization") String accessTokenHeader,
                                                               @RequestHeader("Refresh-Token") String refreshTokenHeader,
