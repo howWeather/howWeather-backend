@@ -146,7 +146,7 @@ public class AuthService {
         } catch (CustomException e) {
             throw e;
         } catch (Exception e) {
-            log.error("프로필 조회 중 에러 발상: {}", e.getMessage(), e);
+            log.error("프로필 조회 중 에러 발생: {}", e.getMessage(), e);
             throw new CustomException(ErrorCode.UNKNOWN_ERROR, "프로필 조회 중 오류가 발생했습니다.");
         }
     }
@@ -158,7 +158,7 @@ public class AuthService {
         } catch (CustomException e) {
             throw e;
         } catch (Exception e) {
-            log.error("프로필 수정 중 에러 발상: {}", e.getMessage(), e);
+            log.error("프로필 수정 중 에러 발생: {}", e.getMessage(), e);
             throw new CustomException(ErrorCode.UNKNOWN_ERROR, "프로필 수정 중 오류가 발생했습니다.");
         }
     }
@@ -173,7 +173,7 @@ public class AuthService {
         } catch (CustomException e) {
             throw e;
         } catch (Exception e) {
-            log.error("비밀번호 변경 중 에러 발상: {}", e.getMessage(), e);
+            log.error("비밀번호 변경 중 에러 발생: {}", e.getMessage(), e);
             throw new CustomException(ErrorCode.UNKNOWN_ERROR, "비밀번호 변경 중 오류가 발생했습니다.");
         }
     }
