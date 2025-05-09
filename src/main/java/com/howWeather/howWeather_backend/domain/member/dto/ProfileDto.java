@@ -11,5 +11,6 @@ public class ProfileDto {
     private String email;
     private int ageGroup;
     private int bodyType;
+    private int constitution;
     private int gender;
 }

@@ -1,16 +1,12 @@
 package com.howWeather.howWeather_backend.domain.member.api;
 
 import com.howWeather.howWeather_backend.domain.member.dto.ProfileDto;
-import com.howWeather.howWeather_backend.domain.member.dto.ProfileUpdateDto;
 import com.howWeather.howWeather_backend.domain.member.entity.Member;
 import com.howWeather.howWeather_backend.domain.member.repository.MemberRepository;
 import com.howWeather.howWeather_backend.domain.member.service.AuthService;
-import com.howWeather.howWeather_backend.global.Response.ApiResponse;
 import com.howWeather.howWeather_backend.global.jwt.CheckAuthenticatedUser;
-import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;

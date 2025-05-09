@@ -140,6 +140,7 @@ public class AuthService {
                     .ageGroup(member.getAgeGroup())
                     .nickname(member.getNickname())
                     .bodyType(member.getBodyType())
+                    .constitution(member.getConstitution())
                     .gender(member.getGender())
                     .build();
 
