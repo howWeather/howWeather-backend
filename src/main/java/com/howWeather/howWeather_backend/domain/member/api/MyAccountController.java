@@ -30,13 +30,4 @@ public class MyAccountController {
         ProfileDto profile = authService.getProfile(member);
         return ResponseEntity.ok(profile);
     }
-
-    @PatchMapping("/profile/edit")
-    @CheckAuthenticatedUser
-    public ResponseEntity<ApiResponse<String>> editProfile(@RequestHeader("Authorization") String accessTokenHeader,
-                                                           @AuthenticationPrincipal Member member,
-                                                           @Valid @RequestBody ProfileUpdateDto profileUpdateDto) {
-        authService.updateProfile(member, profileUpdateDto);
-        return ApiResponse.success(HttpStatus.OK, "프로필을 성공적으로 수정하였습니다.");
-    }
 }
