@@ -56,7 +56,7 @@ public class MyAccountController {
                                                               @Valid @RequestBody NicknameDto nicknameDto,
                                                               @AuthenticationPrincipal Member member) {
         authService.updateNickname(member,nicknameDto);
-        return ApiResponse.success(HttpStatus.OK, "연령대를 성공적으로 수정하였습니다.");
+        return ApiResponse.success(HttpStatus.OK, "닉네임을 성공적으로 수정하였습니다.");
     }
 
     @PatchMapping("/update-constitution")
@@ -65,6 +65,6 @@ public class MyAccountController {
                                                               @Valid @RequestBody ProfileChangeIntDto profileChangeDto,
                                                               @AuthenticationPrincipal Member member) {
         authService.updateConstitution(member, profileChangeDto);
-        return ApiResponse.success(HttpStatus.OK, "연령대를 성공적으로 수정하였습니다.");
+        return ApiResponse.success(HttpStatus.OK, "체질을 성공적으로 수정하였습니다.");
     }
 }

@@ -195,9 +195,12 @@ public class AuthService {
     @Transactional
     public void updateGender(Member member, ProfileChangeIntDto profileChangeDto) {
         try {
-            validateIntData(profileChangeDto.getData() , 1, 2);
-            if (profileChangeDto.getData() != null)
-                member.changeGender(profileChangeDto.getData());
+            validateIntData(profileChangeDto.getData(), 1, 2);
+            if (profileChangeDto.getData() != null) {
+                Member persistedMember = memberRepository.findById(member.getId())
+                        .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND, "회원 정보를 찾을 수 없습니다."));
+                persistedMember.changeGender(profileChangeDto.getData());
+            }
         } catch (CustomException e) {
             throw e;
         } catch (Exception e) {
@@ -209,9 +212,12 @@ public class AuthService {
     @Transactional
     public void updateAgeGroup(Member member, ProfileChangeIntDto profileChangeDto) {
         try {
-            validateIntData(profileChangeDto.getData() , 1, 3);
-            if (profileChangeDto.getData() != null)
-                member.changeAgeGroup(profileChangeDto.getData());
+            validateIntData(profileChangeDto.getData(), 1, 3);
+            if (profileChangeDto.getData() != null) {
+                Member persistedMember = memberRepository.findById(member.getId())
+                        .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND, "회원 정보를 찾을 수 없습니다."));
+                persistedMember.changeAgeGroup(profileChangeDto.getData());
+            }
         } catch (CustomException e) {
             throw e;
         } catch (Exception e) {
@@ -223,8 +229,11 @@ public class AuthService {
     @Transactional
     public void updateNickname(Member member, NicknameDto nicknameDto) {
         try {
-            if (nicknameDto.getData() != null)
-                member.changeNickname(nicknameDto.getData());
+            if (nicknameDto.getData() != null) {
+                Member persistedMember = memberRepository.findById(member.getId())
+                        .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND, "회원 정보를 찾을 수 없습니다."));
+                persistedMember.changeNickname(nicknameDto.getData());
+            }
         } catch (CustomException e) {
             throw e;
         } catch (Exception e) {
@@ -236,9 +245,12 @@ public class AuthService {
     @Transactional
     public void updateConstitution(Member member, ProfileChangeIntDto profileChangeDto) {
         try {
-            validateIntData(profileChangeDto.getData() , 1, 3);
-            if (profileChangeDto.getData() != null)
-                member.changeConstitution(profileChangeDto.getData());
+            validateIntData(profileChangeDto.getData(), 1, 3);
+            if (profileChangeDto.getData() != null) {
+                Member persistedMember = memberRepository.findById(member.getId())
+                        .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND, "회원 정보를 찾을 수 없습니다."));
+                persistedMember.changeConstitution(profileChangeDto.getData());
+            }
         } catch (CustomException e) {
             throw e;
         } catch (Exception e) {
