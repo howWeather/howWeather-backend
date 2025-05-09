@@ -169,8 +169,14 @@ public class AuthService {
             validateOldPassword(member, dto.getOldPassword());
             validatePasswordMatch(dto.getNewPassword(), dto.getConfirmPassword());
             validatePasswordSame(dto.getOldPassword(), dto.getNewPassword());
+
             String encodedNewPassword = passwordEncoder.encode(dto.getNewPassword());
-            member.changePassword(encodedNewPassword);
+
+            Member persistedMember = memberRepository.findById(member.getId())
+                    .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND, "사용자를 찾을 수 없습니다."));
+
+            persistedMember.changePassword(encodedNewPassword);
+            memberRepository.flush();
         } catch (CustomException e) {
             throw e;
         } catch (Exception e) {
@@ -178,6 +184,7 @@ public class AuthService {
             throw new CustomException(ErrorCode.UNKNOWN_ERROR, "비밀번호 변경 중 오류가 발생했습니다.");
         }
     }
+
 
     private void validatePasswordSame(String oldPassword, String newPassword) {
         if (newPassword.equals(oldPassword)) {
