@@ -168,6 +168,7 @@ public class AuthService {
         try {
             validateOldPassword(member, dto.getOldPassword());
             validatePasswordMatch(dto.getNewPassword(), dto.getConfirmPassword());
+            validatePasswordSame(dto.getOldPassword(), dto.getNewPassword());
             String encodedNewPassword = passwordEncoder.encode(dto.getNewPassword());
             member.changePassword(encodedNewPassword);
         } catch (CustomException e) {
@@ -175,6 +176,12 @@ public class AuthService {
         } catch (Exception e) {
             log.error("비밀번호 변경 중 에러 발생: {}", e.getMessage(), e);
             throw new CustomException(ErrorCode.UNKNOWN_ERROR, "비밀번호 변경 중 오류가 발생했습니다.");
+        }
+    }
+
+    private void validatePasswordSame(String oldPassword, String newPassword) {
+        if (newPassword.equals(oldPassword)) {
+            throw new CustomException(ErrorCode.SAME_PASSWORD, "기존의 비밀번호와 다른 비밀번호를 입력해주세요.");
         }
     }
 

@@ -96,14 +96,15 @@ public class AuthController {
         return ApiResponse.success(HttpStatus.OK, "사용 가능한 아이디입니다.");
     }
 
-    @PostMapping("/password-reset")
+    @PostMapping("/change-password")
     @CheckAuthenticatedUser
     public ResponseEntity<ApiResponse<String>> passwordChange(@RequestHeader("Authorization") String accessTokenHeader,
+                                                              @RequestHeader("Refresh-Token") String refreshTokenHeader,
                                                               @Valid @RequestBody PasswordChangeDto dto,
                                                               @AuthenticationPrincipal Member member) {
 
         authService.changePassword(member, dto);
+        logout(accessTokenHeader, refreshTokenHeader);
         return ApiResponse.success(HttpStatus.OK, "비밀번호를 성공적으로 변경하였습니다. 재로그인하시기 바랍니다.");
     }
-
 }

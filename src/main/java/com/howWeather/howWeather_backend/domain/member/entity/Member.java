@@ -87,5 +87,6 @@ public class Member implements UserDetails {
 
     public void changePassword(String encodedNewPassword) {
         this.password = encodedNewPassword;
+        System.out.println("encodedNewPassword = " + encodedNewPassword);
     }
 }
