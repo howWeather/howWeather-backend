@@ -39,9 +39,9 @@ public class SignupRequestDto {
     @Max(value = 3, message = "선택한 체질 정보가 유효하지 않습니다.")
     private int constitution;
 
-    @NotNull(message = "체형은 필수 입력 항목입니다.")
-    @Min(value = 1, message = "선택한 체형 정보가 유효하지 않습니다.")
-    @Max(value = 3, message = "선택한 체형 정보가 유효하지 않습니다.")
+//    @NotNull(message = "체형은 필수 입력 항목입니다.")
+//    @Min(value = 1, message = "선택한 체형 정보가 유효하지 않습니다.")
+//    @Max(value = 3, message = "선택한 체형 정보가 유효하지 않습니다.")
     private int bodyType;
 
     @NotNull(message = "성별은 필수 입력 항목입니다.")
