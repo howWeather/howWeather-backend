@@ -84,4 +84,8 @@ public class Member implements UserDetails {
             this.ageGroup = ageGroup;
         }
     }
+
+    public void changePassword(String encodedNewPassword) {
+        this.password = encodedNewPassword;
+    }
 }

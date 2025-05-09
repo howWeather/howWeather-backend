@@ -1,10 +1,7 @@
 package com.howWeather.howWeather_backend.domain.member.service;
 
 import com.howWeather.howWeather_backend.domain.closet.entity.Closet;
-import com.howWeather.howWeather_backend.domain.member.dto.LoginRequestDto;
-import com.howWeather.howWeather_backend.domain.member.dto.ProfileDto;
-import com.howWeather.howWeather_backend.domain.member.dto.ProfileUpdateDto;
-import com.howWeather.howWeather_backend.domain.member.dto.SignupRequestDto;
+import com.howWeather.howWeather_backend.domain.member.dto.*;
 import com.howWeather.howWeather_backend.domain.member.entity.Member;
 import com.howWeather.howWeather_backend.domain.member.repository.MemberRepository;
 import com.howWeather.howWeather_backend.domain.closet.repository.ClosetRepository;
@@ -163,6 +160,33 @@ public class AuthService {
         } catch (Exception e) {
             log.error("프로필 수정 중 에러 발상: {}", e.getMessage(), e);
             throw new CustomException(ErrorCode.UNKNOWN_ERROR, "프로필 수정 중 오류가 발생했습니다.");
+        }
+    }
+
+    @Transactional
+    public void changePassword(Member member, PasswordChangeDto dto) {
+        try {
+            validateOldPassword(member, dto.getOldPassword());
+            validatePasswordMatch(dto.getNewPassword(), dto.getConfirmPassword());
+            String encodedNewPassword = passwordEncoder.encode(dto.getNewPassword());
+            member.changePassword(encodedNewPassword);
+        } catch (CustomException e) {
+            throw e;
+        } catch (Exception e) {
+            log.error("비밀번호 변경 중 에러 발상: {}", e.getMessage(), e);
+            throw new CustomException(ErrorCode.UNKNOWN_ERROR, "비밀번호 변경 중 오류가 발생했습니다.");
+        }
+    }
+
+    private void validatePasswordMatch(String newPassword, String confirmPassword) {
+        if (!newPassword.equals(confirmPassword)) {
+            throw new CustomException(ErrorCode.PASSWORD_MISMATCH, "변경할 비밀번호가 일치하지 않습니다.");
+        }
+    }
+
+    private void validateOldPassword(Member member, String oldPassword) {
+        if (!passwordEncoder.matches(oldPassword, member.getPassword())) {
+            throw new CustomException(ErrorCode.WRONG_PASSWORD, "현재 비밀번호가 일치하지 않습니다.");
         }
     }
 }
