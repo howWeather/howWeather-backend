@@ -154,7 +154,7 @@ public class AuthService {
     @Transactional
     public void updateProfile(Member member, ProfileUpdateDto dto) {
         try {
-            member.updateProfile(dto.getNickname(), dto.getBodyType(), dto.getAgeGroup());
+            member.updateProfile(dto.getNickname(), dto.getGender(), dto.getAgeGroup());
         } catch (CustomException e) {
             throw e;
         } catch (Exception e) {
