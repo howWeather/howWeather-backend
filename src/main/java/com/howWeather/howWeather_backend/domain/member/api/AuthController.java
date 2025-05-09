@@ -2,7 +2,9 @@ package com.howWeather.howWeather_backend.domain.member.api;
 
 import com.howWeather.howWeather_backend.domain.member.dto.DuplicateCheckDto;
 import com.howWeather.howWeather_backend.domain.member.dto.LoginRequestDto;
+import com.howWeather.howWeather_backend.domain.member.dto.PasswordChangeDto;
 import com.howWeather.howWeather_backend.domain.member.dto.SignupRequestDto;
+import com.howWeather.howWeather_backend.domain.member.entity.Member;
 import com.howWeather.howWeather_backend.domain.member.service.AuthService;
 import com.howWeather.howWeather_backend.global.Response.ApiResponse;
 import com.howWeather.howWeather_backend.global.exception.CustomException;
@@ -16,6 +18,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import javax.validation.Valid;
@@ -93,4 +96,14 @@ public class AuthController {
         return ApiResponse.success(HttpStatus.OK, "사용 가능한 아이디입니다.");
     }
 
+    @PostMapping("/update-password")
+    @CheckAuthenticatedUser
+    public ResponseEntity<ApiResponse<String>> passwordChange(@RequestHeader("Authorization") String accessTokenHeader,
+                                                              @RequestHeader("Refresh-Token") String refreshTokenHeader,
+                                                              @Valid @RequestBody PasswordChangeDto dto,
+                                                              @AuthenticationPrincipal Member member) {
+        authService.changePassword(member, dto);
+        logout(accessTokenHeader, refreshTokenHeader);
+        return ApiResponse.success(HttpStatus.OK, "비밀번호를 성공적으로 변경하였습니다. 재로그인하시기 바랍니다.");
+    }
 }

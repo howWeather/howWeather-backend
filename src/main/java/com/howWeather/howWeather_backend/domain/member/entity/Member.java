@@ -3,6 +3,7 @@ package com.howWeather.howWeather_backend.domain.member.entity;
 import com.howWeather.howWeather_backend.domain.closet.entity.Closet;
 import jakarta.persistence.*;
 import lombok.*;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -17,6 +18,7 @@ import static jakarta.persistence.FetchType.LAZY;
 
 @Entity @Table(name = "member")
 @Getter
+@Slf4j
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor
 @Builder
@@ -71,5 +73,25 @@ public class Member implements UserDetails {
     @Override
     public String getUsername() {
         return loginId;
+    }
+
+    public void changePassword(String encodedNewPassword) {
+        this.password = encodedNewPassword;
+    }
+
+    public void changeGender(int v) {
+        this.gender = v;
+    }
+
+    public void changeAgeGroup(int v) {
+        this.ageGroup = v;
+    }
+
+    public void changeNickname(String s) {
+        this.nickname = s;
+    }
+
+    public void changeConstitution(int v) {
+        this.constitution = v;
     }
 }

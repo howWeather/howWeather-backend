@@ -1,8 +1,7 @@
 package com.howWeather.howWeather_backend.domain.member.service;
 
 import com.howWeather.howWeather_backend.domain.closet.entity.Closet;
-import com.howWeather.howWeather_backend.domain.member.dto.LoginRequestDto;
-import com.howWeather.howWeather_backend.domain.member.dto.SignupRequestDto;
+import com.howWeather.howWeather_backend.domain.member.dto.*;
 import com.howWeather.howWeather_backend.domain.member.entity.Member;
 import com.howWeather.howWeather_backend.domain.member.repository.MemberRepository;
 import com.howWeather.howWeather_backend.domain.closet.repository.ClosetRepository;
@@ -132,4 +131,137 @@ public class AuthService {
         }
     }
 
+    @Transactional(readOnly = true)
+    public ProfileDto getProfile(Member member) {
+        try {
+            return ProfileDto.builder()
+                    .loginId(member.getLoginId())
+                    .email(member.getEmail())
+                    .ageGroup(member.getAgeGroup())
+                    .nickname(member.getNickname())
+                    .bodyType(member.getBodyType())
+                    .constitution(member.getConstitution())
+                    .gender(member.getGender())
+                    .build();
+
+        } catch (CustomException e) {
+            throw e;
+        } catch (Exception e) {
+            log.error("프로필 조회 중 에러 발생: {}", e.getMessage(), e);
+            throw new CustomException(ErrorCode.UNKNOWN_ERROR, "프로필 조회 중 오류가 발생했습니다.");
+        }
+    }
+
+    @Transactional
+    public void changePassword(Member member, PasswordChangeDto dto) {
+        try {
+            validateOldPassword(member, dto.getOldPassword());
+            validatePasswordMatch(dto.getNewPassword(), dto.getConfirmPassword());
+            validatePasswordSame(dto.getOldPassword(), dto.getNewPassword());
+
+            String encodedNewPassword = passwordEncoder.encode(dto.getNewPassword());
+
+            Member persistedMember = memberRepository.findById(member.getId())
+                    .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND, "사용자를 찾을 수 없습니다."));
+
+            persistedMember.changePassword(encodedNewPassword);
+            memberRepository.flush();
+        } catch (CustomException e) {
+            throw e;
+        } catch (Exception e) {
+            log.error("비밀번호 변경 중 에러 발생: {}", e.getMessage(), e);
+            throw new CustomException(ErrorCode.UNKNOWN_ERROR, "비밀번호 변경 중 오류가 발생했습니다.");
+        }
+    }
+
+    private void validatePasswordSame(String oldPassword, String newPassword) {
+        if (newPassword.equals(oldPassword)) {
+            throw new CustomException(ErrorCode.SAME_PASSWORD, "기존의 비밀번호와 다른 비밀번호를 입력해주세요.");
+        }
+    }
+
+    private void validatePasswordMatch(String newPassword, String confirmPassword) {
+        if (!newPassword.equals(confirmPassword)) {
+            throw new CustomException(ErrorCode.PASSWORD_MISMATCH, "변경할 비밀번호가 일치하지 않습니다.");
+        }
+    }
+
+    private void validateOldPassword(Member member, String oldPassword) {
+        if (!passwordEncoder.matches(oldPassword, member.getPassword())) {
+            throw new CustomException(ErrorCode.WRONG_PASSWORD, "현재 비밀번호가 일치하지 않습니다.");
+        }
+    }
+
+    @Transactional
+    public void updateGender(Member member, ProfileChangeIntDto profileChangeDto) {
+        try {
+            validateIntData(profileChangeDto.getData(), 1, 2);
+            if (profileChangeDto.getData() != null) {
+                Member persistedMember = memberRepository.findById(member.getId())
+                        .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND, "회원 정보를 찾을 수 없습니다."));
+                persistedMember.changeGender(profileChangeDto.getData());
+            }
+        } catch (CustomException e) {
+            throw e;
+        } catch (Exception e) {
+            log.error("성별 수정 중 에러 발생: {}", e.getMessage(), e);
+            throw new CustomException(ErrorCode.UNKNOWN_ERROR, "성별 수정 중 오류가 발생했습니다.");
+        }
+    }
+
+    @Transactional
+    public void updateAgeGroup(Member member, ProfileChangeIntDto profileChangeDto) {
+        try {
+            validateIntData(profileChangeDto.getData(), 1, 3);
+            if (profileChangeDto.getData() != null) {
+                Member persistedMember = memberRepository.findById(member.getId())
+                        .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND, "회원 정보를 찾을 수 없습니다."));
+                persistedMember.changeAgeGroup(profileChangeDto.getData());
+            }
+        } catch (CustomException e) {
+            throw e;
+        } catch (Exception e) {
+            log.error("연령대 수정 중 에러 발생: {}", e.getMessage(), e);
+            throw new CustomException(ErrorCode.UNKNOWN_ERROR, "연령대 수정 중 오류가 발생했습니다.");
+        }
+    }
+
+    @Transactional
+    public void updateNickname(Member member, NicknameDto nicknameDto) {
+        try {
+            if (nicknameDto.getData() != null) {
+                Member persistedMember = memberRepository.findById(member.getId())
+                        .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND, "회원 정보를 찾을 수 없습니다."));
+                persistedMember.changeNickname(nicknameDto.getData());
+            }
+        } catch (CustomException e) {
+            throw e;
+        } catch (Exception e) {
+            log.error("닉네임 수정 중 에러 발생: {}", e.getMessage(), e);
+            throw new CustomException(ErrorCode.UNKNOWN_ERROR, "닉네임 수정 중 오류가 발생했습니다.");
+        }
+    }
+
+    @Transactional
+    public void updateConstitution(Member member, ProfileChangeIntDto profileChangeDto) {
+        try {
+            validateIntData(profileChangeDto.getData(), 1, 3);
+            if (profileChangeDto.getData() != null) {
+                Member persistedMember = memberRepository.findById(member.getId())
+                        .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND, "회원 정보를 찾을 수 없습니다."));
+                persistedMember.changeConstitution(profileChangeDto.getData());
+            }
+        } catch (CustomException e) {
+            throw e;
+        } catch (Exception e) {
+            log.error("체질 수정 중 에러 발생: {}", e.getMessage(), e);
+            throw new CustomException(ErrorCode.UNKNOWN_ERROR, "체질 수정 중 오류가 발생했습니다.");
+        }
+    }
+
+    private void validateIntData(Integer data, int s, int e) {
+        if (data < s || data > e) {
+            throw new CustomException(ErrorCode.INVALID_INPUT, "유효하지 않은 입력값입니다.");
+        }
+    }
 }
