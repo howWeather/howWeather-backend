@@ -43,22 +43,22 @@ public class ClosetController {
         return ResponseEntity.ok(allClothes);
     }
 
-    @GetMapping("/selectable-uppers")
+    @GetMapping("/uppers")
     @CheckAuthenticatedUser
-    public ResponseEntity<List<ClothListDto>> getSelectableUppers(
+    public ResponseEntity<ClothListDto> getUppers(
             @RequestHeader("Authorization") String accessTokenHeader,
             @AuthenticationPrincipal Member member) {
 
-        List<ClothListDto> clothes = closetService.getPotentialUppers(member);
+        ClothListDto clothes = closetService.getUppers(member);
         return ResponseEntity.ok(clothes);
     }
     
-    @GetMapping("/selectable-outers")
+    @GetMapping("/outers")
     @CheckAuthenticatedUser
-    public ResponseEntity<List<ClothListDto>> getSelectableOuters(
+    public ResponseEntity<ClothListDto> getOuters(
             @RequestHeader("Authorization") String accessTokenHeader,
             @AuthenticationPrincipal Member member) {
-        List<ClothListDto> clothes = closetService.getPotentialOuters(member);
+        ClothListDto clothes = closetService.getOuters(member);
         return ResponseEntity.ok(clothes);
     }
 

@@ -193,13 +193,9 @@ public class ClosetService {
     }
 
     @Transactional(readOnly = true)
-    public List<ClothListDto> getPotentialUppers(Member member) {
+    public ClothListDto getUppers(Member member) {
         try {
-            List<ClothListDto> result = new ArrayList<>();
-            result.add(findActiveUppers(member));
-            result.add(findLayerFlexibleOuters(member));
-
-            return result;
+            return findActiveUppers(member);
         } catch (CustomException e) {
             throw e;
         } catch (Exception e) {
@@ -209,14 +205,9 @@ public class ClosetService {
     }
 
     @Transactional(readOnly = true)
-    public List<ClothListDto> getPotentialOuters(Member member) {
+    public ClothListDto getOuters(Member member) {
         try {
-            List<ClothListDto> result = new ArrayList<>();
-            result.add(findActiveOuters(member));
-            result.add(findLayerFlexibleUppers(member));
-
-            return result;
-
+            return findActiveOuters(member);
         } catch (CustomException e) {
             throw e;
         } catch (Exception e) {
