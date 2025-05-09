@@ -191,4 +191,65 @@ public class AuthService {
             throw new CustomException(ErrorCode.WRONG_PASSWORD, "현재 비밀번호가 일치하지 않습니다.");
         }
     }
+
+    @Transactional
+    public void updateGender(Member member, ProfileChangeIntDto profileChangeDto) {
+        try {
+            validateIntData(profileChangeDto.getData() , 1, 2);
+            if (profileChangeDto.getData() != null)
+                member.changeGender(profileChangeDto.getData());
+        } catch (CustomException e) {
+            throw e;
+        } catch (Exception e) {
+            log.error("성별 수정 중 에러 발생: {}", e.getMessage(), e);
+            throw new CustomException(ErrorCode.UNKNOWN_ERROR, "성별 수정 중 오류가 발생했습니다.");
+        }
+    }
+
+    @Transactional
+    public void updateAgeGroup(Member member, ProfileChangeIntDto profileChangeDto) {
+        try {
+            validateIntData(profileChangeDto.getData() , 1, 3);
+            if (profileChangeDto.getData() != null)
+                member.changeAgeGroup(profileChangeDto.getData());
+        } catch (CustomException e) {
+            throw e;
+        } catch (Exception e) {
+            log.error("연령대 수정 중 에러 발생: {}", e.getMessage(), e);
+            throw new CustomException(ErrorCode.UNKNOWN_ERROR, "연령대 수정 중 오류가 발생했습니다.");
+        }
+    }
+
+    @Transactional
+    public void updateNickname(Member member, NicknameDto nicknameDto) {
+        try {
+            if (nicknameDto.getData() != null)
+                member.changeNickname(nicknameDto.getData());
+        } catch (CustomException e) {
+            throw e;
+        } catch (Exception e) {
+            log.error("닉네임 수정 중 에러 발생: {}", e.getMessage(), e);
+            throw new CustomException(ErrorCode.UNKNOWN_ERROR, "닉네임 수정 중 오류가 발생했습니다.");
+        }
+    }
+
+    @Transactional
+    public void updateConstitution(Member member, ProfileChangeIntDto profileChangeDto) {
+        try {
+            validateIntData(profileChangeDto.getData() , 1, 3);
+            if (profileChangeDto.getData() != null)
+                member.changeConstitution(profileChangeDto.getData());
+        } catch (CustomException e) {
+            throw e;
+        } catch (Exception e) {
+            log.error("체질 수정 중 에러 발생: {}", e.getMessage(), e);
+            throw new CustomException(ErrorCode.UNKNOWN_ERROR, "체질 수정 중 오류가 발생했습니다.");
+        }
+    }
+
+    private void validateIntData(Integer data, int s, int e) {
+        if (data < s || data > e) {
+            throw new CustomException(ErrorCode.INVALID_INPUT, "유효하지 않은 입력값입니다.");
+        }
+    }
 }
