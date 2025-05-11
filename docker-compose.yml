@@ -1,31 +1,18 @@
 services:
-  app:
-    container_name: spring-boot-app
-    image: ${DOCKER_IMAGE}
-    ports:
-      - "8080:8080"
-    restart: always
-    environment:
-      SPRING_DATASOURCE_URL: ${SPRING_DATASOURCE_URL}
-      SPRING_DATASOURCE_USERNAME: ${SPRING_DATASOURCE_USERNAME}
-      SPRING_DATASOURCE_PASSWORD: ${SPRING_DATASOURCE_PASSWORD}
-      JWT_SECRET_KEY: ${JWT_SECRET_KEY}
-      JWT_EXPIRATION_ACCESS: ${JWT_EXPIRATION_ACCESS}
-      JWT_EXPIRATION_REFRESH: ${JWT_EXPIRATION_REFRESH}
-    depends_on:
-      - postgres
-      - redis
-
   postgres:
     image: postgres:latest
-    container_name: postgres-db
+    container_name: postgres
     environment:
-      POSTGRES_USER: ${SPRING_DATASOURCE_USERNAME}
-      POSTGRES_PASSWORD: ${SPRING_DATASOURCE_PASSWORD}
-      POSTGRES_DB: ${POSTGRES_DB}
+      - POSTGRES_DB=${DB_NAME}
+      - POSTGRES_USER=${DB_USERNAME}
+      - POSTGRES_PASSWORD=${DB_PASSWORD}
     ports:
       - "5432:5432"
-    restart: always
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "${DB_USERNAME}"]
+      interval: 10s
+      retries: 5
+      start_period: 30s
 
   redis:
     image: redis:latest
@@ -33,3 +20,24 @@ services:
     ports:
       - "6380:6379"
     restart: always
+
+  app:
+    image: ${DOCKERHUB_USERNAME}/${DOCKERHUB_REPOSITORY}:${GITHUB_SHA}
+    container_name: spring-boot-app
+    environment:
+      - TZ=Asia/Seoul
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres:5432/${DB_NAME}
+      - SPRING_DATASOURCE_USERNAME=${DB_USERNAME}
+      - SPRING_DATASOURCE_PASSWORD=${DB_PASSWORD}
+      - JWT_SECRET=${JWT_SECRET}
+      - JWT_EXPIRATION_ACCESS=${JWT_EXPIRATION_ACCESS}  
+      - JWT_EXPIRATION_REFRESH=${JWT_EXPIRATION_REFRESH} 
+      - SPRING_SECURITY_ENABLED=true
+      - WEATHER_SERVICE_KEY=${WEATHER_SERVICE_KEY}
+      - SPRING_REDIS_HOST=redis
+      - SPRING_REDIS_PORT=6379
+    ports:
+      - "8080:8080"
+    depends_on:
+      - postgres
+      - redis
