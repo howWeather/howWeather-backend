@@ -54,5 +54,6 @@ public class SignupRequestDto {
     @Max(value = 3, message = "선택한 연령대 정보가 유효하지 않습니다.")
     private int ageGroup;
 
+    @Builder.Default
     private List<String> roles = new ArrayList<>();
 }

@@ -52,6 +52,7 @@ public class Member implements UserDetails {
     @Column(name="gender", nullable = false)
     private int gender;
 
+    @Builder.Default
     @Column(name="sensitivity", nullable = false)
     private int sensitivity = -1;
 
