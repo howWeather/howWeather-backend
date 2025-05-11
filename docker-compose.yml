@@ -12,6 +12,9 @@ services:
       JWT_SECRET_KEY: ${JWT_SECRET_KEY}
       JWT_EXPIRATION_ACCESS: ${JWT_EXPIRATION_ACCESS}
       JWT_EXPIRATION_REFRESH: ${JWT_EXPIRATION_REFRESH}
+    depends_on:
+      - postgres
+      - redis
 
   postgres:
     image: postgres:latest
@@ -19,7 +22,7 @@ services:
     environment:
       POSTGRES_USER: ${SPRING_DATASOURCE_USERNAME}
       POSTGRES_PASSWORD: ${SPRING_DATASOURCE_PASSWORD}
-      POSTGRES_DB: ${SPRING_DATASOURCE_URL}
+      POSTGRES_DB: ${POSTGRES_DB}
     ports:
       - "5432:5432"
     restart: always
