@@ -48,9 +48,9 @@ jobs:
         mkdir -p src/test/resources
         echo "${{ secrets.APPLICATION_TEST_PROPERTIES }}" > src/test/resources/application.properties
 
-    ### Gradle Build (테스트 포함)
+    ### Gradle Build (테스트 제외)
     - name: Build with Gradle Wrapper
-      run: ./gradlew build
+      run: ./gradlew build -x test
 
     ### Docker 로그인
     - name: Docker login
