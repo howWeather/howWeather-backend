@@ -36,46 +36,17 @@ jobs:
     - name: Setup Gradle
       uses: gradle/actions/setup-gradle@af1da67850ed9a4cedd57bfd976089dd991e2582 # v4.0.0
 
-    ### 🔹 application.yml 생성 (main)
-    - name: Generate main application.yml
+    ###  application.properties (main) 생성
+    - name: Generate application.properties (main)
       run: |
         mkdir -p src/main/resources
-        cat <<EOF > src/main/resources/application.yml
-        spring:
-          datasource:
-            url: ${SPRING_DATASOURCE_URL}
-            username: ${SPRING_DATASOURCE_USERNAME}
-            password: ${SPRING_DATASOURCE_PASSWORD}
-          jpa:
-            hibernate:
-              ddl-auto: update
-            show-sql: true
-        jwt:
-          secret: ${JWT_SECRET}
-        EOF
-      env:
-        SPRING_DATASOURCE_URL: ${{ secrets.SPRING_DATASOURCE_URL }}
-        SPRING_DATASOURCE_USERNAME: ${{ secrets.SPRING_DATASOURCE_USERNAME }}
-        SPRING_DATASOURCE_PASSWORD: ${{ secrets.SPRING_DATASOURCE_PASSWORD }}
-        JWT_SECRET: ${{ secrets.JWT_SECRET_KEY }}
+        echo "${{ secrets.APPLICATION_PROPERTIES }}" > src/main/resources/application.properties
 
-
-    ### 🔹 application.yml 생성 (test)
-    - name: Generate test application.yml
+    ### application.properties (test) 생성
+    - name: Generate application.properties (test)
       run: |
         mkdir -p src/test/resources
-        cat <<EOF > src/test/resources/application.yml
-        spring:
-          datasource:
-            url: jdbc:h2:mem:testdb
-            driver-class-name: org.h2.Driver
-            username: sa
-            password:
-          jpa:
-            hibernate:
-              ddl-auto: create
-            show-sql: true
-        EOF
+        e cho "${{ secrets.APPLICATION_TEST_PROPERTIES }}" > src/test/resources/application.properties
 
     ### Gradle Build (테스트 포함)
     - name: Build with Gradle Wrapper
