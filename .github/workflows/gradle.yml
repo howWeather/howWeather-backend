@@ -46,7 +46,7 @@ jobs:
     - name: Generate application.properties (test)
       run: |
         mkdir -p src/test/resources
-        e cho "${{ secrets.APPLICATION_TEST_PROPERTIES }}" > src/test/resources/application.properties
+        echo "${{ secrets.APPLICATION_TEST_PROPERTIES }}" > src/test/resources/application.properties
 
     ### Gradle Build (테스트 포함)
     - name: Build with Gradle Wrapper
