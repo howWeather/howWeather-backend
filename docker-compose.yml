@@ -21,7 +21,7 @@ services:
       POSTGRES_PASSWORD: ${SPRING_DATASOURCE_PASSWORD}
       POSTGRES_DB: ${SPRING_DATASOURCE_URL}
     ports:
-      - "5432:5432"
+      - "5433:5432"
     restart: always
 
   redis:
