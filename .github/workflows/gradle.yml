@@ -76,16 +76,17 @@ jobs:
 
           echo "Setting environment variables..."
           cat > .env <<EOL
-          DB_NAME=${{ secrets.SPRING_DATASOURCE_URL }}
-          DB_USERNAME=${{ secrets.SPRING_DATASOURCE_USERNAME }}
-          DB_PASSWORD=${{ secrets.SPRING_DATASOURCE_PASSWORD }}
+          SPRING_DATASOURCE_URL=${{ secrets.SPRING_DATASOURCE_URL }}
+          SPRING_DATASOURCE_USERNAME=${{ secrets.SPRING_DATASOURCE_USERNAME }}
+          SPRING_DATASOURCE_PASSWORD=${{ secrets.SPRING_DATASOURCE_PASSWORD }}
           DOCKERHUB_USERNAME=${{ secrets.DOCKERHUB_USERNAME }}
           DOCKERHUB_REPOSITORY=${{ secrets.DOCKERHUB_REPOSITORY }}
           GITHUB_SHA=${{ github.sha }}
           DOCKER_IMAGE=${{ secrets.DOCKERHUB_USERNAME }}/${{ secrets.DOCKERHUB_REPOSITORY }}:${{ github.sha }}
-          JWT_SECRET=${{ secrets.JWT_SECRET }}
-          JWT_EXPIRATION_ACCESS=2592000000
-          JWT_EXPIRATION_REFRESH=2592000000
+          JWT_SECRET_KEY=${{ secrets.JWT_SECRET_KEY }}
+          JWT_EXPIRATION_ACCESS=${{ secrets.JWT_EXPIRATION_ACCESS }}
+          JWT_EXPIRATION_REFRESH=${{ secrets.JWT_EXPIRATION_REFRESH }}
+          DOCKER_IMAGE=${{ secrets.DOCKERHUB_USERNAME }}/${{ secrets.DOCKERHUB_REPOSITORY }}:${{ github.sha }}
           EOL
 
           echo "Stopping spring-boot-app container..."
