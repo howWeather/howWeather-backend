@@ -13,7 +13,7 @@ services:
       JWT_EXPIRATION_ACCESS: ${JWT_EXPIRATION_ACCESS}
       JWT_EXPIRATION_REFRESH: ${JWT_EXPIRATION_REFRESH}
       SPRING_REDIS_HOST: redis
-      SPRING_REDIS_PORT: 6380
+      SPRING_REDIS_PORT: 6379
     depends_on:
       - postgres
       - redis
@@ -35,6 +35,6 @@ services:
     image: redis:latest
     container_name: redis
     ports:
-      - "6380:6379"
+      - "6379:6379"
     restart: always
 
