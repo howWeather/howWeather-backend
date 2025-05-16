@@ -22,7 +22,6 @@ public class WeatherService {
 
     @Transactional
     public void fetchAllRegionsWeather(int timeSlot) {
-        weatherRepository.deleteByDate(LocalDate.now().minusDays(1));
         List<Region> regions = regionRepository.findAll();
         for (Region region : regions) {
             try {
@@ -33,7 +32,12 @@ public class WeatherService {
             } catch (Exception e) {
                 throw new CustomException(ErrorCode.API_CALL_ERROR, "날씨 정보를 가져오는 중 오류가 발생했습니다.");
             }
-
         }
     }
+
+    @Transactional
+    public void deleteYesterdayWeather() {
+        weatherRepository.deleteByDate(LocalDate.now().minusDays(1));
+    }
+
 }
