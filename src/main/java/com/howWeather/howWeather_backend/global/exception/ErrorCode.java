@@ -29,7 +29,9 @@ public enum ErrorCode {
     CLOTH_NOT_FOUND("해당 의상을 찾을 수 없습니다", HttpStatus.NOT_FOUND),
     WRONG_PASSWORD("비밀번호가 일치하지 않습니다.", HttpStatus.BAD_REQUEST),
     PASSWORD_MISMATCH("변경할 비밀번호가 일치하지 않습니다.", HttpStatus.BAD_REQUEST),
-    SAME_PASSWORD("변경할 비밀번호는 기존의 비밀번호와 달라야 합니다.", HttpStatus.BAD_REQUEST);
+    SAME_PASSWORD("변경할 비밀번호는 기존의 비밀번호와 달라야 합니다.", HttpStatus.BAD_REQUEST),
+    API_CALL_ERROR("날씨 API를 호출하는 중 오류가 발생했습니다", HttpStatus.SERVICE_UNAVAILABLE),
+    NO_BODY_ERROR("날씨 데이터가 존재하지 않습니다", HttpStatus.NOT_FOUND);
 
 
     private final String message;
