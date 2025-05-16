@@ -16,18 +16,18 @@ public class WeatherScheduler {
     @Scheduled(cron = "0 30 10 * * *", zone = "Asia/Seoul") // 오전 10시 30분
     public void fetchMorningWeather() {
         log.info("오전 날씨를 가져옵니다. 시간: {}", LocalDateTime.now());
-        weatherService.fetchAllRegionsWeather(0);
+        weatherService.fetchAllRegionsWeather(1);
     }
 
     @Scheduled(cron = "0 30 13 * * *", zone = "Asia/Seoul") // 오후 1시 30분
     public void fetchAfternoonWeather() {
         log.info("오후 날씨를 가져옵니다. 시간: {}", LocalDateTime.now());
-        weatherService.fetchAllRegionsWeather(1);
+        weatherService.fetchAllRegionsWeather(2);
     }
 
     @Scheduled(cron = "0 30 19 * * *", zone = "Asia/Seoul") // 저녁 7시 30분
     public void fetchEveningWeather() {
         log.info("저녁 날씨를 가져옵니다. 시간: {}", LocalDateTime.now());
-        weatherService.fetchAllRegionsWeather(2);
+        weatherService.fetchAllRegionsWeather(3);
     }
 }
