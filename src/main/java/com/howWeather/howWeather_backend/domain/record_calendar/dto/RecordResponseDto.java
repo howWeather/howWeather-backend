@@ -12,6 +12,7 @@ import java.util.List;
 @AllArgsConstructor
 public class RecordResponseDto {
     int timeSlot;
+    double temperature;
     int feeling;
     LocalDate date;
     List<Integer> uppers;

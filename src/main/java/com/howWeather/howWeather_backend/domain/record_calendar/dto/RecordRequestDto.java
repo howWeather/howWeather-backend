@@ -16,4 +16,5 @@ public class RecordRequestDto {
     LocalDate date;
     List<Long> uppers;
     List<Long> outers;
+    String city;
 }
