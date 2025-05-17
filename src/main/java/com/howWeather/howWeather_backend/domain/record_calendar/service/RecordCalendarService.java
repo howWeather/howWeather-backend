@@ -6,15 +6,18 @@ import com.howWeather.howWeather_backend.domain.closet.repository.UpperRepositor
 import com.howWeather.howWeather_backend.domain.member.entity.Member;
 import com.howWeather.howWeather_backend.domain.record_calendar.dto.RecordRequestDto;
 import com.howWeather.howWeather_backend.domain.closet.entity.Upper;
+import com.howWeather.howWeather_backend.domain.weather.entity.Weather;
 import com.howWeather.howWeather_backend.domain.closet.entity.Outer;
 import com.howWeather.howWeather_backend.domain.record_calendar.entity.DayRecord;
 import com.howWeather.howWeather_backend.domain.record_calendar.entity.DayRecordOuter;
 import com.howWeather.howWeather_backend.domain.record_calendar.entity.DayRecordUpper;
 import com.howWeather.howWeather_backend.domain.record_calendar.repository.DayRecordRepository;
+import com.howWeather.howWeather_backend.domain.weather.repository.WeatherRepository;
 import com.howWeather.howWeather_backend.global.exception.CustomException;
 import com.howWeather.howWeather_backend.global.exception.ErrorCode;
 import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Service;
+import java.time.LocalDate;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
@@ -26,15 +29,17 @@ public class RecordCalendarService {
     private final DayRecordRepository dayRecordRepository;
     private final UpperRepository upperRepository;
     private final OuterRepository outerRepository;
+    private final WeatherRepository weatherRepository;
 
     @Transactional
     public void saveWrite(RecordRequestDto dto, Member member) {
+        double temperature = findTemperature(dto.getCity(), dto.getDate(), dto.getTimeSlot());
         Closet closet = getClosetOrThrow(member);
 
-        DayRecord dayRecord = makeRecord(dto);
+        DayRecord dayRecord = createDayRecord(dto, temperature);
 
-        List<Upper> upperEntities = validateAndGetUppers(dto, closet);
-        List<Outer> outerEntities = validateAndGetOuters(dto, closet);
+        List<Upper> upperEntities = validateAndGetUppers(dto.getUppers(), closet);
+        List<Outer> outerEntities = validateAndGetOuters(dto.getOuters(), closet);
 
         addUppers(dayRecord, upperEntities);
         addOuters(dayRecord, outerEntities);
@@ -50,16 +55,17 @@ public class RecordCalendarService {
         return closet;
     }
 
-    private DayRecord makeRecord(RecordRequestDto dto) {
+    private DayRecord createDayRecord(RecordRequestDto dto, double temperature) {
         return DayRecord.builder()
                 .date(dto.getDate())
                 .timeSlot(dto.getTimeSlot())
                 .feeling(dto.getFeeling())
+                .temperature(temperature)
                 .build();
     }
 
-    private List<Upper> validateAndGetUppers(RecordRequestDto dto, Closet closet) {
-        return dto.getUppers().stream()
+    private List<Upper> validateAndGetUppers(List<Long> upperIds, Closet closet) {
+        return upperIds.stream()
                 .map(id -> upperRepository.findById(id)
                         .orElseThrow(() -> new CustomException(ErrorCode.INVALID_CLOTH_ID, "유효한 상의가 아닙니다.")))
                 .peek(upper -> {
@@ -70,8 +76,8 @@ public class RecordCalendarService {
                 .collect(Collectors.toList());
     }
 
-    private List<Outer> validateAndGetOuters(RecordRequestDto dto, Closet closet) {
-        return dto.getOuters().stream()
+    private List<Outer> validateAndGetOuters(List<Long> outerIds, Closet closet) {
+        return outerIds.stream()
                 .map(id -> outerRepository.findById(id)
                         .orElseThrow(() -> new CustomException(ErrorCode.INVALID_CLOTH_ID, "유효한 아우터가 아닙니다.")))
                 .peek(outer -> {
@@ -81,7 +87,6 @@ public class RecordCalendarService {
                 })
                 .collect(Collectors.toList());
     }
-
 
     private void addUppers(DayRecord dayRecord, List<Upper> uppers) {
         List<DayRecordUpper> recordUppers = uppers.stream()
@@ -103,5 +108,9 @@ public class RecordCalendarService {
         dayRecord.getOuterList().addAll(recordOuters);
     }
 
-
+    private double findTemperature(String city, LocalDate date, int timeSlot) {
+        return weatherRepository.findByRegionNameAndDateAndTimeSlot(city, date, timeSlot)
+                .map(Weather::getTemperature)
+                .orElseThrow(() -> new CustomException(ErrorCode.REGION_NOT_FOUND, "해당 지역 데이터가 존재하지 않습니다."));
+    }
 }

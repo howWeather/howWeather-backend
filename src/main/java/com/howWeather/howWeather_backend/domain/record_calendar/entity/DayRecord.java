@@ -26,6 +26,8 @@ public class DayRecord {
 
     private int feeling;
 
+    private double temperature;
+
     @OneToMany(mappedBy = "dayRecord", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<DayRecordUpper> upperList = new ArrayList<>();
 
