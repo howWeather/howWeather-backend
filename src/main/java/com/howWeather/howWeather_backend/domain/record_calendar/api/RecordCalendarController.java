@@ -1,0 +1,30 @@
+package com.howWeather.howWeather_backend.domain.record_calendar.api;
+
+import com.howWeather.howWeather_backend.domain.member.entity.Member;
+import com.howWeather.howWeather_backend.domain.record_calendar.dto.RecordRequestDto;
+import com.howWeather.howWeather_backend.domain.record_calendar.service.RecordCalendarService;
+import com.howWeather.howWeather_backend.global.Response.ApiResponse;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.web.bind.annotation.*;
+
+import javax.validation.Valid;
+
+@Slf4j
+@RestController
+@RequiredArgsConstructor
+@RequestMapping("/api/record")
+public class RecordCalendarController {
+    private final RecordCalendarService recordCalendarService;
+
+    @PostMapping("/write")
+    public ResponseEntity<ApiResponse<String>> writeRecord(@RequestHeader("Authorization") String accessTokenHeader,
+                                                           @Valid @RequestBody RecordRequestDto dto,
+                                                           @AuthenticationPrincipal Member member) {
+        recordCalendarService.saveWrite(dto, member);
+        return ApiResponse.success(HttpStatus.OK, "기록을 성공적으로 저장하였습니다.");
+    }
+}
