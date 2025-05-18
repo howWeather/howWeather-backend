@@ -4,6 +4,7 @@ import com.howWeather.howWeather_backend.domain.closet.entity.Outer;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
+import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 import static jakarta.persistence.FetchType.*;
@@ -12,6 +13,7 @@ import static jakarta.persistence.FetchType.*;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
+@Getter
 public class DayRecordOuter {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -24,4 +26,12 @@ public class DayRecordOuter {
     @ManyToOne(fetch = LAZY)
     @JoinColumn(name = "outer_id")
     private Outer outer;
+
+    void setDayRecordInternal(DayRecord dayRecord) {
+        this.dayRecord = dayRecord;
+    }
+
+    void setOuterInternal(Outer outer) {
+        this.outer = outer;
+    }
 }

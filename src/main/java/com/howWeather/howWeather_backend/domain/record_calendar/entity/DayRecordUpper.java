@@ -4,6 +4,7 @@ import com.howWeather.howWeather_backend.domain.closet.entity.Upper;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
+import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 import static jakarta.persistence.FetchType.*;
@@ -12,6 +13,7 @@ import static jakarta.persistence.FetchType.*;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
+@Getter
 public class DayRecordUpper {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -24,4 +26,12 @@ public class DayRecordUpper {
     @ManyToOne(fetch = LAZY)
     @JoinColumn(name = "upper_id")
     private Upper upper;
+
+    public void setDayRecordInternal(DayRecord dayRecord) {
+        this.dayRecord = dayRecord;
+    }
+
+    public void setUpperInternal(Upper upper) {
+        this.upper = upper;
+    }
 }
