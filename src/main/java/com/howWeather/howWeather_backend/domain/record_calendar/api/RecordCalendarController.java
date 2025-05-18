@@ -4,6 +4,7 @@ import com.howWeather.howWeather_backend.domain.member.entity.Member;
 import com.howWeather.howWeather_backend.domain.record_calendar.dto.RecordRequestDto;
 import com.howWeather.howWeather_backend.domain.record_calendar.service.RecordCalendarService;
 import com.howWeather.howWeather_backend.global.Response.ApiResponse;
+import com.howWeather.howWeather_backend.global.jwt.CheckAuthenticatedUser;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
@@ -11,7 +12,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
-import javax.validation.Valid;
+import jakarta.validation.Valid;
 
 @Slf4j
 @RestController
@@ -21,6 +22,7 @@ public class RecordCalendarController {
     private final RecordCalendarService recordCalendarService;
 
     @PostMapping("/write")
+    @CheckAuthenticatedUser
     public ResponseEntity<ApiResponse<String>> writeRecord(@RequestHeader("Authorization") String accessTokenHeader,
                                                            @Valid @RequestBody RecordRequestDto dto,
                                                            @AuthenticationPrincipal Member member) {
