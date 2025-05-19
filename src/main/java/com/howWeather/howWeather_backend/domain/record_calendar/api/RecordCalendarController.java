@@ -36,7 +36,7 @@ public class RecordCalendarController {
         return ApiResponse.success(HttpStatus.OK, "기록을 성공적으로 저장하였습니다.");
     }
 
-    @GetMapping("/{date}")
+    @GetMapping("/date/{date}")
     @CheckAuthenticatedUser
     public ResponseEntity<List<RecordResponseDto>> getDayRecordsByDate(@RequestHeader("Authorization") String accessTokenHeader,
                                                                        @AuthenticationPrincipal Member member,
@@ -46,11 +46,11 @@ public class RecordCalendarController {
         return ResponseEntity.ok(result);
     }
 
-    @GetMapping("/{month}")
+    @GetMapping("/month/{month}")
     @CheckAuthenticatedUser
     public ResponseEntity<List<Integer>> getWrittenDates(@RequestHeader("Authorization") String accessTokenHeader,
                                                          @AuthenticationPrincipal Member member,
-                                                         @PathVariable("month") String month) {
+                                                         @PathVariable String month) {
         YearMonth yearMonth = YearMonth.parse(month);
         List<Integer> writtenDays = recordCalendarService.getWrittenDatesByMonth(member, yearMonth);
         return ResponseEntity.ok(writtenDays);
