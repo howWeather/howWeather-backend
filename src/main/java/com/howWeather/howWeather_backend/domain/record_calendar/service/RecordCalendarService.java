@@ -68,6 +68,27 @@ public class RecordCalendarService {
         }
     }
 
+    @Transactional
+    public List<RecordResponseDto> getDayRecordsByDate(Member member, LocalDate date) {
+        List<DayRecord> records = dayRecordRepository.findByMemberAndDate(member, date);
+
+        return records.stream()
+                .map(record -> RecordResponseDto.builder()
+                        .timeSlot(record.getTimeSlot())
+                        .temperature(record.getTemperature())
+                        .feeling(record.getFeeling())
+                        .date(record.getDate())
+                        .uppers(record.getUpperList().stream()
+                                .map(u -> u.getUpper().getId().intValue())
+                                .collect(Collectors.toList()))
+                        .outers(record.getOuterList().stream()
+                                .map(o -> o.getOuter().getId().intValue())
+                                .collect(Collectors.toList()))
+                        .build())
+                .collect(Collectors.toList());
+    }
+
+
     private void validateRecordTime(LocalDate date, int timeSlot) {
         ZoneId zoneId = ZoneId.of("Asia/Seoul");
         ZonedDateTime now = ZonedDateTime.now(zoneId);
