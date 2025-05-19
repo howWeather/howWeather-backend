@@ -45,4 +45,14 @@ public class RecordCalendarController {
         List<RecordResponseDto> result = recordCalendarService.getDayRecordsByDate(member, localDate);
         return ResponseEntity.ok(result);
     }
+
+    @GetMapping("/{month}")
+    @CheckAuthenticatedUser
+    public ResponseEntity<List<Integer>> getWrittenDates(@RequestHeader("Authorization") String accessTokenHeader,
+                                                         @AuthenticationPrincipal Member member,
+                                                         @PathVariable("month") String month) {
+        YearMonth yearMonth = YearMonth.parse(month);
+        List<Integer> writtenDays = recordCalendarService.getWrittenDatesByMonth(member, yearMonth);
+        return ResponseEntity.ok(writtenDays);
+    }
 }

@@ -88,6 +88,19 @@ public class RecordCalendarService {
                 .collect(Collectors.toList());
     }
 
+    @Transactional
+    public List<Integer> getWrittenDatesByMonth(Member member, YearMonth yearMonth) {
+        LocalDate start = yearMonth.atDay(1);
+        LocalDate end = yearMonth.atEndOfMonth();
+
+        List<DayRecord> records = dayRecordRepository.findByMemberAndDateBetween(member, start, end);
+
+        return records.stream()
+                .map(record -> record.getDate().getDayOfMonth())
+                .distinct()
+                .sorted()
+                .collect(Collectors.toList());
+    }
 
     private void validateRecordTime(LocalDate date, int timeSlot) {
         ZoneId zoneId = ZoneId.of("Asia/Seoul");

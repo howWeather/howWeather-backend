@@ -12,4 +12,6 @@ public interface DayRecordRepository extends JpaRepository<DayRecord, Long> {
     boolean existsByMemberAndDateAndTimeSlot(Member member, LocalDate date, int timeSlot);
 
     List<DayRecord> findByMemberAndDate(Member member, LocalDate date);
+
+    List<DayRecord> findByMemberAndDateBetween(Member member, LocalDate startDate, LocalDate endDate);
 }
