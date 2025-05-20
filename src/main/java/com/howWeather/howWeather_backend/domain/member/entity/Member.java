@@ -1,6 +1,7 @@
 package com.howWeather.howWeather_backend.domain.member.entity;
 
 import com.howWeather.howWeather_backend.domain.closet.entity.Closet;
+import com.howWeather.howWeather_backend.domain.record_calendar.entity.DayRecord;
 import jakarta.persistence.*;
 import lombok.*;
 import lombok.extern.slf4j.Slf4j;
@@ -64,12 +65,21 @@ public class Member implements UserDetails {
     @Builder.Default
     private List<String> roles = new ArrayList<>();
 
+    @OneToMany(mappedBy = "member", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<DayRecord> dayRecords = new ArrayList<>();
+
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
         return this.roles.stream()
                 .map(SimpleGrantedAuthority::new)
                 .collect(Collectors.toList());
     }
+
+    public void addDayRecord(DayRecord dayRecord) {
+        this.dayRecords.add(dayRecord);
+        dayRecord.assignMember(this);
+    }
+
 
     @Override
     public String getUsername() {
