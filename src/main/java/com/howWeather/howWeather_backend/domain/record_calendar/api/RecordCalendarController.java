@@ -69,20 +69,20 @@ public class RecordCalendarController {
     }
 
 
-    @GetMapping("/similar/{yearMonth}")
+    @GetMapping("/similar/{month}")
     @CheckAuthenticatedUser
     public ResponseEntity<List<Integer>> getSimilarDates(@RequestHeader("Authorization") String accessTokenHeader,
                                                          @AuthenticationPrincipal Member member,
-                                                         @PathVariable String yearMonth,
+                                                         @PathVariable String month,
                                                          @RequestParam double temperature,
                                                          @RequestParam(required = false, defaultValue = "1.5") double upperGap,
                                                          @RequestParam(required = false, defaultValue = "1.5") double lowerGap
     ) {
-        if (!yearMonth.matches("^\\d{4}-(0[1-9]|1[0-2])$")) {
+        if (!month.matches("^\\d{4}-(0[1-9]|1[0-2])$")) {
             throw new CustomException(ErrorCode.INVALID_MONTH_REQUEST);
         }
 
-        LocalDate baseDate = LocalDate.parse(yearMonth + "-01");
+        LocalDate baseDate = LocalDate.parse(month + "-01");
         List<Integer> similarDays = recordCalendarService.findSimilarTemperatureDays(
                 member, temperature, lowerGap, upperGap, baseDate
         );
