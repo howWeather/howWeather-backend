@@ -166,6 +166,12 @@ public class AuthService {
     }
 
     @Transactional
+    public void changePasswordAndLogout(Member member, PasswordChangeDto dto, String accessToken, String refreshToken) {
+        changePassword(member, dto);
+        logout(accessToken, refreshToken);
+    }
+
+    @Transactional
     public void changePassword(Member member, PasswordChangeDto dto) {
         try {
             validateOldPassword(member, dto.getOldPassword());
@@ -186,6 +192,7 @@ public class AuthService {
             throw new CustomException(ErrorCode.UNKNOWN_ERROR, "비밀번호 변경 중 오류가 발생했습니다.");
         }
     }
+
 
     private void validatePasswordSame(String oldPassword, String newPassword) {
         if (newPassword.equals(oldPassword)) {
