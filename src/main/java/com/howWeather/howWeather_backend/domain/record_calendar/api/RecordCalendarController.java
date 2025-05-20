@@ -3,7 +3,6 @@ package com.howWeather.howWeather_backend.domain.record_calendar.api;
 import com.howWeather.howWeather_backend.domain.member.entity.Member;
 import com.howWeather.howWeather_backend.domain.record_calendar.dto.RecordRequestDto;
 import com.howWeather.howWeather_backend.domain.record_calendar.dto.RecordResponseDto;
-import com.howWeather.howWeather_backend.domain.record_calendar.dto.SimilarDateMonthDto;
 import com.howWeather.howWeather_backend.domain.record_calendar.service.RecordCalendarService;
 import com.howWeather.howWeather_backend.global.Response.ApiResponse;
 import com.howWeather.howWeather_backend.global.jwt.CheckAuthenticatedUser;
@@ -55,4 +54,26 @@ public class RecordCalendarController {
         List<Integer> writtenDays = recordCalendarService.getWrittenDatesByMonth(member, yearMonth);
         return ResponseEntity.ok(writtenDays);
     }
+
+    @GetMapping("/similar/{yearMonth}")
+    @CheckAuthenticatedUser
+    public ResponseEntity<List<Integer>> getSimilarDates(
+            @RequestHeader("Authorization") String accessTokenHeader,
+            @AuthenticationPrincipal Member member,
+            @PathVariable String yearMonth,
+            @RequestParam double temperature,
+            @RequestParam(required = false, defaultValue = "1.5") double upperGap,
+            @RequestParam(required = false, defaultValue = "1.5") double lowerGap
+    ) {
+        if (!yearMonth.matches("^\\d{4}-(0[1-9]|1[0-2])$")) {
+            throw new IllegalArgumentException("yearMonth는 yyyy-MM 형식이어야 합니다.");
+        }
+
+        LocalDate baseDate = LocalDate.parse(yearMonth + "-01");
+        List<Integer> similarDays = recordCalendarService.findSimilarTemperatureDays(
+                member, temperature, lowerGap, upperGap, baseDate
+        );
+        return ResponseEntity.ok(similarDays);
+    }
+
 }

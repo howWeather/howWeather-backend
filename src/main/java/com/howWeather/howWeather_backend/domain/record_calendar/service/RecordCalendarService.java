@@ -8,7 +8,6 @@ import com.howWeather.howWeather_backend.domain.member.repository.MemberReposito
 import com.howWeather.howWeather_backend.domain.record_calendar.dto.RecordRequestDto;
 import com.howWeather.howWeather_backend.domain.closet.entity.Upper;
 import com.howWeather.howWeather_backend.domain.record_calendar.dto.RecordResponseDto;
-import com.howWeather.howWeather_backend.domain.record_calendar.dto.SimilarDateMonthDto;
 import com.howWeather.howWeather_backend.domain.weather.entity.Weather;
 import com.howWeather.howWeather_backend.domain.closet.entity.Outer;
 import com.howWeather.howWeather_backend.domain.record_calendar.entity.DayRecord;
@@ -26,7 +25,6 @@ import java.time.*;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
-import java.util.Map;
 import java.util.stream.Collectors;
 
 @Service
@@ -68,7 +66,7 @@ public class RecordCalendarService {
         }
     }
 
-    @Transactional
+    @Transactional(readOnly = true)
     public List<RecordResponseDto> getDayRecordsByDate(Member member, LocalDate date) {
         List<DayRecord> records = dayRecordRepository.findByMemberAndDate(member, date);
 
@@ -88,12 +86,31 @@ public class RecordCalendarService {
                 .collect(Collectors.toList());
     }
 
-    @Transactional
+    @Transactional(readOnly = true)
     public List<Integer> getWrittenDatesByMonth(Member member, YearMonth yearMonth) {
         LocalDate start = yearMonth.atDay(1);
         LocalDate end = yearMonth.atEndOfMonth();
 
         List<DayRecord> records = dayRecordRepository.findByMemberAndDateBetween(member, start, end);
+
+        return records.stream()
+                .map(record -> record.getDate().getDayOfMonth())
+                .distinct()
+                .sorted()
+                .collect(Collectors.toList());
+    }
+
+    @Transactional(readOnly = true)
+    public List<Integer> findSimilarTemperatureDays(Member member, double temperature, double lowerGap, double upperGap, LocalDate date) {
+        double minTemp = temperature - lowerGap;
+        double maxTemp = temperature + upperGap;
+
+        LocalDate startDate = date.withDayOfMonth(1);
+        LocalDate endDate = date.withDayOfMonth(date.lengthOfMonth());
+
+        List<DayRecord> records = dayRecordRepository.findByMemberAndTemperatureBetweenAndDateBetween(
+                member, minTemp, maxTemp, startDate, endDate
+        );
 
         return records.stream()
                 .map(record -> record.getDate().getDayOfMonth())

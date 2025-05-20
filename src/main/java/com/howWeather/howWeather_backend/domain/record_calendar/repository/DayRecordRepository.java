@@ -14,4 +14,12 @@ public interface DayRecordRepository extends JpaRepository<DayRecord, Long> {
     List<DayRecord> findByMemberAndDate(Member member, LocalDate date);
 
     List<DayRecord> findByMemberAndDateBetween(Member member, LocalDate startDate, LocalDate endDate);
+
+    List<DayRecord> findByMemberAndTemperatureBetweenAndDateBetween(
+            Member member,
+            double low,
+            double high,
+            LocalDate startDate,
+            LocalDate endDate
+    );
 }
