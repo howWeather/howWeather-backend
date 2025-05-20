@@ -45,6 +45,8 @@ public enum ErrorCode {
     TOO_LATE_TO_RECORD("전날의 기록은 오늘 새벽 5시 30분 전까지만 작성할 수 있습니다.", HttpStatus.BAD_REQUEST),
     INVALID_DATE("전날의 기록은 오늘 오전 6시 전까지 작성 가능합니다. 오늘 오전의 기록은 오전 9시 이후, " +
             "오후는 2시 이후, 저녁 기록은 8시 이후에 작성 가능합니다.", HttpStatus.BAD_REQUEST),
+    INVALID_DATE_REQUEST("세부 날짜의 데이터를 조회하기 위해서는 YYYY-MM-DD 형태를 사용해야 합니다.", HttpStatus.BAD_REQUEST),
+    INVALID_MONTH_REQUEST("한 달의 데이터를 조회하기 위해서는 YYYY-MM 형태를 사용해야 합니다.", HttpStatus.BAD_REQUEST),
 
     // 닐씨
     API_CALL_ERROR("날씨 API를 호출하는 중 오류가 발생했습니다", HttpStatus.SERVICE_UNAVAILABLE),
