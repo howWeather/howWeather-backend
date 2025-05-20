@@ -75,11 +75,15 @@ public class RecordCalendarController {
                                                          @AuthenticationPrincipal Member member,
                                                          @PathVariable String month,
                                                          @RequestParam double temperature,
-                                                         @RequestParam(required = false, defaultValue = "1.5") double upperGap,
-                                                         @RequestParam(required = false, defaultValue = "1.5") double lowerGap
+                                                         @RequestParam(required = false, defaultValue = "2.0") double upperGap,
+                                                         @RequestParam(required = false, defaultValue = "2.0") double lowerGap
     ) {
         if (!month.matches("^\\d{4}-(0[1-9]|1[0-2])$")) {
             throw new CustomException(ErrorCode.INVALID_MONTH_REQUEST);
+        }
+
+        if (upperGap < 0 || upperGap > 10 || lowerGap < 0 || lowerGap > 10) {
+            throw new CustomException(ErrorCode.INVALID_TEMP_GAP);
         }
 
         LocalDate baseDate = LocalDate.parse(month + "-01");
