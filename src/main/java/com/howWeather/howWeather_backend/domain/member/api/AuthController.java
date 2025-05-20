@@ -97,10 +97,12 @@ public class AuthController {
                                                               @RequestHeader("Refresh-Token") String refreshTokenHeader,
                                                               @Valid @RequestBody PasswordChangeDto dto,
                                                               @AuthenticationPrincipal Member member) {
-        authService.changePassword(member, dto);
-        logout(accessTokenHeader, refreshTokenHeader);
+        String accessToken = extractToken(accessTokenHeader);
+        String refreshToken = extractToken(refreshTokenHeader);
+        authService.changePasswordAndLogout(member, dto,accessToken, refreshToken);
         return ApiResponse.success(HttpStatus.OK, "비밀번호를 성공적으로 변경하였습니다. 재로그인하시기 바랍니다.");
     }
+
 
     @DeleteMapping("/delete")
     @CheckAuthenticatedUser
