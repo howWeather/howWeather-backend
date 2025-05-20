@@ -43,11 +43,10 @@ public enum ErrorCode {
     UNABLE_RECORD_TIME("아직 해당 시간대 기록을 작성할 수 없습니다.", HttpStatus.BAD_REQUEST),
     INVALID_TIMESLOT("오전/오후/저녁에 해당하는 시간대만 작성할 수 있습니다.", HttpStatus.BAD_REQUEST),
     TOO_LATE_TO_RECORD("전날의 기록은 오늘 새벽 5시 30분 전까지만 작성할 수 있습니다.", HttpStatus.BAD_REQUEST),
-    INVALID_DATE("전날의 기록은 오늘 오전 6시 전까지 작성 가능합니다. 오늘 오전의 기록은 오전 9시 이후, " +
-            "오후는 2시 이후, 저녁 기록은 8시 이후에 작성 가능합니다.", HttpStatus.BAD_REQUEST),
+    INVALID_DATE("해당 시간대의 기록을 작성할 수 없습니다.", HttpStatus.BAD_REQUEST),
     INVALID_DATE_REQUEST("세부 날짜의 데이터를 조회하기 위해서는 YYYY-MM-DD 형태를 사용해야 합니다.", HttpStatus.BAD_REQUEST),
     INVALID_MONTH_REQUEST("한 달의 데이터를 조회하기 위해서는 YYYY-MM 형태를 사용해야 합니다.", HttpStatus.BAD_REQUEST),
-    INVALID_TEMP_GAP("0 ~ 10도 사이의 값으로 설정 가능합니다.", HttpStatus.BAD_REQUEST),
+    INVALID_TEMP_GAP("온도 범위는 0 ~ 10도 사이의 값으로 설정 가능합니다.", HttpStatus.BAD_REQUEST),
     INVALID_TEMP("현재 온도는 섭씨로 -50 이상 60 이하의 값이어야 합니다.", HttpStatus.BAD_REQUEST),
 
     // 닐씨
