@@ -78,6 +78,10 @@ public class RecordCalendarController {
                                                          @RequestParam(required = false, defaultValue = "2.0") double upperGap,
                                                          @RequestParam(required = false, defaultValue = "2.0") double lowerGap
     ) {
+        if (temperature < -50 || temperature > 60) {
+            throw new CustomException(ErrorCode.INVALID_TEMP);
+        }
+        
         if (!month.matches("^\\d{4}-(0[1-9]|1[0-2])$")) {
             throw new CustomException(ErrorCode.INVALID_MONTH_REQUEST);
         }
