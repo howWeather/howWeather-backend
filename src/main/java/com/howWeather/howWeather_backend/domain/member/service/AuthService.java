@@ -92,8 +92,11 @@ public class AuthService {
         String password = loginRequestDto.getPassword();
         UsernamePasswordAuthenticationToken authenticationToken = new UsernamePasswordAuthenticationToken(id, password);
 
-        if (!isLoginIdAlreadyExist(id)) {
-            throw new LoginException(ErrorCode.USER_NOT_FOUND, "아이디가 존재하지 않습니다.");
+        Member member = memberRepository.findByLoginId(id)
+                .orElseThrow(() -> new LoginException(ErrorCode.USER_NOT_FOUND, "아이디가 존재하지 않습니다."));
+
+        if (member.isDeleted()) {
+            throw new LoginException(ErrorCode.ALREADY_DELETED, "탈퇴한 회원입니다.");
         }
 
         try {
