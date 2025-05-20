@@ -264,4 +264,23 @@ public class AuthService {
             throw new CustomException(ErrorCode.INVALID_INPUT, "유효하지 않은 입력값입니다.");
         }
     }
+
+    @Transactional
+    public void withdraw(Member member) {
+        try {
+            Member persistedMember = memberRepository.findById(member.getId())
+                    .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND, "회원 정보를 찾을 수 없습니다."));
+
+            if (persistedMember.isDeleted()) {
+                throw new CustomException(ErrorCode.ALREADY_DELETED);
+            }
+            persistedMember.withdraw();
+            memberRepository.flush();
+        } catch (CustomException e) {
+            throw e;
+        } catch (Exception e) {
+            log.error("회원 탈퇴 중 에러 발생: {}", e.getMessage(), e);
+            throw new CustomException(ErrorCode.UNKNOWN_ERROR, "회원 탈퇴 중 오류가 발생했습니다.");
+        }
+    }
 }
