@@ -48,13 +48,8 @@ public class AuthController {
     public ResponseEntity<ApiResponse<String>> logout(@RequestHeader("Authorization") String accessTokenHeader,
                                                       @RequestHeader("Refresh-Token") String refreshTokenHeader) {
 
-        if (accessTokenHeader == null || !accessTokenHeader.startsWith("Bearer ") ||
-                refreshTokenHeader == null || !refreshTokenHeader.startsWith("Bearer ")) {
-            throw new CustomException(ErrorCode.INVALID_TOKEN);
-        }
-
-        String accessToken = accessTokenHeader.substring(7).trim();
-        String refreshToken = refreshTokenHeader.substring(7).trim();
+        String accessToken = extractToken(accessTokenHeader);
+        String refreshToken = extractToken(refreshTokenHeader);
 
         if (!jwtTokenProvider.validateToken(accessToken) || !jwtTokenProvider.validateToken(refreshToken)) {
             throw new CustomException(ErrorCode.INVALID_TOKEN);
@@ -105,5 +100,26 @@ public class AuthController {
         authService.changePassword(member, dto);
         logout(accessTokenHeader, refreshTokenHeader);
         return ApiResponse.success(HttpStatus.OK, "비밀번호를 성공적으로 변경하였습니다. 재로그인하시기 바랍니다.");
+    }
+
+    @DeleteMapping("/delete")
+    @CheckAuthenticatedUser
+    public ResponseEntity<Void> withdrawMember(@RequestHeader("Authorization") String accessTokenHeader,
+                                               @RequestHeader("Refresh-Token") String refreshTokenHeader,
+                                               @AuthenticationPrincipal Member member) {
+
+        String accessToken = extractToken(accessTokenHeader);
+        String refreshToken = extractToken(refreshTokenHeader);
+
+        authService.withdraw(member, accessToken, refreshToken);
+
+        return ResponseEntity.noContent().build();
+    }
+
+    private String extractToken(String header) {
+        if (header == null || !header.startsWith("Bearer ")) {
+            throw new CustomException(ErrorCode.INVALID_TOKEN);
+        }
+        return header.substring(7).trim();
     }
 }

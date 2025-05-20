@@ -65,6 +65,10 @@ public class Member implements UserDetails {
     @Builder.Default
     private List<String> roles = new ArrayList<>();
 
+    @Column(name = "is_deleted", nullable = false)
+    @Builder.Default
+    private boolean isDeleted = false;
+
     @OneToMany(mappedBy = "member", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<DayRecord> dayRecords = new ArrayList<>();
 
@@ -80,6 +84,9 @@ public class Member implements UserDetails {
         dayRecord.assignMember(this);
     }
 
+    public void withdraw() {
+        this.isDeleted = true;
+    }
 
     @Override
     public String getUsername() {

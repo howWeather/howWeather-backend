@@ -92,8 +92,11 @@ public class AuthService {
         String password = loginRequestDto.getPassword();
         UsernamePasswordAuthenticationToken authenticationToken = new UsernamePasswordAuthenticationToken(id, password);
 
-        if (!isLoginIdAlreadyExist(id)) {
-            throw new LoginException(ErrorCode.USER_NOT_FOUND, "아이디가 존재하지 않습니다.");
+        Member member = memberRepository.findByLoginId(id)
+                .orElseThrow(() -> new LoginException(ErrorCode.USER_NOT_FOUND, "아이디가 존재하지 않습니다."));
+
+        if (member.isDeleted()) {
+            throw new LoginException(ErrorCode.ALREADY_DELETED, "탈퇴한 회원입니다.");
         }
 
         try {
@@ -112,8 +115,16 @@ public class AuthService {
 
     @Transactional
     public void logout(String accessToken, String refreshToken) {
-        blacklistToken(accessToken, "access");
-        blacklistToken(refreshToken, "refresh");
+        try {
+            blacklistToken(accessToken, "access");
+            blacklistToken(refreshToken, "refresh");
+        } catch (CustomException e) {
+            log.warn("로그아웃 중 CustomException 발생: {}", e.getMessage());
+            throw e;
+        } catch (Exception e) {
+            log.error("로그아웃 처리 중 알 수 없는 에러 발생", e);
+            throw new CustomException(ErrorCode.UNKNOWN_ERROR, "로그아웃 중 오류가 발생했습니다.");
+        }
     }
 
     private void blacklistToken(String token, String tokenType) {
@@ -122,7 +133,9 @@ public class AuthService {
             Date expiration = jwtTokenProvider.getExpiration(token);
             long ttl = Math.max((expiration.getTime() - System.currentTimeMillis()) / 1000, 1);
             redisTemplate.opsForValue().set(key, token, ttl, TimeUnit.SECONDS);
+            log.info("{} 토큰 블랙리스트 등록 완료", tokenType);
         } else {
+            log.warn("{} 토큰이 유효하지 않음", tokenType);
             if ("access".equals(tokenType)) {
                 throw new CustomException(ErrorCode.INVALID_ACCESS_TOKEN);
             } else {
@@ -262,6 +275,27 @@ public class AuthService {
     private void validateIntData(Integer data, int s, int e) {
         if (data < s || data > e) {
             throw new CustomException(ErrorCode.INVALID_INPUT, "유효하지 않은 입력값입니다.");
+        }
+    }
+
+    @Transactional
+    public void withdraw(Member member, String accessToken, String refreshToken) {
+        try {
+            Member persistedMember = memberRepository.findById(member.getId())
+                    .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND, "회원 정보를 찾을 수 없습니다."));
+
+            if (persistedMember.isDeleted()) {
+                throw new CustomException(ErrorCode.ALREADY_DELETED);
+            }
+
+            persistedMember.withdraw();
+            memberRepository.flush();
+            logout(accessToken, refreshToken);
+        } catch (CustomException e) {
+            throw e;
+        } catch (Exception e) {
+            log.error("회원 탈퇴 중 에러 발생: {}", e.getMessage(), e);
+            throw new CustomException(ErrorCode.UNKNOWN_ERROR, "회원 탈퇴 중 오류가 발생했습니다.");
         }
     }
 }
