@@ -42,7 +42,7 @@ public class SecurityConfig {
                 .authorizeHttpRequests((authorizeRequestsConfig)->
                         authorizeRequestsConfig
                                 .requestMatchers("/api/auth/email-exist-check", "/api/auth/login",
-                                        "/api/auth/signup", "/api/auth/loginid-exist-check").permitAll()
+                                        "/api/auth/signup", "/api/auth/loginid-exist-check", "/api/auth/reset-password").permitAll()
                                 .anyRequest().authenticated()
                 )
                 .addFilterBefore(

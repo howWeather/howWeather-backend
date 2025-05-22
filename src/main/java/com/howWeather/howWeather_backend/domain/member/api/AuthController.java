@@ -1,9 +1,6 @@
 package com.howWeather.howWeather_backend.domain.member.api;
 
-import com.howWeather.howWeather_backend.domain.member.dto.DuplicateCheckDto;
-import com.howWeather.howWeather_backend.domain.member.dto.LoginRequestDto;
-import com.howWeather.howWeather_backend.domain.member.dto.PasswordChangeDto;
-import com.howWeather.howWeather_backend.domain.member.dto.SignupRequestDto;
+import com.howWeather.howWeather_backend.domain.member.dto.*;
 import com.howWeather.howWeather_backend.domain.member.entity.Member;
 import com.howWeather.howWeather_backend.domain.member.service.AuthService;
 import com.howWeather.howWeather_backend.global.Response.ApiResponse;
@@ -116,6 +113,12 @@ public class AuthController {
         authService.withdraw(member, accessToken, refreshToken);
 
         return ResponseEntity.noContent().build();
+    }
+
+    @PostMapping("/reset-password")
+    public ResponseEntity<ApiResponse<String>> resetPassword(@Valid @RequestBody PasswordResetRequestDto dto) {
+        authService.resetPassword(dto.getIdentifier());
+        return ApiResponse.success(HttpStatus.OK, "임시 비밀번호를 이메일로 전송했습니다.");
     }
 
     private String extractToken(String header) {
