@@ -311,7 +311,7 @@ public class AuthService {
 
     @Transactional
     public void resetPassword(String identifier) {
-        Member member = memberRepository.findByUsernameOrEmail(identifier, identifier)
+        Member member = memberRepository.findByLoginIdOrEmail(identifier, identifier)
                 .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND, "사용자를 찾을 수 없습니다."));
 
         String tempPassword = passwordGeneratorService.generateSecurePassword(12);
