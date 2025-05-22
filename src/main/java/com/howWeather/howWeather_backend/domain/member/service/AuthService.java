@@ -23,6 +23,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.security.SecureRandom;
 import java.util.Date;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
@@ -36,7 +37,9 @@ public class AuthService {
     private final PasswordEncoder passwordEncoder;
     private final AuthenticationManagerBuilder authenticationManagerBuilder;
     private final JwtTokenProvider jwtTokenProvider;
+    private final PasswordGeneratorService passwordGeneratorService;
     private final ClosetRepository closetRepository;
+    private final MailService mailService;
 
     @Transactional
     public void signup(SignupRequestDto signupRequestDto) {
@@ -303,6 +306,28 @@ public class AuthService {
         } catch (Exception e) {
             log.error("회원 탈퇴 중 에러 발생: {}", e.getMessage(), e);
             throw new CustomException(ErrorCode.UNKNOWN_ERROR, "회원 탈퇴 중 오류가 발생했습니다.");
+        }
+    }
+
+    @Transactional
+    public String resetPassword(String identifier) {
+        try {
+            Member member = memberRepository.findByLoginIdOrEmail(identifier, identifier)
+                    .orElseThrow(() -> new CustomException(ErrorCode.ID_OR_EMAIL_NOT_FOUND));
+
+            String tempPassword = passwordGeneratorService.generateSecurePassword(12);
+
+            String encoded = passwordEncoder.encode(tempPassword);
+            member.changePassword(encoded);
+
+            memberRepository.flush();
+            mailService.sendTemporaryPassword(member.getEmail(), tempPassword);
+            return member.getEmail();
+        }  catch (CustomException e) {
+            throw e;
+        } catch (Exception e) {
+            log.error("비밀번호 초기화 중 에러 발생: {}", e.getMessage(), e);
+            throw new CustomException(ErrorCode.UNKNOWN_ERROR, "비밀번호 초기화 중 오류가 발생했습니다.");
         }
     }
 }
