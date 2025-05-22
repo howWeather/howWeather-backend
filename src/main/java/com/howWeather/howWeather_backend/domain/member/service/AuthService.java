@@ -23,6 +23,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.security.SecureRandom;
 import java.util.Date;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
@@ -36,6 +37,7 @@ public class AuthService {
     private final PasswordEncoder passwordEncoder;
     private final AuthenticationManagerBuilder authenticationManagerBuilder;
     private final JwtTokenProvider jwtTokenProvider;
+    private final PasswordGeneratorService passwordGeneratorService;
     private final ClosetRepository closetRepository;
 
     @Transactional
@@ -305,4 +307,18 @@ public class AuthService {
             throw new CustomException(ErrorCode.UNKNOWN_ERROR, "회원 탈퇴 중 오류가 발생했습니다.");
         }
     }
+
+    @Transactional
+    public void resetPassword(String identifier) {
+        Member member = memberRepository.findByUsernameOrEmail(identifier, identifier)
+                .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND, "사용자를 찾을 수 없습니다."));
+
+        String tempPassword = passwordGeneratorService.generateSecurePassword(12);
+
+        String encoded = passwordEncoder.encode(tempPassword);
+        member.changePassword(encoded);
+
+        memberRepository.flush();
+    }
+
 }
