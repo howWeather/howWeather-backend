@@ -84,6 +84,7 @@ jobs:
           GITHUB_SHA=${{ github.sha }}
           DOCKER_IMAGE=${{ secrets.DOCKERHUB_USERNAME }}/${{ secrets.DOCKERHUB_REPOSITORY }}:${{ github.sha }}
           JWT_SECRET_KEY=${{ secrets.JWT_SECRET_KEY }}
+          POSTGRES_DB=${{ secrets.POSTGRES_DB }}
           JWT_EXPIRATION_ACCESS=${{ secrets.JWT_EXPIRATION_ACCESS }}
           JWT_EXPIRATION_REFRESH=${{ secrets.JWT_EXPIRATION_REFRESH }}
           DOCKER_IMAGE=${{ secrets.DOCKERHUB_USERNAME }}/${{ secrets.DOCKERHUB_REPOSITORY }}:${{ github.sha }}
