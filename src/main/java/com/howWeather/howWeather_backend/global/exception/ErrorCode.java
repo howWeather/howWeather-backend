@@ -22,6 +22,7 @@ public enum ErrorCode {
     SAME_PASSWORD("변경할 비밀번호는 기존의 비밀번호와 달라야 합니다.", HttpStatus.BAD_REQUEST),
     ALREADY_DELETED("탈퇴한 계정입니다.", HttpStatus.BAD_REQUEST),
     EMAIL_SEND_FAIL("임시 비밀번호 이메일 전송에 실패했습니다.", HttpStatus.SERVICE_UNAVAILABLE),
+    ID_OR_EMAIL_NOT_FOUND("해당 아이디나 이메일을 사용하는 계정이 없습니다", HttpStatus.NOT_FOUND),
 
     // 토큰
     INVALID_TOKEN("유효하지 않은 토큰입니다.", HttpStatus.BAD_REQUEST),

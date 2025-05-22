@@ -311,16 +311,22 @@ public class AuthService {
 
     @Transactional
     public void resetPassword(String identifier) {
-        Member member = memberRepository.findByLoginIdOrEmail(identifier, identifier)
-                .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND, "사용자를 찾을 수 없습니다."));
+        try {
+            Member member = memberRepository.findByLoginIdOrEmail(identifier, identifier)
+                    .orElseThrow(() -> new CustomException(ErrorCode.ID_OR_EMAIL_NOT_FOUND));
 
-        String tempPassword = passwordGeneratorService.generateSecurePassword(12);
+            String tempPassword = passwordGeneratorService.generateSecurePassword(12);
 
-        String encoded = passwordEncoder.encode(tempPassword);
-        member.changePassword(encoded);
+            String encoded = passwordEncoder.encode(tempPassword);
+            member.changePassword(encoded);
 
-        memberRepository.flush();
-        mailService.sendTemporaryPassword(member.getEmail(), tempPassword);
+            memberRepository.flush();
+            mailService.sendTemporaryPassword(member.getEmail(), tempPassword);
+        }  catch (CustomException e) {
+            throw e;
+        } catch (Exception e) {
+            log.error("비밀번호 초기화 중 에러 발생: {}", e.getMessage(), e);
+            throw new CustomException(ErrorCode.UNKNOWN_ERROR, "비밀번호 초기화 중 오류가 발생했습니다.");
+        }
     }
-
 }
