@@ -39,6 +39,7 @@ public class AuthService {
     private final JwtTokenProvider jwtTokenProvider;
     private final PasswordGeneratorService passwordGeneratorService;
     private final ClosetRepository closetRepository;
+    private final MailService mailService;
 
     @Transactional
     public void signup(SignupRequestDto signupRequestDto) {
@@ -319,6 +320,7 @@ public class AuthService {
         member.changePassword(encoded);
 
         memberRepository.flush();
+        mailService.sendTemporaryPassword(member.getEmail(), tempPassword);
     }
 
 }
