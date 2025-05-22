@@ -117,9 +117,10 @@ public class AuthController {
 
     @PostMapping("/reset-password")
     public ResponseEntity<ApiResponse<String>> resetPassword(@Valid @RequestBody PasswordResetRequestDto dto) {
-        authService.resetPassword(dto.getIdentifier());
-        return ApiResponse.success(HttpStatus.OK, "임시 비밀번호를 이메일로 전송했습니다.");
+        String email = authService.resetPassword(dto.getIdentifier());
+        return ApiResponse.success(HttpStatus.OK, email);
     }
+
 
     private String extractToken(String header) {
         if (header == null || !header.startsWith("Bearer ")) {

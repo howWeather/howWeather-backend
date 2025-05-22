@@ -310,7 +310,7 @@ public class AuthService {
     }
 
     @Transactional
-    public void resetPassword(String identifier) {
+    public String resetPassword(String identifier) {
         try {
             Member member = memberRepository.findByLoginIdOrEmail(identifier, identifier)
                     .orElseThrow(() -> new CustomException(ErrorCode.ID_OR_EMAIL_NOT_FOUND));
@@ -322,6 +322,7 @@ public class AuthService {
 
             memberRepository.flush();
             mailService.sendTemporaryPassword(member.getEmail(), tempPassword);
+            return member.getEmail();
         }  catch (CustomException e) {
             throw e;
         } catch (Exception e) {
