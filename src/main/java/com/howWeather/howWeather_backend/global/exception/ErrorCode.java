@@ -24,7 +24,7 @@ public enum ErrorCode {
     EMAIL_SEND_FAIL("임시 비밀번호 이메일 전송에 실패했습니다.", HttpStatus.SERVICE_UNAVAILABLE),
     ID_OR_EMAIL_NOT_FOUND("해당 아이디나 이메일을 사용하는 계정이 없습니다", HttpStatus.NOT_FOUND),
 
-    // 토큰
+    // JWT 토큰
     INVALID_TOKEN("유효하지 않은 토큰입니다.", HttpStatus.BAD_REQUEST),
     TOKEN_EXPIRED("토큰이 만료되었습니다.", HttpStatus.UNAUTHORIZED),
     TOKEN_REISSUE_FAILED("토큰 재발급에 실패했습니다.", HttpStatus.UNAUTHORIZED),
@@ -55,7 +55,11 @@ public enum ErrorCode {
     // 닐씨
     API_CALL_ERROR("날씨 API를 호출하는 중 오류가 발생했습니다", HttpStatus.SERVICE_UNAVAILABLE),
     NO_BODY_ERROR("날씨 데이터가 존재하지 않습니다", HttpStatus.NOT_FOUND),
-    REGION_NOT_FOUND("해당 지역은 서비스가 제공되지 않습니다.", HttpStatus.NOT_FOUND);
+    REGION_NOT_FOUND("해당 지역은 서비스가 제공되지 않습니다.", HttpStatus.NOT_FOUND),
+
+    // 알림 관리
+    DUPLICATE_FCM_TOKEN("이미 등록된 FCM 토큰입니다.", HttpStatus.CONFLICT),
+    INVALID_FCM_TOKEN("잘못된 FCM 토큰입니다.", HttpStatus.BAD_REQUEST);
 
 
     private final String message;
