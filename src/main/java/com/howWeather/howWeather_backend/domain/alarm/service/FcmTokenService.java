@@ -1,5 +1,6 @@
 package com.howWeather.howWeather_backend.domain.alarm.service;
 
+import com.google.auth.oauth2.GoogleCredentials;
 import com.howWeather.howWeather_backend.domain.alarm.entity.FcmAlarmPreference;
 import com.howWeather.howWeather_backend.domain.alarm.entity.FcmToken;
 import com.howWeather.howWeather_backend.domain.alarm.enums.AlarmTime;
@@ -7,14 +8,15 @@ import com.howWeather.howWeather_backend.domain.alarm.repository.FcmAlarmPrefere
 import  com.howWeather.howWeather_backend.domain.alarm.repository.FcmTokenRepository;
 import com.howWeather.howWeather_backend.global.exception.CustomException;
 import com.howWeather.howWeather_backend.global.exception.ErrorCode;
+import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import net.minidev.json.JSONObject;
 import okhttp3.*;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.util.List;
 
@@ -24,12 +26,30 @@ import java.util.List;
 public class FcmTokenService {
     private final FcmTokenRepository fcmTokenRepository;
     private final FcmAlarmPreferenceRepository fcmAlarmPreferenceRepository;
-    private final String API_URL = "https://fcm.googleapis.com/fcm/send";
 
     private final OkHttpClient client = new OkHttpClient();
 
-    @Value("${fcm.server-key}")
-    private String serverKey;
+    private GoogleCredentials googleCredentials;
+
+    @Value("${fcm.service-account-file}")
+    private String serviceAccountFile;
+
+    @Value("${fcm.project-id}")
+    private String projectId;
+
+    private static final String FCM_SEND_ENDPOINT_TEMPLATE = "https://fcm.googleapis.com/v1/projects/%s/messages:send";
+
+    @PostConstruct
+    public void init() {
+        try (FileInputStream serviceAccountStream = new FileInputStream(serviceAccountFile)) {
+            googleCredentials = GoogleCredentials.fromStream(serviceAccountStream)
+                    .createScoped("https://www.googleapis.com/auth/firebase.messaging");
+            googleCredentials.refreshIfExpired();
+        } catch (IOException e) {
+            log.error("Firebase 인증 초기화 실패: {}", e.getMessage(), e);
+            throw new RuntimeException("Firebase 인증 초기화 실패", e);
+        }
+    }
 
     @Transactional
     public void saveToken(Long memberId, String token) {
@@ -101,45 +121,43 @@ public class FcmTokenService {
         return fcmTokenRepository.findByMemberId(memberId);
     }
 
-    private JSONObject createNotificationPayload(String title, String body) {
-        JSONObject notification = new JSONObject();
-        notification.put("title", title);
-        notification.put("body", body);
+    private void sendPushNotification(String targetToken, String title, String body) throws IOException {
+        googleCredentials.refreshIfExpired();
+        String accessToken = googleCredentials.getAccessToken().getTokenValue();
 
-        JSONObject message = new JSONObject();
-        message.put("notification", notification);
-        return message;
-    }
+        String url = String.format(FCM_SEND_ENDPOINT_TEMPLATE, projectId);
 
-    private JSONObject createMessagePayload(String targetToken, JSONObject notification) {
-        JSONObject message = new JSONObject();
-        message.put("to", targetToken);
-        message.put("notification", notification.get("notification"));
-        return message;
-    }
+        String jsonPayload = buildMessageJson(targetToken, title, body);
 
-    private Request buildRequest(JSONObject message) {
-        return new Request.Builder()
-                .url(API_URL)
-                .post(RequestBody.create(
-                        message.toString(), MediaType.parse("application/json")))
-                .addHeader("Authorization", "key=" + serverKey)
-                .addHeader("Content-Type", "application/json")
+        Request request = new Request.Builder()
+                .url(url)
+                .post(RequestBody.create(jsonPayload, MediaType.get("application/json; charset=utf-8")))
+                .addHeader("Authorization", "Bearer " + accessToken)
                 .build();
-    }
 
-    private void executeRequest(Request request) throws IOException {
-        Response response = client.newCall(request).execute();
-
-        if (!response.isSuccessful()) {
-            throw new IOException("FCM 전송 실패: " + response.code() + " - " + response.message());
+        try (Response response = client.newCall(request).execute()) {
+            if (!response.isSuccessful()) {
+                throw new IOException("FCM 전송 실패: " + response.code() + " - " + response.message());
+            }
         }
     }
 
-    private void sendPushNotification(String targetToken, String title, String body) throws IOException {
-        JSONObject notification = createNotificationPayload(title, body);
-        JSONObject message = createMessagePayload(targetToken, notification);
-        Request request = buildRequest(message);
-        executeRequest(request);
+    private String buildMessageJson(String targetToken, String title, String body) {
+        return "{"
+                + "\"message\":{"
+                +     "\"token\":\"" + targetToken + "\","
+                +     "\"notification\":{"
+                +         "\"title\":\"" + escapeJson(title) + "\","
+                +         "\"body\":\"" + escapeJson(body) + "\""
+                +     "}"
+                + "}"
+                + "}";
+    }
+
+    private String escapeJson(String str) {
+        if (str == null) return "";
+        return str.replace("\"", "\\\"")
+                .replace("\n", "\\n")
+                .replace("\r", "\\r");
     }
 }
