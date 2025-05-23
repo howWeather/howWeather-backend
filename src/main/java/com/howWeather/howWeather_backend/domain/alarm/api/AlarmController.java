@@ -1,6 +1,8 @@
 package com.howWeather.howWeather_backend.domain.alarm.api;
 
+import com.howWeather.howWeather_backend.domain.alarm.dto.FcmAlarmPreferenceDto;
 import com.howWeather.howWeather_backend.domain.alarm.dto.FcmTokenRequestDto;
+import com.howWeather.howWeather_backend.domain.alarm.service.FcmAlarmPreferenceService;
 import com.howWeather.howWeather_backend.domain.alarm.service.FcmTokenService;
 import com.howWeather.howWeather_backend.domain.member.entity.Member;
 import lombok.RequiredArgsConstructor;
@@ -13,6 +15,7 @@ import org.springframework.web.bind.annotation.*;
 @RequiredArgsConstructor
 public class AlarmController {
     private final FcmTokenService fcmTokenService;
+    private final FcmAlarmPreferenceService fcmAlarmPreferenceService;
 
     @PostMapping("/token-save")
     public ResponseEntity<String> saveToken(@RequestBody FcmTokenRequestDto request,
@@ -30,5 +33,12 @@ public class AlarmController {
         Long memberId = member.getId();
         fcmTokenService.deleteToken(memberId, request.getToken());
         return ResponseEntity.noContent().build();
+    }
+
+    @GetMapping
+    public ResponseEntity<FcmAlarmPreferenceDto> getPreference(@RequestHeader("Authorization") String accessTokenHeader,
+                                                               @AuthenticationPrincipal Member member) {
+        FcmAlarmPreferenceDto dto = fcmAlarmPreferenceService.getPreference(member);
+        return ResponseEntity.ok(dto);
     }
 }
