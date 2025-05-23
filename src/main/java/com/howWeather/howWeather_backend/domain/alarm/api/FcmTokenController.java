@@ -22,4 +22,13 @@ public class FcmTokenController {
         fcmTokenService.saveToken(memberId, request.getToken());
         return ResponseEntity.ok("FCM 토큰이 성공적으로 저장되었습니다.");
     }
+
+    @DeleteMapping("/delete")
+    public ResponseEntity<Void> deleteToken(@RequestBody FcmTokenRequestDto request,
+                                            @RequestHeader("Authorization") String accessTokenHeader,
+                                            @AuthenticationPrincipal Member member) {
+        Long memberId = member.getId();
+        fcmTokenService.deleteToken(memberId, request.getToken());
+        return ResponseEntity.noContent().build();
+    }
 }

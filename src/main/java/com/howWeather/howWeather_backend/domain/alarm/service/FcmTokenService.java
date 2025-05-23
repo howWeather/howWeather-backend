@@ -5,6 +5,7 @@ import  com.howWeather.howWeather_backend.domain.alarm.repository.FcmTokenReposi
 import com.howWeather.howWeather_backend.global.exception.CustomException;
 import com.howWeather.howWeather_backend.global.exception.ErrorCode;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
@@ -13,6 +14,7 @@ import java.util.List;
 
 @Component
 @RequiredArgsConstructor
+@Slf4j
 public class FcmTokenService {
     private final FcmTokenRepository repository;
     private final String API_URL = "https://fcm.googleapis.com/fcm/send";
@@ -36,10 +38,20 @@ public class FcmTokenService {
         } catch (IllegalArgumentException e) {
             throw new CustomException(ErrorCode.INVALID_FCM_TOKEN, "잘못된 토큰 정보입니다.");
         } catch (Exception e) {
-            throw new CustomException(ErrorCode.UNKNOWN_ERROR, e.getMessage());
+            log.error("FCM 토큰 저장 중 예외 발생: {}", e.getMessage(), e);
+            throw new CustomException(ErrorCode.UNKNOWN_ERROR, "FCM 토큰 저장 중 오류가 발생했습니다.");
         }
     }
 
+    @Transactional
+    public void deleteToken(Long memberId, String token) {
+        try {
+            repository.deleteByMemberIdAndToken(memberId, token);
+        } catch (Exception e) {
+            log.error("FCM 토큰 삭제 중 예외 발생: {}", e.getMessage(), e);
+            throw new CustomException(ErrorCode.UNKNOWN_ERROR, "FCM 토큰 삭제 중 오류가 발생했습니다.");
+        }
+    }
 
     @Transactional(readOnly = true)
     public List<FcmToken> getAllTokens() {
