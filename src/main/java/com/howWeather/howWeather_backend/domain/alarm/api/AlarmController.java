@@ -41,4 +41,11 @@ public class AlarmController {
         FcmAlarmPreferenceDto dto = fcmAlarmPreferenceService.getPreference(member);
         return ResponseEntity.ok(dto);
     }
+
+    @PatchMapping("/update")
+    public ResponseEntity<String> updatePreference(@AuthenticationPrincipal Member member,
+                                                 @RequestBody FcmAlarmPreferenceDto dto) {
+        fcmAlarmPreferenceService.updatePreference(member, dto);
+        return ResponseEntity.ok("알람 수신 여부를 변경하였습니다.");
+    }
 }

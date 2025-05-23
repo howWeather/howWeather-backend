@@ -25,4 +25,28 @@ public class FcmAlarmPreference {
     private boolean morning;
     private boolean afternoon;
     private boolean evening;
+
+    public void updateMorning(Boolean morning) {
+        if (morning != null) {
+            this.morning = morning;
+        }
+    }
+
+    public void updateAfternoon(Boolean afternoon) {
+        if (afternoon != null) {
+            this.afternoon = afternoon;
+        }
+    }
+
+    public void updateEvening(Boolean evening) {
+        if (evening != null) {
+            this.evening = evening;
+        }
+    }
+
+    public void updateAll(Boolean morning, Boolean afternoon, Boolean evening) {
+        updateMorning(morning);
+        updateAfternoon(afternoon);
+        updateEvening(evening);
+    }
 }

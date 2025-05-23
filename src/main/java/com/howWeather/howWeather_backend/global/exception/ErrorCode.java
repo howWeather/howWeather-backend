@@ -59,7 +59,10 @@ public enum ErrorCode {
 
     // 알림 관리
     DUPLICATE_FCM_TOKEN("이미 등록된 FCM 토큰입니다.", HttpStatus.CONFLICT),
-    INVALID_FCM_TOKEN("잘못된 FCM 토큰입니다.", HttpStatus.BAD_REQUEST);
+    INVALID_FCM_TOKEN("잘못된 FCM 토큰입니다.", HttpStatus.BAD_REQUEST),
+    ALARM_NOT_FOUND("알람 정보를 찾을 수 없습니다.", HttpStatus.NOT_FOUND)
+
+    ;
 
 
     private final String message;

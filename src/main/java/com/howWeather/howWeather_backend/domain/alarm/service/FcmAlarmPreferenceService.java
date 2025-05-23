@@ -42,9 +42,23 @@ public class FcmAlarmPreferenceService {
                     .map(pref -> new FcmAlarmPreferenceDto(pref.isMorning(), pref.isAfternoon(), pref.isEvening()))
                     .orElse(new FcmAlarmPreferenceDto(true, true, true));
         } catch (Exception e) {
-            log.error("알람 정보 조회 중 오류 발생: {}", e.getMessage(), e);
-            throw new CustomException(ErrorCode.UNKNOWN_ERROR, "알람 정보 조회 중 오류가 발생했습니다.");
+            log.error("알람 설정 조회 중 오류 발생: {}", e.getMessage(), e);
+            throw new CustomException(ErrorCode.UNKNOWN_ERROR, "알람 설정 조회 중 오류가 발생했습니다.");
         }
+    }
+
+    @Transactional
+    public void updatePreference(Member member, FcmAlarmPreferenceDto dto) {
+        try {
+            FcmAlarmPreference preference = repository.findByMember(member)
+                    .orElseThrow(() -> new CustomException(ErrorCode.ALARM_NOT_FOUND));
+
+            preference.updateAll(dto.getMorning(), dto.getAfternoon(), dto.getEvening());
+        } catch (Exception e) {
+            log.error("알람 설정 수정 중 오류 발생: {}", e.getMessage(), e);
+            throw new CustomException(ErrorCode.UNKNOWN_ERROR, "알람 설정 수정 중 오류가 발생했습니다.");
+        }
+
     }
 }
 
