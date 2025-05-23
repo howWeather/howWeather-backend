@@ -9,12 +9,12 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
-@RequestMapping("/api/fcm-token")
+@RequestMapping("/api/alarm")
 @RequiredArgsConstructor
-public class FcmTokenController {
+public class AlarmController {
     private final FcmTokenService fcmTokenService;
 
-    @PostMapping("/save")
+    @PostMapping("/token-save")
     public ResponseEntity<String> saveToken(@RequestBody FcmTokenRequestDto request,
                                           @RequestHeader("Authorization") String accessTokenHeader,
                                           @AuthenticationPrincipal Member member) {
@@ -23,7 +23,7 @@ public class FcmTokenController {
         return ResponseEntity.ok("FCM 토큰이 성공적으로 저장되었습니다.");
     }
 
-    @DeleteMapping("/delete")
+    @DeleteMapping("/token-delete")
     public ResponseEntity<Void> deleteToken(@RequestBody FcmTokenRequestDto request,
                                             @RequestHeader("Authorization") String accessTokenHeader,
                                             @AuthenticationPrincipal Member member) {
