@@ -131,7 +131,6 @@ public class FcmTokenService {
         String accessToken = googleCredentials.getAccessToken().getTokenValue();
 
         String url = String.format(FCM_SEND_ENDPOINT_TEMPLATE, projectId);
-
         String jsonPayload = buildMessageJson(targetToken, title, body);
 
         Request request = new Request.Builder()
@@ -142,7 +141,13 @@ public class FcmTokenService {
 
         try (Response response = client.newCall(request).execute()) {
             if (!response.isSuccessful()) {
-                throw new IOException("FCM 전송 실패: " + response.code() + " - " + response.message());
+                int code = response.code();
+                if (code == 404 || code == 410) {
+                    fcmTokenRepository.deleteByToken(targetToken);
+                    log.warn("유효하지 않은 FCM 토큰으로 삭제됨: {}", targetToken);
+                } else {
+                    throw new IOException("FCM 전송 실패: " + code + " - " + response.message());
+                }
             }
         }
     }
