@@ -1,5 +1,6 @@
 package com.howWeather.howWeather_backend.domain.member.service;
 
+import com.howWeather.howWeather_backend.domain.alarm.service.FcmAlarmPreferenceService;
 import com.howWeather.howWeather_backend.domain.closet.entity.Closet;
 import com.howWeather.howWeather_backend.domain.member.dto.*;
 import com.howWeather.howWeather_backend.domain.member.entity.Member;
@@ -23,7 +24,6 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.security.SecureRandom;
 import java.util.Date;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
@@ -40,6 +40,7 @@ public class AuthService {
     private final PasswordGeneratorService passwordGeneratorService;
     private final ClosetRepository closetRepository;
     private final MailService mailService;
+    private final FcmAlarmPreferenceService fcmAlarmPreferenceService;
 
     @Transactional
     public void signup(SignupRequestDto signupRequestDto) {
@@ -73,7 +74,7 @@ public class AuthService {
             Closet closet = Closet.builder().build();
             closet.setMember(member);
             closetRepository.save(closet);
-
+            fcmAlarmPreferenceService.createDefaultPreference(member);
         } catch (Exception e) {
             throw new CustomException(ErrorCode.UNKNOWN_ERROR, "회원가입 중 서버 오류가 발생했습니다.");
         }
