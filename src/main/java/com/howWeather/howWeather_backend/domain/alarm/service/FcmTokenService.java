@@ -14,6 +14,7 @@ import lombok.extern.slf4j.Slf4j;
 import okhttp3.*;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
+import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.io.FileInputStream;
@@ -23,6 +24,7 @@ import java.util.List;
 @Component
 @RequiredArgsConstructor
 @Slf4j
+@Service
 public class FcmTokenService {
     private final FcmTokenRepository fcmTokenRepository;
     private final FcmAlarmPreferenceRepository fcmAlarmPreferenceRepository;
@@ -66,8 +68,11 @@ public class FcmTokenService {
 
         } catch (IllegalArgumentException e) {
             throw new CustomException(ErrorCode.INVALID_FCM_TOKEN, "잘못된 토큰 정보입니다.");
+
+        } catch (CustomException e) {
+            throw  e;
         } catch (Exception e) {
-            log.error("FCM 토큰 저장 중 예외 발생: {}", e.getMessage(), e);
+            log.error("FCM 디바이스 토큰 저장 중 예외 발생: {}", e.getMessage(), e);
             throw new CustomException(ErrorCode.UNKNOWN_ERROR, "FCM 토큰 저장 중 오류가 발생했습니다.");
         }
     }
@@ -77,8 +82,8 @@ public class FcmTokenService {
         try {
             fcmTokenRepository.deleteByMemberIdAndToken(memberId, token);
         } catch (Exception e) {
-            log.error("FCM 토큰 삭제 중 예외 발생: {}", e.getMessage(), e);
-            throw new CustomException(ErrorCode.UNKNOWN_ERROR, "FCM 토큰 삭제 중 오류가 발생했습니다.");
+            log.error("FCM 디바이스 토큰 삭제 중 예외 발생: {}", e.getMessage(), e);
+            throw new CustomException(ErrorCode.UNKNOWN_ERROR, "FCM 디바이스 토큰 삭제 중 오류가 발생했습니다.");
         }
     }
 
