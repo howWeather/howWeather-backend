@@ -14,6 +14,9 @@ services:
       JWT_EXPIRATION_REFRESH: ${JWT_EXPIRATION_REFRESH}
       SPRING_REDIS_HOST: redis
       SPRING_REDIS_PORT: 6379
+      FCM_SERVICE_ACCOUNT_FILE: ${FCM_SERVICE_ACCOUNT_FILE}  # 여기 환경변수로 경로 전달
+    volumes:
+      - ${FCM_SERVICE_ACCOUNT_FILE}:/app/firebase-service-account.json  # 서버 내 실제 경로 마운트
     depends_on:
       - postgres
       - redis
