@@ -43,6 +43,7 @@ public class FcmTokenService {
 
     @PostConstruct
     public void init() {
+        log.info("Firebase service account file path: {}", serviceAccountFile);
         try (FileInputStream serviceAccountStream = new FileInputStream(serviceAccountFile)) {
             googleCredentials = GoogleCredentials.fromStream(serviceAccountStream)
                     .createScoped("https://www.googleapis.com/auth/firebase.messaging");
