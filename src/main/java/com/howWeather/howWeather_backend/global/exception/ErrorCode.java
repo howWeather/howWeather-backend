@@ -55,7 +55,7 @@ public enum ErrorCode {
     // 닐씨
     API_CALL_ERROR("날씨 API를 호출하는 중 오류가 발생했습니다", HttpStatus.SERVICE_UNAVAILABLE),
     NO_BODY_ERROR("날씨 데이터가 존재하지 않습니다", HttpStatus.NOT_FOUND),
-    REGION_NOT_FOUND("해당 지역은 서비스가 제공되지 않습니다.", HttpStatus.NOT_FOUND),
+    REGION_NOT_FOUND("해당 지역과 시간대에 대해서는 서비스를 제공하지 않습니다.", HttpStatus.NOT_FOUND),
 
     // 알림 관리
     DUPLICATE_FCM_TOKEN("이미 등록된 FCM 토큰입니다.", HttpStatus.CONFLICT),
