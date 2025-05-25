@@ -88,7 +88,7 @@ jobs:
           JWT_EXPIRATION_ACCESS=${{ secrets.JWT_EXPIRATION_ACCESS }}
           JWT_EXPIRATION_REFRESH=${{ secrets.JWT_EXPIRATION_REFRESH }}
           OPENWEATHER_API_KEY=${{ secrets.WEATHER_SERVICE_KEY }}
-          FCM_SERVICE_ACCOUNT_FILE=${{ secrets.FCM_SERVICE_ACCOUNT_FILE_PATH }}
+          FCM_SERVICE_ACCOUNT_FILE=${{ secrets.FCM_SERVICE_ACCOUNT_FILE }}
           EOL
           echo "Stopping spring-boot-app container..."
           docker-compose --env-file .env stop app || true
