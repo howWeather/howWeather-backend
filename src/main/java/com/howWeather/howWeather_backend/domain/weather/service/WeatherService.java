@@ -1,5 +1,6 @@
 package com.howWeather.howWeather_backend.domain.weather.service;
 
+import com.howWeather.howWeather_backend.domain.weather.dto.WeatherSimpleDto;
 import com.howWeather.howWeather_backend.domain.weather.entity.Region;
 import com.howWeather.howWeather_backend.domain.weather.entity.Weather;
 import com.howWeather.howWeather_backend.domain.weather.repository.RegionRepository;
@@ -40,4 +41,17 @@ public class WeatherService {
         weatherRepository.deleteByDate(LocalDate.now().minusDays(1));
     }
 
+    @Transactional(readOnly = true)
+    public double getTemperature(WeatherSimpleDto dto) {
+        try{
+            LocalDate localDate = LocalDate.parse(dto.getDate());
+            return weatherRepository.findByRegionNameAndDateAndTimeSlot(dto.getCity(), localDate, dto.getTimeSlot())
+                    .map(Weather::getTemperature)
+                    .orElseThrow(() -> new CustomException(ErrorCode.REGION_NOT_FOUND, "해당 지역과 시간대의 온도는 현재 제공하지 않습니다."));
+        } catch (CustomException e){
+            throw  e;
+        } catch (Exception e) {
+            throw new CustomException(ErrorCode.API_CALL_ERROR, "날씨 정보를 가져오는 중 오류가 발생했습니다.");
+        }
+    }
 }
