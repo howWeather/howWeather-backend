@@ -87,11 +87,9 @@ jobs:
           POSTGRES_DB=${{ secrets.POSTGRES_DB }}
           JWT_EXPIRATION_ACCESS=${{ secrets.JWT_EXPIRATION_ACCESS }}
           JWT_EXPIRATION_REFRESH=${{ secrets.JWT_EXPIRATION_REFRESH }}
-          DOCKER_IMAGE=${{ secrets.DOCKERHUB_USERNAME }}/${{ secrets.DOCKERHUB_REPOSITORY }}:${{ github.sha }}
           OPENWEATHER_API_KEY=${{ secrets.WEATHER_SERVICE_KEY }}
           FCM_SERVICE_ACCOUNT_FILE=${{ secrets.FCM_SERVICE_ACCOUNT_FILE_PATH }}
           EOL
-  
           echo "Stopping spring-boot-app container..."
           docker-compose --env-file .env stop app || true
 
