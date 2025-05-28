@@ -34,11 +34,6 @@ public class SecurityConfig {
     private final OAuthSuccessHandler oAuthSuccessHandler;
 
     @Bean
-    public PasswordEncoder passwordEncoder() {
-        return new BCryptPasswordEncoder();
-    }
-
-    @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http, HttpSecurity httpSecurity, RedisTemplate redisTemplate) throws Exception {
         http
                 .csrf(AbstractHttpConfigurer::disable)
