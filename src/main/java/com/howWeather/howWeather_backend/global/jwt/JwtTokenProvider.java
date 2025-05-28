@@ -83,7 +83,6 @@ public class JwtTokenProvider {
                 .compact();
     }
 
-
     public JwtToken reissueAccessToken(String refreshToken) {
         String redisKey = "blacklist:" + refreshToken;
         if (Boolean.TRUE.equals(redisTemplate.hasKey(redisKey))) {
