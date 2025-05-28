@@ -123,12 +123,6 @@ public class AuthController {
         return ApiResponse.success(HttpStatus.OK, email);
     }
 
-    @PostMapping("/kakao-login")
-    public ResponseEntity<ApiResponse<JwtToken>> kakaoLogin(@RequestBody KakaoLoginRequestDto request) {
-        JwtToken token = kakaoOAuthService.loginByAccessToken(request.getKakaoAccessToken());
-        return ApiResponse.loginSuccess(HttpStatus.OK, token, token.getAccessToken());
-    }
-
     private String extractToken(String header) {
         if (header == null || !header.startsWith("Bearer ")) {
             throw new CustomException(ErrorCode.INVALID_TOKEN);
