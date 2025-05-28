@@ -1,11 +1,9 @@
 package com.howWeather.howWeather_backend.global.config;
 
-import com.howWeather.howWeather_backend.domain.member.service.CustomOAuthUserService;
 import com.howWeather.howWeather_backend.global.custom.CustomAccessDeniedHandler;
 import com.howWeather.howWeather_backend.global.custom.CustomAuthEntryPoint;
 import com.howWeather.howWeather_backend.global.jwt.JwtFilter;
 import com.howWeather.howWeather_backend.global.jwt.JwtTokenProvider;
-import com.howWeather.howWeather_backend.global.oauth.OAuthSuccessHandler;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -14,8 +12,6 @@ import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
-import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
-import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
@@ -30,24 +26,19 @@ public class SecurityConfig {
     private final JwtTokenProvider jwtTokenProvider;
     private final CustomAuthEntryPoint customAuthEntryPoint;
     private final CustomAccessDeniedHandler customAccessDeniedHandler;
-    private final CustomOAuthUserService customOAuthUserService;
-    private final OAuthSuccessHandler oAuthSuccessHandler;
 
     @Bean
-    public SecurityFilterChain securityFilterChain(HttpSecurity http, HttpSecurity httpSecurity, RedisTemplate redisTemplate) throws Exception {
+    public SecurityFilterChain securityFilterChain(HttpSecurity http, RedisTemplate redisTemplate) throws Exception {
         http
                 .csrf(AbstractHttpConfigurer::disable)
                 .cors(Customizer.withDefaults())
                 .authorizeHttpRequests((authorizeRequestsConfig)->
                         authorizeRequestsConfig
                                 .requestMatchers("/api/auth/email-exist-check", "/api/auth/login",
-                                        "/api/auth/kakao-login", "/api/auth/google-login",
+                                        "/api/oauth2/kakao-login", "/api/oauth2/google-login",
                                         "/api/auth/signup", "/api/auth/loginid-exist-check",
                                         "/api/auth/reset-password").permitAll()
                                 .anyRequest().authenticated()
-                ).oauth2Login(oauth2 -> oauth2
-                        .userInfoEndpoint(userInfo -> userInfo.userService(customOAuthUserService))
-                        .successHandler(oAuthSuccessHandler)
                 )
                 .addFilterBefore(
                         new JwtFilter(jwtTokenProvider, redisTemplate),

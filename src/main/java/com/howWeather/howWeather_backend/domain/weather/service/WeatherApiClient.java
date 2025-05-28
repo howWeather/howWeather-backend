@@ -34,7 +34,7 @@ public class WeatherApiClient {
         ResponseEntity<Map> response = fetchWeatherData(url);
 
         if (!response.getStatusCode().is2xxSuccessful()) {
-            throw new CustomException(ErrorCode.API_CALL_ERROR, "날씨 데이터를 가져오는 데 실패했습니다.");
+            throw new CustomException(ErrorCode.WEATHER_API_CALL_ERROR, "날씨 데이터를 가져오는 데 실패했습니다.");
         }
 
         Map<String, Object> body = response.getBody();
@@ -55,7 +55,7 @@ public class WeatherApiClient {
             return restTemplate.exchange(url, HttpMethod.GET, null, Map.class);
         } catch (RestClientException e) {
             log.error(e.getMessage());
-            throw new CustomException(ErrorCode.API_CALL_ERROR, "날씨 API 호출 실패");
+            throw new CustomException(ErrorCode.WEATHER_API_CALL_ERROR, "날씨 API 호출 실패");
         }
     }
 

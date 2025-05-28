@@ -1,7 +1,6 @@
 package com.howWeather.howWeather_backend.domain.member.dto;
 
 import lombok.Data;
-import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 @Data
