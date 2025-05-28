@@ -26,7 +26,8 @@ public class CustomOAuthUserService implements OAuth2UserService<OAuth2UserReque
                 .findFirst()
                 .orElseThrow(() -> new IllegalArgumentException("지원하지 않는 소셜 로그인: " + registrationId));
 
-        delegate.login(oAuth2User);
+        delegate.processOAuth2User(oAuth2User);
         return oAuth2User;
     }
+
 }

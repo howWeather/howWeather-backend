@@ -47,7 +47,7 @@ public class Member implements UserDetails {
     @Column(name="age_group", nullable = false)
     private int ageGroup;
 
-    @Column(name="body_type", nullable = false)
+    @Column(name="body_type")
     private int bodyType;
 
     @Column(name="gender", nullable = false)
