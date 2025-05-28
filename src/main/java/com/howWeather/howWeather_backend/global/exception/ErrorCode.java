@@ -53,14 +53,17 @@ public enum ErrorCode {
     INVALID_TEMP("현재 온도는 섭씨로 -50 이상 60 이하의 값이어야 합니다.", HttpStatus.BAD_REQUEST),
 
     // 닐씨
-    API_CALL_ERROR("날씨 API를 호출하는 중 오류가 발생했습니다", HttpStatus.SERVICE_UNAVAILABLE),
+    WEATHER_API_CALL_ERROR("날씨 API를 호출하는 중 오류가 발생했습니다", HttpStatus.SERVICE_UNAVAILABLE),
     NO_BODY_ERROR("날씨 데이터가 존재하지 않습니다", HttpStatus.NOT_FOUND),
     REGION_NOT_FOUND("해당 지역과 시간대에 대해서는 서비스를 제공하지 않습니다.", HttpStatus.NOT_FOUND),
 
     // 알림 관리
     DUPLICATE_FCM_TOKEN("이미 등록된 FCM 토큰입니다.", HttpStatus.CONFLICT),
     INVALID_FCM_TOKEN("잘못된 FCM 토큰입니다.", HttpStatus.BAD_REQUEST),
-    ALARM_NOT_FOUND("알람 정보를 찾을 수 없습니다.", HttpStatus.NOT_FOUND)
+    ALARM_NOT_FOUND("알람 정보를 찾을 수 없습니다.", HttpStatus.NOT_FOUND),
+
+    // 소셜 로그인
+    KAKAO_API_CALL_ERROR("Kakao API를 호출하는 중 오류가 발생했습니다", HttpStatus.SERVICE_UNAVAILABLE)
 
     ;
 

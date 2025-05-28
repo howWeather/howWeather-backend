@@ -31,7 +31,7 @@ public class WeatherService {
                     weatherRepository.save(weatherData);
                 }
             } catch (Exception e) {
-                throw new CustomException(ErrorCode.API_CALL_ERROR, "날씨 정보를 가져오는 중 오류가 발생했습니다.");
+                throw new CustomException(ErrorCode.WEATHER_API_CALL_ERROR, "날씨 정보를 가져오는 중 오류가 발생했습니다.");
             }
         }
     }
@@ -51,7 +51,7 @@ public class WeatherService {
         } catch (CustomException e){
             throw  e;
         } catch (Exception e) {
-            throw new CustomException(ErrorCode.API_CALL_ERROR, "날씨 정보를 가져오는 중 오류가 발생했습니다.");
+            throw new CustomException(ErrorCode.WEATHER_API_CALL_ERROR, "날씨 정보를 가져오는 중 오류가 발생했습니다.");
         }
     }
 }
