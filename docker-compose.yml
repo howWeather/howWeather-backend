@@ -31,7 +31,7 @@ services:
     ports:
       - "5432:5432"
     volumes:
-      - ./init_postgres.sql:/docker-entrypoint-initdb.d/init_postgres.sql  # SQL 파일 마운트
+      - ./init_postgres.sql:/docker-entrypoint-initdb.d/init_postgres.sql  
     restart: always
 
   redis:
