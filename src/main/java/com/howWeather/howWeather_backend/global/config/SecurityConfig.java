@@ -1,9 +1,11 @@
 package com.howWeather.howWeather_backend.global.config;
 
+import com.howWeather.howWeather_backend.domain.member.service.CustomOAuthUserService;
 import com.howWeather.howWeather_backend.global.custom.CustomAccessDeniedHandler;
 import com.howWeather.howWeather_backend.global.custom.CustomAuthEntryPoint;
 import com.howWeather.howWeather_backend.global.jwt.JwtFilter;
 import com.howWeather.howWeather_backend.global.jwt.JwtTokenProvider;
+import com.howWeather.howWeather_backend.global.oauth.OAuthSuccessHandler;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -28,6 +30,8 @@ public class SecurityConfig {
     private final JwtTokenProvider jwtTokenProvider;
     private final CustomAuthEntryPoint customAuthEntryPoint;
     private final CustomAccessDeniedHandler customAccessDeniedHandler;
+    private final CustomOAuthUserService customOAuthUserService;
+    private final OAuthSuccessHandler oAuthSuccessHandler;
 
     @Bean
     public PasswordEncoder passwordEncoder() {
@@ -42,8 +46,13 @@ public class SecurityConfig {
                 .authorizeHttpRequests((authorizeRequestsConfig)->
                         authorizeRequestsConfig
                                 .requestMatchers("/api/auth/email-exist-check", "/api/auth/login",
-                                        "/api/auth/signup", "/api/auth/loginid-exist-check", "/api/auth/reset-password").permitAll()
+                                        "/api/auth/kakao-login", "/api/auth/google-login",
+                                        "/api/auth/signup", "/api/auth/loginid-exist-check",
+                                        "/api/auth/reset-password").permitAll()
                                 .anyRequest().authenticated()
+                ).oauth2Login(oauth2 -> oauth2
+                        .userInfoEndpoint(userInfo -> userInfo.userService(customOAuthUserService))
+                        .successHandler(oAuthSuccessHandler)
                 )
                 .addFilterBefore(
                         new JwtFilter(jwtTokenProvider, redisTemplate),
