@@ -3,6 +3,7 @@ package com.howWeather.howWeather_backend.domain.member.api;
 import com.howWeather.howWeather_backend.domain.member.dto.*;
 import com.howWeather.howWeather_backend.domain.member.entity.Member;
 import com.howWeather.howWeather_backend.domain.member.service.AuthService;
+import com.howWeather.howWeather_backend.domain.member.service.KakaoOAuthService;
 import com.howWeather.howWeather_backend.global.Response.ApiResponse;
 import com.howWeather.howWeather_backend.global.exception.CustomException;
 import com.howWeather.howWeather_backend.global.exception.ErrorCode;
@@ -27,6 +28,7 @@ import javax.validation.Valid;
 public class AuthController {
     private final JwtTokenProvider jwtTokenProvider;
     private final AuthService authService;
+    private final KakaoOAuthService kakaoOAuthService;
 
     @PostMapping("/signup")
     public ResponseEntity<ApiResponse<String>> signup(@Valid @RequestBody SignupRequestDto signupRequestDto) {
@@ -121,6 +123,11 @@ public class AuthController {
         return ApiResponse.success(HttpStatus.OK, email);
     }
 
+    @PostMapping("/kakao-login")
+    public ResponseEntity<ApiResponse<JwtToken>> kakaoLogin(@RequestBody KakaoLoginRequestDto request) {
+        JwtToken token = kakaoOAuthService.loginByAccessToken(request.getKakaoAccessToken());
+        return ApiResponse.loginSuccess(HttpStatus.OK, token, token.getAccessToken());
+    }
 
     private String extractToken(String header) {
         if (header == null || !header.startsWith("Bearer ")) {
