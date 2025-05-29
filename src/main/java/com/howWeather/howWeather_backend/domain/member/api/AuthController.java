@@ -3,11 +3,9 @@ package com.howWeather.howWeather_backend.domain.member.api;
 import com.howWeather.howWeather_backend.domain.member.dto.*;
 import com.howWeather.howWeather_backend.domain.member.entity.Member;
 import com.howWeather.howWeather_backend.domain.member.service.AuthService;
-import com.howWeather.howWeather_backend.domain.member.service.KakaoOAuthService;
 import com.howWeather.howWeather_backend.global.Response.ApiResponse;
 import com.howWeather.howWeather_backend.global.exception.CustomException;
 import com.howWeather.howWeather_backend.global.exception.ErrorCode;
-import com.howWeather.howWeather_backend.global.exception.UserAlreadyExistsException;
 import com.howWeather.howWeather_backend.global.jwt.CheckAuthenticatedUser;
 import com.howWeather.howWeather_backend.global.jwt.JwtToken;
 import com.howWeather.howWeather_backend.global.jwt.JwtTokenProvider;
@@ -15,7 +13,6 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.Authentication;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
@@ -28,7 +25,6 @@ import javax.validation.Valid;
 public class AuthController {
     private final JwtTokenProvider jwtTokenProvider;
     private final AuthService authService;
-    private final KakaoOAuthService kakaoOAuthService;
 
     @PostMapping("/signup")
     public ResponseEntity<ApiResponse<String>> signup(@Valid @RequestBody SignupRequestDto signupRequestDto) {
