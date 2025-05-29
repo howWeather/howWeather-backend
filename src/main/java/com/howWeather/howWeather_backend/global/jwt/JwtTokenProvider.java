@@ -54,7 +54,7 @@ public class JwtTokenProvider {
                 .refreshToken(refreshToken).build();
     }
 
-    private String makeAccessToken(long now, String username, String authorities) {
+    public String makeAccessToken(long now, String username, String authorities) {
         Date accessTokenExpirationTime = new Date(now + ACCESS_TOKEN_EXPIRATION_TIME);
         return Jwts.builder()
                 .setSubject(username)
@@ -64,7 +64,7 @@ public class JwtTokenProvider {
                 .compact();
     }
 
-    private String makeRefreshToken(long now, String username, String authorities) {
+    public String makeRefreshToken(long now, String username, String authorities) {
         Date refreshTokenExpirationTime = new Date(now + REFRESH_TOKEN_EXPIRATION_TIME);
         return Jwts.builder()
                 .claim("auth", authorities)
