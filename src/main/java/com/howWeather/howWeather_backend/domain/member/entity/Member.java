@@ -79,6 +79,10 @@ public class Member implements UserDetails {
                 .collect(Collectors.toList());
     }
 
+    @Column(name = "login_type", nullable = false)
+    @Enumerated(EnumType.STRING)
+    private LoginType loginType;
+
     public void addDayRecord(DayRecord dayRecord) {
         this.dayRecords.add(dayRecord);
         dayRecord.assignMember(this);
@@ -112,4 +116,25 @@ public class Member implements UserDetails {
     public void changeConstitution(int v) {
         this.constitution = v;
     }
+
+    @Override
+    public boolean isAccountNonExpired() {
+        return !isDeleted;
+    }
+
+    @Override
+    public boolean isAccountNonLocked() {
+        return !isDeleted;
+    }
+
+    @Override
+    public boolean isCredentialsNonExpired() {
+        return !isDeleted;
+    }
+
+    @Override
+    public boolean isEnabled() {
+        return !isDeleted;
+    }
+
 }
