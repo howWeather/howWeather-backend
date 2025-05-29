@@ -2,10 +2,12 @@ package com.howWeather.howWeather_backend.domain.member.service;
 
 import com.howWeather.howWeather_backend.domain.member.dto.KakaoUserInfo;
 import com.howWeather.howWeather_backend.domain.member.dto.OAuthToken;
+import com.howWeather.howWeather_backend.domain.member.entity.LoginType;
 import com.howWeather.howWeather_backend.domain.member.entity.Member;
 import com.howWeather.howWeather_backend.domain.member.repository.MemberRepository;
 import com.howWeather.howWeather_backend.global.jwt.JwtToken;
 import com.howWeather.howWeather_backend.global.jwt.JwtTokenProvider;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.*;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -22,6 +24,7 @@ import org.springframework.util.MultiValueMap;
 import java.util.List;
 import java.util.UUID;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class KakaoOAuthService {
@@ -60,6 +63,7 @@ public class KakaoOAuthService {
                 .password(passwordEncoder.encode(UUID.randomUUID().toString()))
                 .email(userInfo.getEmail())
                 .nickname(userInfo.getNickname())
+                .loginType(LoginType.KAKAO)
                 .constitution(1)
                 .ageGroup(1)
                 .gender(1)
@@ -80,18 +84,32 @@ public class KakaoOAuthService {
     }
 
     private OAuthToken getToken(String code) {
-        MultiValueMap<String, String> params = new LinkedMultiValueMap<>();
-        params.add("grant_type", "authorization_code");
-        params.add("client_id", clientId);
-        params.add("redirect_uri", redirectUri);
-        params.add("code", code);
+        try {
+            MultiValueMap<String, String> params = new LinkedMultiValueMap<>();
+            params.add("grant_type", "authorization_code");
+            params.add("client_id", clientId);
+            params.add("redirect_uri", redirectUri);
+            params.add("code", code);
 
-        HttpHeaders headers = new HttpHeaders();
-        headers.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
-        HttpEntity<MultiValueMap<String, String>> request = new HttpEntity<>(params, headers);
+            System.out.println("params = " + params);
 
-        ResponseEntity<OAuthToken> response = restTemplate.postForEntity(tokenUri, request, OAuthToken.class);
-        return response.getBody();
+            HttpHeaders headers = new HttpHeaders();
+            headers.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
+            HttpEntity<MultiValueMap<String, String>> request = new HttpEntity<>(params, headers);
+
+            ResponseEntity<OAuthToken> response = restTemplate.postForEntity(tokenUri, request, OAuthToken.class);
+            if (!response.getStatusCode().is2xxSuccessful() || response.getBody() == null) {
+                log.error("카카오 토큰 요청 실패: status={}, body={}", response.getStatusCode(), response.getBody());
+                throw new RuntimeException("카카오 토큰 요청 실패");
+            }
+
+            return response.getBody();
+
+        } catch (Exception e) {
+            log.error(e.getMessage());
+
+        }
+        return null;
     }
 
     private KakaoUserInfo getUserInfo(String accessToken) {
@@ -100,6 +118,10 @@ public class KakaoOAuthService {
         HttpEntity<String> entity = new HttpEntity<>(headers);
 
         ResponseEntity<KakaoUserInfo> response = restTemplate.exchange(userInfoUri, HttpMethod.GET, entity, KakaoUserInfo.class);
+        if(!response.getStatusCode().is2xxSuccessful() || response.getBody() == null) {
+            throw new RuntimeException("카카오 사용자 정보 조회 실패");
+        }
         return response.getBody();
     }
+
 }
