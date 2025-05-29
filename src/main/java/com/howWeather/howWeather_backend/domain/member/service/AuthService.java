@@ -3,6 +3,7 @@ package com.howWeather.howWeather_backend.domain.member.service;
 import com.howWeather.howWeather_backend.domain.alarm.service.FcmAlarmPreferenceService;
 import com.howWeather.howWeather_backend.domain.closet.entity.Closet;
 import com.howWeather.howWeather_backend.domain.member.dto.*;
+import com.howWeather.howWeather_backend.domain.member.entity.LoginType;
 import com.howWeather.howWeather_backend.domain.member.entity.Member;
 import com.howWeather.howWeather_backend.domain.member.repository.MemberRepository;
 import com.howWeather.howWeather_backend.domain.closet.repository.ClosetRepository;
@@ -60,6 +61,7 @@ public class AuthService {
                     .loginId(signupRequestDto.getLoginId())
                     .password(encodedPassword)
                     .email(signupRequestDto.getEmail())
+                    .loginType(LoginType.LOCAL)
                     .nickname(signupRequestDto.getNickname())
                     .constitution(signupRequestDto.getConstitution())
                     .ageGroup(signupRequestDto.getAgeGroup())

@@ -79,7 +79,7 @@ public class Member implements UserDetails {
                 .collect(Collectors.toList());
     }
 
-    @Column(name = "login_type", nullable = false)
+    @Column(name = "login_type", nullable = true)
     @Enumerated(EnumType.STRING)
     private LoginType loginType;
 
