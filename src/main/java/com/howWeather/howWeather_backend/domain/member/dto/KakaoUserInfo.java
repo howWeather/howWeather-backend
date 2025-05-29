@@ -1,49 +1,29 @@
 package com.howWeather.howWeather_backend.domain.member.dto;
 
-import lombok.Data;
-import lombok.NoArgsConstructor;
-
 import java.util.Map;
 
-@Data
-@NoArgsConstructor
-public class KakaoUserInfo {
-    private Long id;
-    private KakaoAccount kakao_account;
+public class KakaoUserInfo implements OAuth2UserInfo {
+    private final Map<String, Object> attributes;
 
     public KakaoUserInfo(Map<String, Object> attributes) {
-        this.id = ((Number) attributes.get("id")).longValue();
-
-        Map<String, Object> accountMap = (Map<String, Object>) attributes.get("kakao_account");
-        this.kakao_account = new KakaoAccount(accountMap);
+        this.attributes = attributes;
     }
 
+    @Override
+    public String getId() {
+        return attributes.get("id").toString();
+    }
+
+    @Override
     public String getEmail() {
-        return kakao_account.getEmail();
+        Map<String, Object> kakaoAccount = (Map<String, Object>) attributes.get("kakao_account");
+        return kakaoAccount != null ? (String) kakaoAccount.get("email") : null;
     }
 
+    @Override
     public String getNickname() {
-        return kakao_account.getProfile().getNickname();
-    }
-
-    @Data
-    public static class KakaoAccount {
-        private String email;
-        private Profile profile;
-
-        public KakaoAccount(Map<String, Object> accountMap) {
-            this.email = (String) accountMap.get("email");
-            Map<String, Object> profileMap = (Map<String, Object>) accountMap.get("profile");
-            this.profile = new Profile(profileMap);
-        }
-
-        @Data
-        public static class Profile {
-            private String nickname;
-
-            public Profile(Map<String, Object> profileMap) {
-                this.nickname = (String) profileMap.get("nickname");
-            }
-        }
+        Map<String, Object> kakaoAccount = (Map<String, Object>) attributes.get("kakao_account");
+        Map<String, Object> profile = (Map<String, Object>) kakaoAccount.get("profile");
+        return profile != null ? (String) profile.get("nickname") : null;
     }
 }
