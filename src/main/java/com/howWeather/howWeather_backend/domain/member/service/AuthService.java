@@ -294,17 +294,26 @@ public class AuthService {
     @Transactional
     public void withdraw(Member member, String accessToken, String refreshToken) {
         try {
-            Member persistedMember = memberRepository.findById(member.getId())
-                    .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND, "회원 정보를 찾을 수 없습니다."));
-
-            if (persistedMember.isDeleted()) {
-                throw new CustomException(ErrorCode.ALREADY_DELETED);
+            if (member.getLoginType() == LoginType.GOOGLE) {
+                // TODO : 구글 로그인 계정 처리 추가
+            } else if (member.getLoginType() == LoginType.KAKAO) {
+                // TODO : 카카오 로그인 계정 처리 추가
             }
+            else {
+                Member persistedMember = memberRepository.findById(member.getId())
+                        .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND, "회원 정보를 찾을 수 없습니다."));
 
-            persistedMember.withdraw();
-            memberRepository.flush();
-            logout(accessToken, refreshToken);
-        } catch (CustomException e) {
+                if (persistedMember.isDeleted()) {
+                    throw new CustomException(ErrorCode.ALREADY_DELETED);
+                }
+
+                persistedMember.withdraw();
+                memberRepository.flush();
+                logout(accessToken, refreshToken);
+
+            }
+        }
+        catch (CustomException e) {
             throw e;
         } catch (Exception e) {
             log.error("회원 탈퇴 중 에러 발생: {}", e.getMessage(), e);
