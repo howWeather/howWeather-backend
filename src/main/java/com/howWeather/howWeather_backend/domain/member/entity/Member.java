@@ -90,6 +90,8 @@ public class Member implements UserDetails {
 
     public void withdraw() {
         this.isDeleted = true;
+        this.loginId = "withdrawn user " + this.id;
+        this.email = "withdrawn_user_" + this.id + "@withdrawn.invalid";
     }
 
     @Override

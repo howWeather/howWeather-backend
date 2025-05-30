@@ -68,7 +68,6 @@ public enum ErrorCode {
     OAUTH2_TOKEN_NOT_FOUND("OAuth2 access token을 찾을 수 없습니다.", HttpStatus.UNAUTHORIZED)
     ;
 
-
     private final String message;
     private final HttpStatus httpStatus;
 
