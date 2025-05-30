@@ -297,14 +297,16 @@ public class AuthService {
     }
 
     @Transactional
-    public void withdraw(Member member, String jwtAccessToken, String jwtRefreshToken) {
+    public void withdraw(Member member, String jwtAccessToken, String refreshToken, String socialAccessToken) {
         try {
-            String oauthAccessToken = getAccessTokenFromContext();
+            if ((member.getLoginType() != LoginType.LOCAL) && socialAccessToken == null) {
+                throw new CustomException(ErrorCode.OAUTH2_TOKEN_NOT_FOUND, "소셜 access token이 필요합니다.");
+            }
 
             if (member.getLoginType() == LoginType.GOOGLE) {
-                customOAuth2UserService.unlinkGoogle(oauthAccessToken);
+                customOAuth2UserService.unlinkGoogle(socialAccessToken);
             } else if (member.getLoginType() == LoginType.KAKAO) {
-                customOAuth2UserService.unlinkKakao(oauthAccessToken);
+                customOAuth2UserService.unlinkKakao(socialAccessToken);
             }
 
             Member persistedMember = memberRepository.findById(member.getId())
@@ -316,8 +318,7 @@ public class AuthService {
 
             persistedMember.withdraw();
             memberRepository.flush();
-
-            logout(jwtAccessToken, jwtRefreshToken);
+            logout(jwtAccessToken, refreshToken);
 
         } catch (CustomException e) {
             throw e;

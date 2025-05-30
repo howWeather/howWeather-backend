@@ -103,13 +103,11 @@ public class AuthController {
     @CheckAuthenticatedUser
     public ResponseEntity<Void> withdrawMember(@RequestHeader("Authorization") String accessTokenHeader,
                                                @RequestHeader("Refresh-Token") String refreshTokenHeader,
+                                               @RequestHeader(value = "Social-Access-Token", required = false) String socialAccessToken,
                                                @AuthenticationPrincipal Member member) {
-
-        String accessToken = extractToken(accessTokenHeader);
+        String jwtAccessToken = extractToken(accessTokenHeader);
         String refreshToken = extractToken(refreshTokenHeader);
-
-        authService.withdraw(member, accessToken, refreshToken);
-
+        authService.withdraw(member, jwtAccessToken, refreshToken, socialAccessToken);
         return ResponseEntity.noContent().build();
     }
 
