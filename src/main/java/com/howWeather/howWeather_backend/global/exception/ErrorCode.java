@@ -63,10 +63,10 @@ public enum ErrorCode {
     ALARM_NOT_FOUND("알람 정보를 찾을 수 없습니다.", HttpStatus.NOT_FOUND),
 
     // 소셜 로그인
-    KAKAO_API_CALL_ERROR("Kakao API를 호출하는 중 오류가 발생했습니다", HttpStatus.SERVICE_UNAVAILABLE)
-
+    KAKAO_API_CALL_ERROR("Kakao API를 호출하는 중 오류가 발생했습니다", HttpStatus.SERVICE_UNAVAILABLE),
+    NO_OAUTH2_CLIENT("Auth2AuthorizedClient가 존재하지 않습니다.", HttpStatus.UNAUTHORIZED),
+    OAUTH2_TOKEN_NOT_FOUND("OAuth2 access token을 찾을 수 없습니다.", HttpStatus.UNAUTHORIZED)
     ;
-
 
     private final String message;
     private final HttpStatus httpStatus;

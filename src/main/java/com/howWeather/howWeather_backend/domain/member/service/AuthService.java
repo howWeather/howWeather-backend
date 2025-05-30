@@ -20,8 +20,12 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.AuthenticationException;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.oauth2.client.OAuth2AuthorizedClient;
+import org.springframework.security.oauth2.client.OAuth2AuthorizedClientService;
+import org.springframework.security.oauth2.client.authentication.OAuth2AuthenticationToken;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -42,6 +46,8 @@ public class AuthService {
     private final ClosetRepository closetRepository;
     private final MailService mailService;
     private final FcmAlarmPreferenceService fcmAlarmPreferenceService;
+    private final CustomOAuth2UserService customOAuth2UserService;
+    private final OAuth2AuthorizedClientService authorizedClientService;
 
     @Transactional
     public void signup(SignupRequestDto signupRequestDto) {
@@ -199,7 +205,6 @@ public class AuthService {
         }
     }
 
-
     private void validatePasswordSame(String oldPassword, String newPassword) {
         if (newPassword.equals(oldPassword)) {
             throw new CustomException(ErrorCode.SAME_PASSWORD, "기존의 비밀번호와 다른 비밀번호를 입력해주세요.");
@@ -292,34 +297,52 @@ public class AuthService {
     }
 
     @Transactional
-    public void withdraw(Member member, String accessToken, String refreshToken) {
+    public void withdraw(Member member, String jwtAccessToken, String refreshToken, String socialAccessToken) {
         try {
+            if ((member.getLoginType() != LoginType.LOCAL) && socialAccessToken == null) {
+                throw new CustomException(ErrorCode.OAUTH2_TOKEN_NOT_FOUND, "소셜 access token이 필요합니다.");
+            }
+
             if (member.getLoginType() == LoginType.GOOGLE) {
-                // TODO : 구글 로그인 계정 처리 추가
+                customOAuth2UserService.unlinkGoogle(socialAccessToken);
             } else if (member.getLoginType() == LoginType.KAKAO) {
-                // TODO : 카카오 로그인 계정 처리 추가
+                customOAuth2UserService.unlinkKakao(socialAccessToken);
             }
-            else {
-                Member persistedMember = memberRepository.findById(member.getId())
-                        .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND, "회원 정보를 찾을 수 없습니다."));
 
-                if (persistedMember.isDeleted()) {
-                    throw new CustomException(ErrorCode.ALREADY_DELETED);
-                }
+            Member persistedMember = memberRepository.findById(member.getId())
+                    .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND, "회원 정보를 찾을 수 없습니다."));
 
-                persistedMember.withdraw();
-                memberRepository.flush();
-                logout(accessToken, refreshToken);
-
+            if (persistedMember.isDeleted()) {
+                throw new CustomException(ErrorCode.ALREADY_DELETED);
             }
-        }
-        catch (CustomException e) {
+
+            persistedMember.withdraw();
+            memberRepository.flush();
+            logout(jwtAccessToken, refreshToken);
+
+        } catch (CustomException e) {
             throw e;
         } catch (Exception e) {
             log.error("회원 탈퇴 중 에러 발생: {}", e.getMessage(), e);
             throw new CustomException(ErrorCode.UNKNOWN_ERROR, "회원 탈퇴 중 오류가 발생했습니다.");
         }
     }
+
+    private String getAccessTokenFromContext() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+
+        if (authentication instanceof OAuth2AuthenticationToken oauthToken) {
+            OAuth2AuthorizedClient authorizedClient = authorizedClientService.loadAuthorizedClient(
+                    oauthToken.getAuthorizedClientRegistrationId(),
+                    oauthToken.getName());
+
+            if (authorizedClient != null) {
+                return authorizedClient.getAccessToken().getTokenValue();
+            }
+        }
+        throw new CustomException(ErrorCode.OAUTH2_TOKEN_NOT_FOUND, "OAuth2 access token을 찾을 수 없습니다.");
+    }
+
 
     @Transactional
     public String resetPassword(String identifier) {
