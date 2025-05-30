@@ -7,13 +7,26 @@ import com.howWeather.howWeather_backend.domain.member.entity.LoginType;
 import com.howWeather.howWeather_backend.domain.member.entity.Member;
 import com.howWeather.howWeather_backend.domain.member.repository.MemberRepository;
 import com.howWeather.howWeather_backend.global.custom.CustomOAuth2User;
+import com.howWeather.howWeather_backend.global.exception.CustomException;
+import com.howWeather.howWeather_backend.global.exception.ErrorCode;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.security.access.hierarchicalroles.CycleInRoleHierarchyException;
+import org.springframework.security.oauth2.client.OAuth2AuthorizedClient;
+import org.springframework.security.oauth2.client.OAuth2AuthorizedClientService;
+import org.springframework.security.oauth2.client.authentication.OAuth2AuthenticationToken;
 import org.springframework.security.oauth2.client.userinfo.DefaultOAuth2UserService;
 import org.springframework.security.oauth2.client.userinfo.OAuth2UserRequest;
 import org.springframework.security.oauth2.core.OAuth2AuthenticationException;
 import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.stereotype.Service;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
+import org.springframework.util.LinkedMultiValueMap;
+import org.springframework.util.MultiValueMap;
+import org.springframework.web.client.RestTemplate;
 
 import java.util.List;
 import java.util.Map;
@@ -23,8 +36,9 @@ import java.util.UUID;
 @Service
 @RequiredArgsConstructor
 public class CustomOAuth2UserService extends DefaultOAuth2UserService {
-
+    private final RestTemplate restTemplate;
     private final MemberRepository memberRepository;
+    private final OAuth2AuthorizedClientService authorizedClientService;
 
     @Override
     public OAuth2User loadUser(OAuth2UserRequest userRequest) throws OAuth2AuthenticationException {
@@ -67,4 +81,35 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
                 .build();
         return memberRepository.save(member);
     }
+
+    public void unlinkKakao(String accessToken) {
+        HttpHeaders headers = new HttpHeaders();
+        headers.setBearerAuth(accessToken);
+        HttpEntity<String> entity = new HttpEntity<>(headers);
+
+        ResponseEntity<String> response = restTemplate.postForEntity(
+                "https://kapi.kakao.com/v1/user/unlink", entity, String.class);
+
+        if (!response.getStatusCode().is2xxSuccessful()) {
+            throw new RuntimeException("카카오 연결 끊기 실패");
+        }
+    }
+
+    public void unlinkGoogle(String accessToken) {
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
+
+        MultiValueMap<String, String> params = new LinkedMultiValueMap<>();
+        params.add("token", accessToken);
+
+        HttpEntity<MultiValueMap<String, String>> request = new HttpEntity<>(params, headers);
+
+        ResponseEntity<String> response = restTemplate.postForEntity(
+                "https://oauth2.googleapis.com/revoke", request, String.class);
+
+        if (!response.getStatusCode().is2xxSuccessful()) {
+            throw new RuntimeException("구글 연결 끊기 실패");
+        }
+    }
+
 }
