@@ -6,27 +6,18 @@ import io.jsonwebtoken.*;
 import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
 import jakarta.servlet.http.HttpServletRequest;
-import lombok.AllArgsConstructor;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.redis.core.RedisTemplate;
-import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
-import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
-import org.springframework.security.core.userdetails.User;
-import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Component;
 import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.context.request.ServletRequestAttributes;
 
 import java.security.Key;
-import java.util.Arrays;
-import java.util.Collection;
 import java.util.Date;
-import java.util.List;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -63,7 +54,7 @@ public class JwtTokenProvider {
                 .refreshToken(refreshToken).build();
     }
 
-    private String makeAccessToken(long now, String username, String authorities) {
+    public String makeAccessToken(long now, String username, String authorities) {
         Date accessTokenExpirationTime = new Date(now + ACCESS_TOKEN_EXPIRATION_TIME);
         return Jwts.builder()
                 .setSubject(username)
@@ -73,7 +64,7 @@ public class JwtTokenProvider {
                 .compact();
     }
 
-    private String makeRefreshToken(long now, String username, String authorities) {
+    public String makeRefreshToken(long now, String username, String authorities) {
         Date refreshTokenExpirationTime = new Date(now + REFRESH_TOKEN_EXPIRATION_TIME);
         return Jwts.builder()
                 .claim("auth", authorities)
@@ -82,7 +73,6 @@ public class JwtTokenProvider {
                 .signWith(key, SignatureAlgorithm.HS256)
                 .compact();
     }
-
 
     public JwtToken reissueAccessToken(String refreshToken) {
         String redisKey = "blacklist:" + refreshToken;

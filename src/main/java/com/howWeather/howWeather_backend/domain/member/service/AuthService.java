@@ -3,6 +3,7 @@ package com.howWeather.howWeather_backend.domain.member.service;
 import com.howWeather.howWeather_backend.domain.alarm.service.FcmAlarmPreferenceService;
 import com.howWeather.howWeather_backend.domain.closet.entity.Closet;
 import com.howWeather.howWeather_backend.domain.member.dto.*;
+import com.howWeather.howWeather_backend.domain.member.entity.LoginType;
 import com.howWeather.howWeather_backend.domain.member.entity.Member;
 import com.howWeather.howWeather_backend.domain.member.repository.MemberRepository;
 import com.howWeather.howWeather_backend.domain.closet.repository.ClosetRepository;
@@ -60,6 +61,7 @@ public class AuthService {
                     .loginId(signupRequestDto.getLoginId())
                     .password(encodedPassword)
                     .email(signupRequestDto.getEmail())
+                    .loginType(LoginType.LOCAL)
                     .nickname(signupRequestDto.getNickname())
                     .constitution(signupRequestDto.getConstitution())
                     .ageGroup(signupRequestDto.getAgeGroup())
@@ -292,17 +294,26 @@ public class AuthService {
     @Transactional
     public void withdraw(Member member, String accessToken, String refreshToken) {
         try {
-            Member persistedMember = memberRepository.findById(member.getId())
-                    .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND, "회원 정보를 찾을 수 없습니다."));
-
-            if (persistedMember.isDeleted()) {
-                throw new CustomException(ErrorCode.ALREADY_DELETED);
+            if (member.getLoginType() == LoginType.GOOGLE) {
+                // TODO : 구글 로그인 계정 처리 추가
+            } else if (member.getLoginType() == LoginType.KAKAO) {
+                // TODO : 카카오 로그인 계정 처리 추가
             }
+            else {
+                Member persistedMember = memberRepository.findById(member.getId())
+                        .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND, "회원 정보를 찾을 수 없습니다."));
 
-            persistedMember.withdraw();
-            memberRepository.flush();
-            logout(accessToken, refreshToken);
-        } catch (CustomException e) {
+                if (persistedMember.isDeleted()) {
+                    throw new CustomException(ErrorCode.ALREADY_DELETED);
+                }
+
+                persistedMember.withdraw();
+                memberRepository.flush();
+                logout(accessToken, refreshToken);
+
+            }
+        }
+        catch (CustomException e) {
             throw e;
         } catch (Exception e) {
             log.error("회원 탈퇴 중 에러 발생: {}", e.getMessage(), e);

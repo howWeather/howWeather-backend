@@ -1,7 +1,5 @@
 package com.howWeather.howWeather_backend.global.jwt;
 
-import com.howWeather.howWeather_backend.global.exception.CustomException;
-import com.howWeather.howWeather_backend.global.exception.ErrorCode;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.ServletRequest;

@@ -6,7 +6,6 @@ import com.howWeather.howWeather_backend.domain.member.service.AuthService;
 import com.howWeather.howWeather_backend.global.Response.ApiResponse;
 import com.howWeather.howWeather_backend.global.exception.CustomException;
 import com.howWeather.howWeather_backend.global.exception.ErrorCode;
-import com.howWeather.howWeather_backend.global.exception.UserAlreadyExistsException;
 import com.howWeather.howWeather_backend.global.jwt.CheckAuthenticatedUser;
 import com.howWeather.howWeather_backend.global.jwt.JwtToken;
 import com.howWeather.howWeather_backend.global.jwt.JwtTokenProvider;
@@ -14,7 +13,6 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.Authentication;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
@@ -120,7 +118,6 @@ public class AuthController {
         String email = authService.resetPassword(dto.getIdentifier());
         return ApiResponse.success(HttpStatus.OK, email);
     }
-
 
     private String extractToken(String header) {
         if (header == null || !header.startsWith("Bearer ")) {

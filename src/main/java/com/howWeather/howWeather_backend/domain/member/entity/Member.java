@@ -47,7 +47,7 @@ public class Member implements UserDetails {
     @Column(name="age_group", nullable = false)
     private int ageGroup;
 
-    @Column(name="body_type", nullable = false)
+    @Column(name="body_type")
     private int bodyType;
 
     @Column(name="gender", nullable = false)
@@ -78,6 +78,10 @@ public class Member implements UserDetails {
                 .map(SimpleGrantedAuthority::new)
                 .collect(Collectors.toList());
     }
+
+    @Column(name = "login_type", nullable = true)
+    @Enumerated(EnumType.STRING)
+    private LoginType loginType;
 
     public void addDayRecord(DayRecord dayRecord) {
         this.dayRecords.add(dayRecord);
@@ -112,4 +116,25 @@ public class Member implements UserDetails {
     public void changeConstitution(int v) {
         this.constitution = v;
     }
+
+    @Override
+    public boolean isAccountNonExpired() {
+        return !isDeleted;
+    }
+
+    @Override
+    public boolean isAccountNonLocked() {
+        return !isDeleted;
+    }
+
+    @Override
+    public boolean isCredentialsNonExpired() {
+        return !isDeleted;
+    }
+
+    @Override
+    public boolean isEnabled() {
+        return !isDeleted;
+    }
+
 }
