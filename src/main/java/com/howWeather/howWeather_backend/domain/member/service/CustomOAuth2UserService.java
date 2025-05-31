@@ -38,7 +38,6 @@ import java.util.UUID;
 public class CustomOAuth2UserService extends DefaultOAuth2UserService {
     private final RestTemplate restTemplate;
     private final MemberRepository memberRepository;
-    private final OAuth2AuthorizedClientService authorizedClientService;
 
     @Override
     public OAuth2User loadUser(OAuth2UserRequest userRequest) throws OAuth2AuthenticationException {
@@ -76,7 +75,7 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
                 .constitution(1)
                 .ageGroup(1)
                 .gender(1)
-                .sensitivity(1)
+                .sensitivity(-1)
                 .isDeleted(false)
                 .build();
         return memberRepository.save(member);
