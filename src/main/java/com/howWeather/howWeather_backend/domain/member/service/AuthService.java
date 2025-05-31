@@ -51,7 +51,7 @@ public class AuthService {
 
     @Transactional
     public void signup(SignupRequestDto signupRequestDto) {
-        if (isEmailAlreadyExist(signupRequestDto.getEmail())) {
+        if (isEmailAlreadyExist(signupRequestDto.getEmail(), LoginType.LOCAL)) {
             throw new CustomException(ErrorCode.EMAIL_ALREADY_EXISTS);
         }
 
@@ -89,12 +89,21 @@ public class AuthService {
     }
 
     @Transactional(readOnly = true)
-    public boolean isEmailAlreadyExist(String email) {
-        return memberRepository.findByEmail(email).isPresent();
+    public boolean isEmailAlreadyExist(String email, LoginType loginType) {
+        return memberRepository.findByEmailAndLoginType(email, loginType).isPresent();
     }
+
 
     @Transactional(readOnly = true)
     public boolean isLoginIdAlreadyExist(String loginId) {
+        List<String> forbiddenPrefixes = List.of("Google_", "Kakao_");
+
+        for (String prefix : forbiddenPrefixes) {
+            if (loginId.startsWith(prefix)) {
+                throw new CustomException(ErrorCode.INVALID_SOCIAL_PREFIX_LOGIN_ID);
+            }
+        }
+
         return memberRepository.findByLoginId(loginId).isPresent();
     }
 
@@ -342,7 +351,6 @@ public class AuthService {
         }
         throw new CustomException(ErrorCode.OAUTH2_TOKEN_NOT_FOUND, "OAuth2 access token을 찾을 수 없습니다.");
     }
-
 
     @Transactional
     public String resetPassword(String identifier) {

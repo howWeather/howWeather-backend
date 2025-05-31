@@ -1,5 +1,6 @@
 package com.howWeather.howWeather_backend.domain.member.dto;
 
+import com.howWeather.howWeather_backend.global.custom.InvalidPrefix;
 import jakarta.validation.constraints.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -17,6 +18,7 @@ public class SignupRequestDto {
 
     @NotBlank(message = "아이디는 필수 입력 항목입니다.")
     @Size(min = 6, max = 20, message = "아이디는 6~20자 이내여야 합니다.")
+    @InvalidPrefix(prefixes = { "Google_", "Kakao_" }, message = "아이디는 'Google_', 'Kakao_'로 시작할 수 없습니다.")
     @Pattern(regexp = "^[a-zA-Z0-9!@#$%^&*()_+\\-=\\[\\]{};':\"\\\\|,.<>\\/?]*$", message = "아이디는 영문, 숫자, 특수문자만 포함할 수 있습니다.")
     private String loginId;
 

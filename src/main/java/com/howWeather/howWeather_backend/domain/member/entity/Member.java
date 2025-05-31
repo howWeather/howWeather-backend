@@ -35,7 +35,7 @@ public class Member implements UserDetails {
     @Column(name="member_pw", nullable = false)
     private String password;
 
-    @Column(name="member_email", unique = true, nullable = false)
+    @Column(name="member_email", nullable = false)
     private String email;
 
     @Column(name="member_nickname", nullable = false)
@@ -139,5 +139,4 @@ public class Member implements UserDetails {
     public boolean isEnabled() {
         return !isDeleted;
     }
-
 }
