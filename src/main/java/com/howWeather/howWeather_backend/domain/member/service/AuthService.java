@@ -51,7 +51,7 @@ public class AuthService {
 
     @Transactional
     public void signup(SignupRequestDto signupRequestDto) {
-        if (isEmailAlreadyExist(signupRequestDto.getEmail())) {
+        if (isEmailAlreadyExist(signupRequestDto.getEmail(), LoginType.LOCAL)) {
             throw new CustomException(ErrorCode.EMAIL_ALREADY_EXISTS);
         }
 
@@ -89,9 +89,10 @@ public class AuthService {
     }
 
     @Transactional(readOnly = true)
-    public boolean isEmailAlreadyExist(String email) {
-        return memberRepository.findByEmail(email).isPresent();
+    public boolean isEmailAlreadyExist(String email, LoginType loginType) {
+        return memberRepository.findByEmailAndLoginType(email, loginType).isPresent();
     }
+
 
     @Transactional(readOnly = true)
     public boolean isLoginIdAlreadyExist(String loginId) {

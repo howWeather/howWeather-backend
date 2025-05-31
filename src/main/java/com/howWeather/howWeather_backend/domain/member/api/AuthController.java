@@ -1,6 +1,7 @@
 package com.howWeather.howWeather_backend.domain.member.api;
 
 import com.howWeather.howWeather_backend.domain.member.dto.*;
+import com.howWeather.howWeather_backend.domain.member.entity.LoginType;
 import com.howWeather.howWeather_backend.domain.member.entity.Member;
 import com.howWeather.howWeather_backend.domain.member.service.AuthService;
 import com.howWeather.howWeather_backend.global.Response.ApiResponse;
@@ -67,7 +68,7 @@ public class AuthController {
 
     @GetMapping("/email-exist-check")
     public ResponseEntity<ApiResponse<String>> isEmailExist(@RequestParam("email") String email) {
-        boolean emailAlreadyExist = authService.isEmailAlreadyExist(email);
+        boolean emailAlreadyExist = authService.isEmailAlreadyExist(email, LoginType.LOCAL);
 
         if (emailAlreadyExist) {
             throw new CustomException(ErrorCode.EMAIL_ALREADY_EXISTS);
