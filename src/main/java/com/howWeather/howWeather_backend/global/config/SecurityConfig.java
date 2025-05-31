@@ -40,7 +40,7 @@ public class SecurityConfig {
                 .authorizeHttpRequests((authorizeRequestsConfig)->
                         authorizeRequestsConfig
                                 .requestMatchers("/api/auth/email-exist-check", "/api/auth/login",
-                                        "/login/oauth2/**",
+                                        "/login/oauth2/**", "/api/oauth/**",
                                         "/api/auth/signup", "/api/auth/loginid-exist-check",
                                         "/api/auth/reset-password").permitAll()
                                 .anyRequest().authenticated()
