@@ -96,7 +96,19 @@ public class AuthService {
 
     @Transactional(readOnly = true)
     public boolean isLoginIdAlreadyExist(String loginId) {
-        return memberRepository.findByLoginId(loginId).isPresent();
+        try {
+            List<String> forbiddenPrefixes = List.of("Google_", "Kakao_");
+
+            for (String prefix : forbiddenPrefixes) {
+                if (loginId.startsWith(prefix)) {
+                    throw new CustomException(ErrorCode.INVALID_SOCIAL_PREFIX_LOGIN_ID);
+                }
+            }
+
+            return memberRepository.findByLoginId(loginId).isPresent();
+        } catch (CustomException e) {
+            throw e;
+        }
     }
 
     @Transactional

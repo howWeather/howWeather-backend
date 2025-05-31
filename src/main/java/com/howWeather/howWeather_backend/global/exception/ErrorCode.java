@@ -16,6 +16,7 @@ public enum ErrorCode {
     USER_NOT_FOUND("아이디가 존재하지 않습니다.", HttpStatus.UNAUTHORIZED),
     INVALID_CREDENTIALS("비밀번호가 틀렸습니다.", HttpStatus.UNAUTHORIZED),
     LOGIN_ID_ALREADY_EXISTS("이미 사용 중인 아이디입니다.", HttpStatus.CONFLICT),
+    INVALID_SOCIAL_PREFIX_LOGIN_ID("'Kakao_', 'Google_'등 소셜 접두어는 사용할 수 없습니다.", HttpStatus.BAD_REQUEST),
     EMAIL_ALREADY_EXISTS("이미 사용 중인 이메일입니다.", HttpStatus.CONFLICT),
     WRONG_PASSWORD("비밀번호가 일치하지 않습니다.", HttpStatus.BAD_REQUEST),
     PASSWORD_MISMATCH("변경할 비밀번호가 일치하지 않습니다.", HttpStatus.BAD_REQUEST),
