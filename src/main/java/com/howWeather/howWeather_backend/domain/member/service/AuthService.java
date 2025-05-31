@@ -344,7 +344,6 @@ public class AuthService {
         throw new CustomException(ErrorCode.OAUTH2_TOKEN_NOT_FOUND, "OAuth2 access token을 찾을 수 없습니다.");
     }
 
-
     @Transactional
     public String resetPassword(String identifier) {
         try {

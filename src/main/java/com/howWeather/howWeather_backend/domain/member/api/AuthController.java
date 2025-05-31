@@ -76,7 +76,6 @@ public class AuthController {
         return ApiResponse.success(HttpStatus.OK, "사용 가능한 이메일입니다.");
     }
 
-
     @GetMapping("/loginid-exist-check")
     public ResponseEntity<ApiResponse<String>> isLoginIdExist(@RequestParam("loginId") String loginId) {
         boolean loginIdAlreadyExist = authService.isLoginIdAlreadyExist(loginId);
