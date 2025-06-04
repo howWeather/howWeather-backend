@@ -1,9 +1,12 @@
 package com.howWeather.howWeather_backend.domain.weather.service;
 
+import com.howWeather.howWeather_backend.domain.ai_model.dto.WeatherPredictDto;
 import com.howWeather.howWeather_backend.domain.weather.dto.WeatherSimpleDto;
 import com.howWeather.howWeather_backend.domain.weather.entity.Region;
 import com.howWeather.howWeather_backend.domain.weather.entity.Weather;
+import com.howWeather.howWeather_backend.domain.weather.entity.WeatherForecast;
 import com.howWeather.howWeather_backend.domain.weather.repository.RegionRepository;
+import com.howWeather.howWeather_backend.domain.weather.repository.WeatherForecastRepository;
 import com.howWeather.howWeather_backend.domain.weather.repository.WeatherRepository;
 import com.howWeather.howWeather_backend.global.exception.CustomException;
 import com.howWeather.howWeather_backend.global.exception.ErrorCode;
@@ -20,6 +23,7 @@ public class WeatherService {
     private final WeatherRepository weatherRepository;
     private final WeatherApiClient weatherApiClient;
     private final RegionRepository regionRepository;
+    private final WeatherForecastRepository weatherForecastRepository;
 
     @Transactional
     public void fetchAllRegionsWeather(int timeSlot) {
@@ -53,5 +57,31 @@ public class WeatherService {
         } catch (Exception e) {
             throw new CustomException(ErrorCode.WEATHER_API_CALL_ERROR, "날씨 정보를 가져오는 중 오류가 발생했습니다.");
         }
+    }
+
+    // TODO: 사용자 위치 기반으로 확장할 예정
+    public void fetchHourlyForecast() {
+        double lat = 37.53138497;
+        double lon = 126.979907;
+        String regionName = "용산구"; // TODO: 추후 동적 지역명으로 변경
+
+        List<WeatherPredictDto> forecasts = weatherApiClient.fetchHourlyForecast(lat, lon);
+
+        List<WeatherForecast> entities = forecasts.stream()
+                .map(dto -> WeatherForecast.builder()
+                        .regionName(regionName)
+                        .forecastDate(LocalDate.now())
+                        .hour(dto.getHour())
+                        .temperature(dto.getTemperature())
+                        .humidity(dto.getHumidity())
+                        .windSpeed(dto.getWindSpeed())
+                        .precipitation(dto.getPrecipitation())
+                        .cloudAmount(dto.getCloudAmount())
+                        .feelsLike(dto.getFeelsLike())
+                        .build()
+                )
+                .toList();
+
+        weatherForecastRepository.saveAll(entities);
     }
 }
