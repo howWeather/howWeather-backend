@@ -25,4 +25,11 @@ public class ClothController {
         String url = clothService.getUpperImage(clothId);
         return ApiResponse.success(HttpStatus.OK, url);
     }
+
+    @GetMapping("/outer-image/{clothId}")
+    @CheckAuthenticatedUser
+    public ResponseEntity<ApiResponse<String>> outerImage(@PathVariable("clothId") int clothId) {
+        String url = clothService.getOuterImage(clothId);
+        return ApiResponse.success(HttpStatus.OK, url);
+    }
 }

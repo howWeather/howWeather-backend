@@ -19,4 +19,10 @@ public class ClothService {
         return clothRepository.findUrlByCategoryAndClothType(1, id)
                 .orElseThrow(() -> new CustomException(ErrorCode.CLOTH_NOT_FOUND));
     }
+
+    @Transactional(readOnly = true)
+    public String getOuterImage(int id) {
+        return clothRepository.findUrlByCategoryAndClothType(2, id)
+                .orElseThrow(() -> new CustomException(ErrorCode.CLOTH_NOT_FOUND));
+    }
 }
