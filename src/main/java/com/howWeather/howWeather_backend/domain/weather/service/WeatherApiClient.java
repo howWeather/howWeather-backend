@@ -1,5 +1,6 @@
 package com.howWeather.howWeather_backend.domain.weather.service;
 
+import com.howWeather.howWeather_backend.domain.ai_model.dto.WeatherPredictDto;
 import com.howWeather.howWeather_backend.global.exception.CustomException;
 import com.howWeather.howWeather_backend.global.exception.ErrorCode;
 import lombok.extern.slf4j.Slf4j;
@@ -12,10 +13,8 @@ import org.springframework.web.client.RestTemplate;
 
 import com.howWeather.howWeather_backend.domain.weather.entity.Weather;
 
-import java.time.LocalDate;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.time.*;
+import java.util.*;
 
 @Service
 @Slf4j
@@ -115,5 +114,74 @@ public class WeatherApiClient {
             }
         }
         return "";
+    }
+
+    public List<WeatherPredictDto> fetchHourlyForecast(double lat, double lon) {
+        String url = String.format(
+                "https://api.openweathermap.org/data/2.5/onecall?lat=%f&lon=%f&exclude=current,minutely,daily,alerts&appid=%s&units=metric&lang=kr",
+                lat, lon, WEATHER_API_KEY);
+
+        ResponseEntity<Map> response;
+        try {
+            response = restTemplate.exchange(url, HttpMethod.GET, null, Map.class);
+        } catch (RestClientException e) {
+            log.error("One Call API 호출 실패: {}", e.getMessage());
+            throw new CustomException(ErrorCode.WEATHER_API_CALL_ERROR, "One Call API 호출 실패");
+        }
+
+        if (!response.getStatusCode().is2xxSuccessful()) {
+            throw new CustomException(ErrorCode.WEATHER_API_CALL_ERROR, "One Call API 호출 실패");
+        }
+
+        Map<String, Object> body = response.getBody();
+        if (body == null || !body.containsKey("hourly")) {
+            throw new CustomException(ErrorCode.NO_BODY_ERROR, "One Call API 응답에 hourly 데이터가 없습니다.");
+        }
+
+        List<Map<String, Object>> hourlyList = (List<Map<String, Object>>) body.get("hourly");
+
+        List<Integer> targetHours = List.of(9, 12, 15, 18, 21);
+
+        List<WeatherPredictDto> forecastList = new ArrayList<>();
+
+        for (Map<String, Object> hourData : hourlyList) {
+            long dt = ((Number) hourData.get("dt")).longValue();
+            ZonedDateTime dateTime = Instant.ofEpochSecond(dt).atZone(ZoneId.of("Asia/Seoul"));
+
+            int hour = dateTime.getHour();
+            if (targetHours.contains(hour)) {
+                double temp = getDoubleValue(hourData, "temp");
+                double humidity = getDoubleValue(hourData, "humidity");
+                double windSpeed = getDoubleValue(hourData, "wind_speed");
+                double cloudiness = getDoubleValue(hourData, "clouds");
+                double feelsLike = getDoubleValue(hourData, "feels_like");
+                double precipitation = 0.0;
+
+                if (hourData.containsKey("rain")) {
+                    Map<String, Object> rain = (Map<String, Object>) hourData.get("rain");
+                    precipitation = getDoubleValue(rain, "1h");
+                }
+
+                WeatherPredictDto dto = WeatherPredictDto.builder()
+                        .hour(hour)
+                        .temperature(temp)
+                        .humidity(humidity)
+                        .windSpeed(windSpeed)
+                        .cloudAmount(cloudiness)
+                        .feelsLike(feelsLike)
+                        .precipitation(precipitation)
+                        .build();
+                forecastList.add(dto);
+            }
+        }
+        return forecastList;
+    }
+
+    private double getDoubleValue(Map<String, Object> map, String key) {
+        Object value = map.get(key);
+        if (value instanceof Number number) {
+            return number.doubleValue();
+        }
+        return 0.0;
     }
 }
