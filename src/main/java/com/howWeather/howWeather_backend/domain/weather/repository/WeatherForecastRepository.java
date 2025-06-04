@@ -8,5 +8,5 @@ import java.time.LocalDate;
 
 @Repository
 public interface WeatherForecastRepository extends JpaRepository<WeatherForecast, Long> {
-    void deleteByForecastDate(LocalDate forecastDate);
+    void deleteByForecastDateBefore(LocalDate date);
 }
