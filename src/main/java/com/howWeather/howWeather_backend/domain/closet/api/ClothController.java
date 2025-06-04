@@ -1,16 +1,15 @@
 package com.howWeather.howWeather_backend.domain.closet.api;
 
 import com.howWeather.howWeather_backend.domain.closet.service.ClothService;
+import com.howWeather.howWeather_backend.domain.member.entity.Member;
 import com.howWeather.howWeather_backend.global.Response.ApiResponse;
 import com.howWeather.howWeather_backend.global.jwt.CheckAuthenticatedUser;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.web.bind.annotation.*;
 
 @Slf4j
 @RestController
@@ -19,17 +18,21 @@ import org.springframework.web.bind.annotation.RestController;
 public class ClothController {
     private final ClothService clothService;
 
-    @GetMapping("/upper-image/{clothId}")
+    @GetMapping("/upper-image/{clothType}")
     @CheckAuthenticatedUser
-    public ResponseEntity<ApiResponse<String>> upperImage(@PathVariable("clothId") int clothId) {
-        String url = clothService.getUpperImage(clothId);
+    public ResponseEntity<ApiResponse<String>> upperImage(@RequestHeader("Authorization") String accessTokenHeader,
+                                                          @AuthenticationPrincipal Member member,
+                                                          @PathVariable("clothType") int clothType) {
+        String url = clothService.getUpperImage(clothType);
         return ApiResponse.success(HttpStatus.OK, url);
     }
 
-    @GetMapping("/outer-image/{clothId}")
+    @GetMapping("/outer-image/{clothType}")
     @CheckAuthenticatedUser
-    public ResponseEntity<ApiResponse<String>> outerImage(@PathVariable("clothId") int clothId) {
-        String url = clothService.getOuterImage(clothId);
+    public ResponseEntity<ApiResponse<String>> outerImage(@RequestHeader("Authorization") String accessTokenHeader,
+                                                          @AuthenticationPrincipal Member member,
+                                                          @PathVariable("clothType") int clothType) {
+        String url = clothService.getOuterImage(clothType);
         return ApiResponse.success(HttpStatus.OK, url);
     }
 }
