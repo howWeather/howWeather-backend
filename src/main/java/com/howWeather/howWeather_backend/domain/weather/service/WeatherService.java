@@ -63,7 +63,7 @@ public class WeatherService {
     public void fetchHourlyForecast() {
         double lat = 37.53138497;
         double lon = 126.979907;
-        String regionName = "용산구"; // TODO: 추후 동적 지역명으로 변경
+        String regionName = "서울특별시 용산구"; // TODO: 추후 동적 지역명으로 변경
 
         List<WeatherPredictDto> forecasts = weatherApiClient.fetchHourlyForecast(lat, lon);
 
