@@ -13,7 +13,8 @@ public enum ErrorCode {
     
     // 회원가입/로그인/로그아웃/비밀번호 설정 관련
     USER_ALREADY_EXISTS("이미 존재하는 사용자입니다.", HttpStatus.BAD_REQUEST),
-    USER_NOT_FOUND("아이디가 존재하지 않습니다.", HttpStatus.UNAUTHORIZED),
+    ID_NOT_FOUND("아이디가 존재하지 않습니다.", HttpStatus.UNAUTHORIZED),
+    USER_NOT_FOUNT("해당 회원이 존재하지 않습니다.", HttpStatus.NOT_FOUND),
     INVALID_CREDENTIALS("비밀번호가 틀렸습니다.", HttpStatus.UNAUTHORIZED),
     LOGIN_ID_ALREADY_EXISTS("이미 사용 중인 아이디입니다.", HttpStatus.CONFLICT),
     INVALID_SOCIAL_PREFIX_LOGIN_ID("'Kakao_', 'Google_'등 소셜 접두어는 사용할 수 없습니다.", HttpStatus.BAD_REQUEST),
@@ -52,6 +53,7 @@ public enum ErrorCode {
     INVALID_MONTH_REQUEST("한 달의 데이터를 조회하기 위해서는 YYYY-MM 형태를 사용해야 합니다.", HttpStatus.BAD_REQUEST),
     INVALID_TEMP_GAP("온도 범위는 0 ~ 10도 사이의 값으로 설정 가능합니다.", HttpStatus.BAD_REQUEST),
     INVALID_TEMP("현재 온도는 섭씨로 -50 이상 60 이하의 값이어야 합니다.", HttpStatus.BAD_REQUEST),
+    RECORD_NOT_FOUND("해당 기록이 존재하지 않습니다", HttpStatus.NOT_FOUND),
 
     // 닐씨
     WEATHER_API_CALL_ERROR("날씨 API를 호출하는 중 오류가 발생했습니다", HttpStatus.SERVICE_UNAVAILABLE),

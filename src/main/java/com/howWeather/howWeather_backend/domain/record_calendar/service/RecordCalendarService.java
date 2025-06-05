@@ -1,13 +1,18 @@
 package com.howWeather.howWeather_backend.domain.record_calendar.service;
 
+import com.howWeather.howWeather_backend.domain.ai_model.dto.HistoryRequestDto;
 import com.howWeather.howWeather_backend.domain.closet.entity.Closet;
+import com.howWeather.howWeather_backend.domain.closet.repository.ClothRepository;
 import com.howWeather.howWeather_backend.domain.closet.repository.OuterRepository;
 import com.howWeather.howWeather_backend.domain.closet.repository.UpperRepository;
 import com.howWeather.howWeather_backend.domain.member.entity.Member;
 import com.howWeather.howWeather_backend.domain.member.repository.MemberRepository;
+import com.howWeather.howWeather_backend.domain.record_calendar.dto.RecordForModelDto;
 import com.howWeather.howWeather_backend.domain.record_calendar.dto.RecordRequestDto;
 import com.howWeather.howWeather_backend.domain.closet.entity.Upper;
 import com.howWeather.howWeather_backend.domain.record_calendar.dto.RecordResponseDto;
+import com.howWeather.howWeather_backend.domain.record_calendar.repository.DayRecordOuterRepository;
+import com.howWeather.howWeather_backend.domain.record_calendar.repository.DayRecordUpperRepository;
 import com.howWeather.howWeather_backend.domain.weather.entity.Weather;
 import com.howWeather.howWeather_backend.domain.closet.entity.Outer;
 import com.howWeather.howWeather_backend.domain.record_calendar.entity.DayRecord;
@@ -18,12 +23,14 @@ import com.howWeather.howWeather_backend.domain.weather.repository.WeatherReposi
 import com.howWeather.howWeather_backend.global.exception.CustomException;
 import com.howWeather.howWeather_backend.global.exception.ErrorCode;
 import lombok.AllArgsConstructor;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 
 import java.time.*;
 
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -35,12 +42,15 @@ public class RecordCalendarService {
     private final OuterRepository outerRepository;
     private final WeatherRepository weatherRepository;
     private final MemberRepository memberRepository;
+    private final ClothRepository clothRepository;
+    private final DayRecordOuterRepository dayRecordOuterRepository;
+    private final DayRecordUpperRepository dayRecordUpperRepository;
 
     @Transactional
     public void saveWrite(RecordRequestDto dto, Member member) {
         try {
             Member managedMember = memberRepository.findById(member.getId())
-                    .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
+                    .orElseThrow(() -> new CustomException(ErrorCode.ID_NOT_FOUND));
 
             validateRecordTime(dto.getDate(), dto.getTimeSlot());
             boolean exists = dayRecordRepository.existsByMemberAndDateAndTimeSlot(managedMember, dto.getDate(), dto.getTimeSlot());
@@ -119,6 +129,124 @@ public class RecordCalendarService {
                 .collect(Collectors.toList());
     }
 
+    @Transactional
+    public List<RecordForModelDto> getMemberHistory(HistoryRequestDto dto) {
+        try {
+            memberCheck(dto.getMemberId());
+            List<RecordForModelDto> result = new ArrayList<>();
+
+            List<Long> historyIdList = getSimilarHistoryIds(dto);
+            for (Long historyId : historyIdList) {
+                List<Integer> outers = getOuterList(historyId);
+                List<Integer> uppers = getTopList(historyId);
+
+                if (outers == null || outers.isEmpty()) continue;
+                if (uppers == null || uppers.isEmpty()) continue;
+
+                result.add(makeRecordModelDto(historyId, uppers, outers));
+            }
+            return result;
+        } catch (CustomException e){
+            throw e;
+        } catch (Exception e) {
+            throw new CustomException(ErrorCode.UNKNOWN_ERROR, e.getMessage());
+        }
+    }
+
+    private RecordForModelDto makeRecordModelDto(Long historyId, List<Integer> tops, List<Integer> outers) {
+        return RecordForModelDto.builder()
+                .temperature(getTemperatureByDayRecordId(historyId))
+                .feeling(getFeelingByDayRecordId(historyId))
+                .tops(tops)
+                .outers(outers)
+                .build();
+    }
+
+    private List<Integer> getOuterList(Long historyId) {
+        List<DayRecordOuter> dayRecordOuters = dayRecordOuterRepository.findByDayRecordId(historyId);
+        if (dayRecordOuters.isEmpty()) return null;
+
+        List<Integer> result = new ArrayList<>();
+
+        for (DayRecordOuter dro : dayRecordOuters) {
+            Outer outer = dro.getOuter();
+            if (outer == null)  return null;
+
+            Integer clothType = outer.getOuterType() != null ? outer.getOuterType().intValue() : null;
+            int thickness = outer.getThickness();
+            int category = 2;
+
+            if (clothType == null) return null;
+
+            Integer value = switch (thickness) {
+                case 1 -> clothRepository.findThinByCategoryAndClothType(category, clothType)
+                        .orElseThrow(() -> new CustomException(ErrorCode.CLOTH_NOT_FOUND));
+                case 2 -> clothRepository.findNormalByCategoryAndClothType(category, clothType)
+                        .orElseThrow(() -> new CustomException(ErrorCode.CLOTH_NOT_FOUND));
+                case 3 -> clothRepository.findThickByCategoryAndClothType(category, clothType)
+                        .orElseThrow(() -> new CustomException(ErrorCode.CLOTH_NOT_FOUND));
+                default -> throw new CustomException(ErrorCode.INVALID_THICKNESS);
+            };
+            result.add(value);
+        }
+        return result;
+    }
+
+    private List<Integer> getTopList(Long historyId) {
+        List<DayRecordUpper> dayRecordTops = dayRecordUpperRepository.findByDayRecordId(historyId);
+        if (dayRecordTops.isEmpty()) return null;
+
+        List<Integer> result = new ArrayList<>();
+
+        for (DayRecordUpper drt : dayRecordTops) {
+            Upper top = drt.getUpper();
+            if (top == null) return null;
+
+            Integer clothType = top.getUpperType() != null ? top.getUpperType().intValue() : null;
+            int thickness = top.getThickness();
+            int category = 1;
+
+            if (clothType == null)  return null;
+
+            Integer value = switch (thickness) {
+                case 1 -> clothRepository.findThinByCategoryAndClothType(category, clothType)
+                        .orElseThrow(() -> new CustomException(ErrorCode.CLOTH_NOT_FOUND));
+                case 2 -> clothRepository.findNormalByCategoryAndClothType(category, clothType)
+                        .orElseThrow(() -> new CustomException(ErrorCode.CLOTH_NOT_FOUND));
+                case 3 -> clothRepository.findThickByCategoryAndClothType(category, clothType)
+                        .orElseThrow(() -> new CustomException(ErrorCode.CLOTH_NOT_FOUND));
+                default -> throw new CustomException(ErrorCode.INVALID_THICKNESS);
+            };
+            result.add(value);
+        }
+        return result;
+    }
+
+    public int getFeelingByDayRecordId(Long id) {
+        return dayRecordRepository.findFeelingById(id)
+                .orElseThrow(() -> new CustomException(ErrorCode.RECORD_NOT_FOUND));
+    }
+
+    public double getTemperatureByDayRecordId(Long id) {
+        return dayRecordRepository.findTemperatureById(id)
+                .orElseThrow(() -> new CustomException(ErrorCode.RECORD_NOT_FOUND));
+    }
+
+    private List<Long> getSimilarHistoryIds(HistoryRequestDto dto) {
+        int count = (dto.getCnt() != null) ? dto.getCnt() : HistoryRequestDto.DEFAULT_CNT;
+        double upperBound = dto.getUpperBound();
+        double lowerBound = dto.getLowerBound();
+        return dayRecordRepository.findRecentRecordIdsByMemberIdAndTemperatureRange(
+                dto.getMemberId(), lowerBound, upperBound, PageRequest.of(0, count)
+        );
+    }
+
+    private void memberCheck(Long id) {
+        if (!memberRepository.existsByIdAndIsDeletedFalse(id)) {
+            throw new CustomException(ErrorCode.USER_NOT_FOUNT);
+        }
+    }
+
     private void validateRecordTime(LocalDate date, int timeSlot) {
         ZoneId zoneId = ZoneId.of("Asia/Seoul");
         ZonedDateTime now = ZonedDateTime.now(zoneId);
@@ -148,7 +276,6 @@ public class RecordCalendarService {
         throw new CustomException(ErrorCode.INVALID_DATE, "오늘 또는 어제 날짜에 대해서만 기록을 작성할 수 있습니다.");
     }
 
-
     private LocalDateTime getAvailableTime(LocalDate date, int timeSlot) {
         return switch (timeSlot) {
             case 1 -> date.atTime(9, 0);
@@ -166,7 +293,6 @@ public class RecordCalendarService {
             default -> "알 수 없음";
         };
     }
-
 
     private Closet getClosetOrThrow(Member member) {
         Closet closet = member.getCloset();
