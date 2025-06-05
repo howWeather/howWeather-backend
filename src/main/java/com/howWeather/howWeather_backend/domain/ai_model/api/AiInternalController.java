@@ -1,12 +1,16 @@
 package com.howWeather.howWeather_backend.domain.ai_model.api;
 
 import com.howWeather.howWeather_backend.domain.ai_model.dto.AiPredictionRequestDto;
+import com.howWeather.howWeather_backend.domain.ai_model.dto.HistoryRequestDto;
 import com.howWeather.howWeather_backend.domain.ai_model.dto.ModelClothingRecommendationDto;
 import com.howWeather.howWeather_backend.domain.ai_model.service.AiInternalService;
 import com.howWeather.howWeather_backend.domain.ai_model.service.RecommendationService;
 import com.howWeather.howWeather_backend.domain.member.entity.Member;
 import com.howWeather.howWeather_backend.domain.member.repository.MemberRepository;
+import com.howWeather.howWeather_backend.domain.record_calendar.dto.RecordForModelDto;
+import com.howWeather.howWeather_backend.domain.record_calendar.service.RecordCalendarService;
 import com.howWeather.howWeather_backend.global.Response.ApiResponse;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
@@ -27,6 +31,7 @@ public class AiInternalController {
     private final AiInternalService aiInternalService;
     private final MemberRepository memberRepository;
     private final RecommendationService recommendationService;
+    private final RecordCalendarService recordCalendarService;
 
     @PostMapping("/prediction")
     public ResponseEntity<List<AiPredictionRequestDto>> sendAllUsersPredictionData() {
@@ -51,4 +56,9 @@ public class AiInternalController {
         return ApiResponse.success(HttpStatus.OK, "예측 결과를 성공적으로 저장했습니다.");
     }
 
+    @PostMapping("/similar-history")
+    public ResponseEntity<ApiResponse<List<RecordForModelDto>>> getSimilarHistory(@Valid @RequestBody HistoryRequestDto dto) {
+        List<RecordForModelDto> result = recordCalendarService.getMemberHistory(dto);
+        return ApiResponse.success(HttpStatus.OK, result);
+    }
 }
