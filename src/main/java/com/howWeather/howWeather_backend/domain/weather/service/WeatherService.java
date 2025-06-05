@@ -15,6 +15,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
+import java.util.ArrayList;
 import java.util.List;
 
 @Service
@@ -59,29 +60,37 @@ public class WeatherService {
         }
     }
 
-    // TODO: 사용자 위치 기반으로 확장할 예정
     public void fetchHourlyForecast() {
         double lat = 37.53138497;
         double lon = 126.979907;
         String regionName = "서울특별시 용산구"; // TODO: 추후 동적 지역명으로 변경
 
-        List<WeatherPredictDto> forecasts = weatherApiClient.fetchHourlyForecast(lat, lon);
+        List<WeatherPredictDto> forecasts = weatherApiClient.fetchForecast(lat, lon);
 
-        List<WeatherForecast> entities = forecasts.stream()
-                .map(dto -> WeatherForecast.builder()
-                        .regionName(regionName)
-                        .forecastDate(LocalDate.now())
-                        .hour(dto.getHour())
-                        .temperature(dto.getTemperature())
-                        .humidity(dto.getHumidity())
-                        .windSpeed(dto.getWindSpeed())
-                        .precipitation(dto.getPrecipitation())
-                        .cloudAmount(dto.getCloudAmount())
-                        .feelsLike(dto.getFeelsLike())
-                        .build()
-                )
-                .toList();
+        LocalDate baseDate = LocalDate.now();
+        int cnt = 0;
 
+        List<WeatherForecast> entities = new ArrayList<>();
+
+        for (WeatherPredictDto dto : forecasts) {
+            LocalDate forecastDate = baseDate.plusDays(cnt / 5);
+
+            WeatherForecast entity = WeatherForecast.builder()
+                    .regionName(regionName)
+                    .forecastDate(forecastDate)
+                    .hour(dto.getHour())
+                    .temperature(dto.getTemperature())
+                    .humidity(dto.getHumidity())
+                    .windSpeed(dto.getWindSpeed())
+                    .precipitation(dto.getPrecipitation())
+                    .cloudAmount(dto.getCloudAmount())
+                    .feelsLike(dto.getFeelsLike())
+                    .build();
+
+            entities.add(entity);
+            cnt++;
+        }
         weatherForecastRepository.saveAll(entities);
     }
+
 }
