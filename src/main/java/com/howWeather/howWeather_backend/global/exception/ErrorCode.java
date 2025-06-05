@@ -65,13 +65,16 @@ public enum ErrorCode {
 
     // 추천 의상 반환 로직
     NO_PREDICT_DATA("예측된 정보가 없습니다.", HttpStatus.NOT_FOUND),
+    NO_RECOMMEND_UPPER("의상 추천을 위해 학습된 상의가 현재 옷장에 존재하지 않습니다. 옷장에 옷이 있는지 확인해주세요.", HttpStatus.NOT_FOUND),
+    NO_RECOMMEND_OUTER("의상 추천을 위해 학습된 아우터가 현재 옷장에 존재하지 않습니다. 옷장에 옷이 있는지 확인해주세요.", HttpStatus.NOT_FOUND),
+    WEATHER_DATA_NOT_FOUND("해당 시간대의 예보 데이터는 제공하지 않습니다.",  HttpStatus.BAD_REQUEST),
 
     // 소셜 로그인
     KAKAO_API_CALL_ERROR("Kakao API를 호출하는 중 오류가 발생했습니다", HttpStatus.SERVICE_UNAVAILABLE),
     KAKAO_INVALID_ACCESS_TOKEN("유효하지 않은 카카오 액세스 토큰입니다.", HttpStatus.UNAUTHORIZED),
     GOOGLE_INVALID_ACCESS_TOKEN("유효하지 않은 구글 액세스 토큰입니다.", HttpStatus.UNAUTHORIZED), 
     NO_OAUTH2_CLIENT("Auth2AuthorizedClient가 존재하지 않습니다.", HttpStatus.UNAUTHORIZED),
-    OAUTH2_TOKEN_NOT_FOUND("OAuth2 access token을 찾을 수 없습니다.", HttpStatus.UNAUTHORIZED)
+    OAUTH2_TOKEN_NOT_FOUND("OAuth2 access token을 찾을 수 없습니다.", HttpStatus.UNAUTHORIZED),
     ;
 
     private final String message;
