@@ -114,7 +114,7 @@ public class AuthService {
         UsernamePasswordAuthenticationToken authenticationToken = new UsernamePasswordAuthenticationToken(id, password);
 
         Member member = memberRepository.findByLoginId(id)
-                .orElseThrow(() -> new LoginException(ErrorCode.USER_NOT_FOUND, "아이디가 존재하지 않습니다."));
+                .orElseThrow(() -> new LoginException(ErrorCode.ID_NOT_FOUND, "아이디가 존재하지 않습니다."));
 
         if (member.isDeleted()) {
             throw new LoginException(ErrorCode.ALREADY_DELETED, "탈퇴한 회원입니다.");
@@ -124,7 +124,7 @@ public class AuthService {
             Authentication authentication = authenticationManagerBuilder.getObject().authenticate(authenticationToken);
             return jwtTokenProvider.generateToken(authentication);
         } catch (UsernameNotFoundException e) {
-            throw new LoginException(ErrorCode.USER_NOT_FOUND, "아이디가 존재하지 않습니다.");
+            throw new LoginException(ErrorCode.ID_NOT_FOUND, "아이디가 존재하지 않습니다.");
         } catch (BadCredentialsException e) {
             throw new LoginException(ErrorCode.INVALID_CREDENTIALS, "비밀번호가 틀렸습니다.");
         } catch (AuthenticationException e) {
@@ -202,7 +202,7 @@ public class AuthService {
             String encodedNewPassword = passwordEncoder.encode(dto.getNewPassword());
 
             Member persistedMember = memberRepository.findById(member.getId())
-                    .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND, "사용자를 찾을 수 없습니다."));
+                    .orElseThrow(() -> new CustomException(ErrorCode.ID_NOT_FOUND, "사용자를 찾을 수 없습니다."));
 
             persistedMember.changePassword(encodedNewPassword);
             memberRepository.flush();
@@ -238,7 +238,7 @@ public class AuthService {
             validateIntData(profileChangeDto.getData(), 1, 2);
             if (profileChangeDto.getData() != null) {
                 Member persistedMember = memberRepository.findById(member.getId())
-                        .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND, "회원 정보를 찾을 수 없습니다."));
+                        .orElseThrow(() -> new CustomException(ErrorCode.ID_NOT_FOUND, "회원 정보를 찾을 수 없습니다."));
                 persistedMember.changeGender(profileChangeDto.getData());
             }
         } catch (CustomException e) {
@@ -255,7 +255,7 @@ public class AuthService {
             validateIntData(profileChangeDto.getData(), 1, 3);
             if (profileChangeDto.getData() != null) {
                 Member persistedMember = memberRepository.findById(member.getId())
-                        .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND, "회원 정보를 찾을 수 없습니다."));
+                        .orElseThrow(() -> new CustomException(ErrorCode.ID_NOT_FOUND, "회원 정보를 찾을 수 없습니다."));
                 persistedMember.changeAgeGroup(profileChangeDto.getData());
             }
         } catch (CustomException e) {
@@ -271,7 +271,7 @@ public class AuthService {
         try {
             if (nicknameDto.getData() != null) {
                 Member persistedMember = memberRepository.findById(member.getId())
-                        .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND, "회원 정보를 찾을 수 없습니다."));
+                        .orElseThrow(() -> new CustomException(ErrorCode.ID_NOT_FOUND, "회원 정보를 찾을 수 없습니다."));
                 persistedMember.changeNickname(nicknameDto.getData());
             }
         } catch (CustomException e) {
@@ -288,7 +288,7 @@ public class AuthService {
             validateIntData(profileChangeDto.getData(), 1, 3);
             if (profileChangeDto.getData() != null) {
                 Member persistedMember = memberRepository.findById(member.getId())
-                        .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND, "회원 정보를 찾을 수 없습니다."));
+                        .orElseThrow(() -> new CustomException(ErrorCode.ID_NOT_FOUND, "회원 정보를 찾을 수 없습니다."));
                 persistedMember.changeConstitution(profileChangeDto.getData());
             }
         } catch (CustomException e) {
@@ -319,7 +319,7 @@ public class AuthService {
             }
 
             Member persistedMember = memberRepository.findById(member.getId())
-                    .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND, "회원 정보를 찾을 수 없습니다."));
+                    .orElseThrow(() -> new CustomException(ErrorCode.ID_NOT_FOUND, "회원 정보를 찾을 수 없습니다."));
 
             if (persistedMember.isDeleted()) {
                 throw new CustomException(ErrorCode.ALREADY_DELETED);
