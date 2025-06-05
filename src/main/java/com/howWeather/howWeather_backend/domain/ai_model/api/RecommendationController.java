@@ -23,9 +23,10 @@ import java.util.List;
 public class RecommendationController {
     private final RecommendationService recommendationService;
 
-    @GetMapping()
+    @GetMapping("/recommendation")
     public ResponseEntity<ApiResponse<List<RecommendPredictDto>>> getRecommendList(@RequestHeader("Authorization") String accessTokenHeader,
                                                                                    @AuthenticationPrincipal Member member) {
+
         List<RecommendPredictDto> recommendList = recommendationService.getRecommendList(member);
         return ApiResponse.success(HttpStatus.OK, recommendList);
     }
