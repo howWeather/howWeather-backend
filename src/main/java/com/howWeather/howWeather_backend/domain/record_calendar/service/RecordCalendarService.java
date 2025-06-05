@@ -2,7 +2,6 @@ package com.howWeather.howWeather_backend.domain.record_calendar.service;
 
 import com.howWeather.howWeather_backend.domain.ai_model.dto.HistoryRequestDto;
 import com.howWeather.howWeather_backend.domain.closet.entity.Closet;
-import com.howWeather.howWeather_backend.domain.closet.entity.Cloth;
 import com.howWeather.howWeather_backend.domain.closet.repository.ClothRepository;
 import com.howWeather.howWeather_backend.domain.closet.repository.OuterRepository;
 import com.howWeather.howWeather_backend.domain.closet.repository.UpperRepository;
@@ -51,7 +50,7 @@ public class RecordCalendarService {
     public void saveWrite(RecordRequestDto dto, Member member) {
         try {
             Member managedMember = memberRepository.findById(member.getId())
-                    .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
+                    .orElseThrow(() -> new CustomException(ErrorCode.ID_NOT_FOUND));
 
             validateRecordTime(dto.getDate(), dto.getTimeSlot());
             boolean exists = dayRecordRepository.existsByMemberAndDateAndTimeSlot(managedMember, dto.getDate(), dto.getTimeSlot());
@@ -244,7 +243,7 @@ public class RecordCalendarService {
 
     private void memberCheck(Long id) {
         if (!memberRepository.existsByIdAndIsDeletedFalse(id)) {
-            throw new CustomException(ErrorCode.USER_NOT_FOUND, "존재하지 않는 회원입니다");
+            throw new CustomException(ErrorCode.USER_NOT_FOUNT);
         }
     }
 
