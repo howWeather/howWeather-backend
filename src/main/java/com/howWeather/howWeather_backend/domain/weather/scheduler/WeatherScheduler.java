@@ -1,5 +1,6 @@
 package com.howWeather.howWeather_backend.domain.weather.scheduler;
 
+import com.howWeather.howWeather_backend.domain.ai_model.repository.ClothingRecommendationRepository;
 import com.howWeather.howWeather_backend.domain.weather.repository.WeatherForecastRepository;
 import com.howWeather.howWeather_backend.domain.weather.service.WeatherService;
 import lombok.AllArgsConstructor;
@@ -16,6 +17,7 @@ import java.time.LocalDateTime;
 public class WeatherScheduler {
     private final WeatherService weatherService;
     private final WeatherForecastRepository weatherForecastRepository;
+    private final ClothingRecommendationRepository clothingRecommendationRepository;
 
     @Scheduled(cron = "0 30 8 * * *", zone = "Asia/Seoul") // 오전 8시 30분
     public void fetchMorningWeather() {
@@ -49,7 +51,12 @@ public class WeatherScheduler {
 
     @Scheduled(cron = "0 0 7 * * *", zone = "Asia/Seoul") // 매일 오전 7시
     public void deleteOldForecastData() {
-        weatherForecastRepository.deleteByForecastDateBefore(LocalDate.now());
-        log.info("오늘 이전의 예보 데이터를 모두 삭제했습니다. 기준 날짜: {}", LocalDate.now());
+        LocalDate today = LocalDate.now();
+
+        weatherForecastRepository.deleteByForecastDateBefore(today);
+        log.info("오늘 이전의 예보 데이터를 모두 삭제했습니다. 기준 날짜: {}", today);
+
+        clothingRecommendationRepository.deleteByDateBefore(today);
+        log.info("오늘 이전의 의류 추천 데이터를 모두 삭제했습니다. 기준 날짜: {}", today);
     }
 }

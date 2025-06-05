@@ -10,4 +10,6 @@ import java.util.List;
 @Repository
 public interface ClothingRecommendationRepository extends JpaRepository<ClothingRecommendation, Long> {
     List<ClothingRecommendation> findByMemberIdAndDate(Long memberId, LocalDate date);
+
+    void deleteByDateBefore(LocalDate date);
 }
