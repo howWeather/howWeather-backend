@@ -1,6 +1,6 @@
 package com.howWeather.howWeather_backend.domain.ai_model.api;
 
-import com.howWeather.howWeather_backend.domain.ai_model.dto.RecommendListDto;
+import com.howWeather.howWeather_backend.domain.ai_model.dto.RecommendPredictDto;
 import com.howWeather.howWeather_backend.domain.ai_model.service.RecommendationService;
 import com.howWeather.howWeather_backend.domain.member.entity.Member;
 import com.howWeather.howWeather_backend.global.Response.ApiResponse;
@@ -14,6 +14,8 @@ import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.util.List;
+
 @Slf4j
 @RestController
 @RequiredArgsConstructor
@@ -22,9 +24,9 @@ public class RecommendationController {
     private final RecommendationService recommendationService;
 
     @GetMapping()
-    public ResponseEntity<ApiResponse<RecommendListDto>> getRecommendList(@RequestHeader("Authorization") String accessTokenHeader,
-                                                                          @AuthenticationPrincipal Member member) {
-        RecommendListDto recommendList = recommendationService.getRecommendList(member);
+    public ResponseEntity<ApiResponse<List<RecommendPredictDto>>> getRecommendList(@RequestHeader("Authorization") String accessTokenHeader,
+                                                                                   @AuthenticationPrincipal Member member) {
+        List<RecommendPredictDto> recommendList = recommendationService.getRecommendList(member);
         return ApiResponse.success(HttpStatus.OK, recommendList);
     }
 }

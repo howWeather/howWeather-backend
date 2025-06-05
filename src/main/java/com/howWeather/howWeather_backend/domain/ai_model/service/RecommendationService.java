@@ -3,6 +3,7 @@ package com.howWeather.howWeather_backend.domain.ai_model.service;
 import com.howWeather.howWeather_backend.domain.ai_model.dto.ModelClothingRecommendationDto;
 import com.howWeather.howWeather_backend.domain.ai_model.dto.ModelRecommendationResult;
 import com.howWeather.howWeather_backend.domain.ai_model.dto.RecommendListDto;
+import com.howWeather.howWeather_backend.domain.ai_model.dto.RecommendPredictDto;
 import com.howWeather.howWeather_backend.domain.ai_model.entity.ClothingRecommendation;
 import com.howWeather.howWeather_backend.domain.ai_model.repository.ClothingRecommendationRepository;
 import com.howWeather.howWeather_backend.domain.member.entity.Member;
@@ -14,6 +15,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
+import java.util.ArrayList;
 import java.util.List;
 
 @Slf4j
@@ -43,8 +45,18 @@ public class RecommendationService {
     }
 
     @Transactional(readOnly = true)
-    public RecommendListDto getRecommendList(Member member) {
+    public List<RecommendPredictDto> getRecommendList(Member member) {
         List<ClothingRecommendation> modelPredictList = getModelPrediction(member.getId(), LocalDate.now());
+
+        List<RecommendPredictDto> result = new ArrayList<>();
+        for (ClothingRecommendation recommendation : modelPredictList) {
+            result.add(makeResultForPredict(recommendation));
+        }
+
+        return null;
+    }
+
+    private RecommendPredictDto makeResultForPredict(ClothingRecommendation recommendation) {
         return null;
     }
 
