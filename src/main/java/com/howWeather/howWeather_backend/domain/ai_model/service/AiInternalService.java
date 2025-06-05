@@ -35,8 +35,10 @@ public class AiInternalService {
     }
 
     private List<WeatherPredictDto> getWeatherForecast() {
+        List<Integer> targetHours = List.of(9, 12, 15, 18, 21);
+
         List<WeatherForecast> forecasts = weatherForecastRepository
-                .findByRegionNameAndForecastDate("서울특별시 용산구", LocalDate.now());
+                .findByRegionNameAndForecastDateAndHourIn("서울특별시 용산구", LocalDate.now(), targetHours);
 
         return forecasts.stream()
                 .map(this::convertToDto)
@@ -141,7 +143,7 @@ public class AiInternalService {
 
 
     private List<Map<Long, Integer>> getAllOutersList(List<Outer> outerList) {
-        Set<Long> seenTypes = new HashSet<>(); 
+        Set<Long> seenTypes = new HashSet<>();
         List<Map<Long, Integer>> ans = new ArrayList<>();
 
         for (Outer outer : outerList) {
