@@ -108,81 +108,97 @@ public class AiInternalService {
     }
 
     private List<int[]> makeOneOrTwoElementArrays(List<Map<Long, Integer>> uppersList) {
-        Set<String> seen = new HashSet<>();
+        Set<Integer> allValues = uppersList.stream()
+                .flatMap(map -> map.values().stream())
+                .collect(Collectors.toSet());
+
         List<int[]> result = new ArrayList<>();
+        Set<String> seen = new HashSet<>();
 
-        for (Map<Long, Integer> map : uppersList) {
-            List<Integer> values = new ArrayList<>(map.values());
-
-            if (values.size() >= 1) {
-                int[] oneElem = new int[] { values.get(0) };
-                String key = Arrays.toString(oneElem);
-                if (!seen.contains(key)) {
-                    seen.add(key);
-                    result.add(oneElem);
-                }
+        for (Integer val : allValues) {
+            int[] one = new int[] { val };
+            String key = Arrays.toString(one);
+            if (seen.add(key)) {
+                result.add(one);
             }
+        }
 
-            if (values.size() >= 2) {
-                int[] twoElem = new int[] { values.get(0), values.get(1) };
-                Arrays.sort(twoElem);
-                String key = Arrays.toString(twoElem);
-                if (!seen.contains(key)) {
-                    seen.add(key);
-                    result.add(twoElem);
+        List<Integer> valueList = new ArrayList<>(allValues);
+        int n = valueList.size();
+        for (int i = 0; i < n; i++) {
+            for (int j = i + 1; j < n; j++) {
+                int[] two = new int[] { valueList.get(i), valueList.get(j) };
+                Arrays.sort(two);
+                String key = Arrays.toString(two);
+                if (seen.add(key)) {
+                    result.add(two);
                 }
             }
         }
+
         return result;
     }
 
+
     private List<Map<Long, Integer>> getAllOutersList(List<Outer> outerList) {
+        Set<Long> seenTypes = new HashSet<>(); 
         List<Map<Long, Integer>> ans = new ArrayList<>();
+
         for (Outer outer : outerList) {
             Long type = outer.getOuterType();
+            if (seenTypes.contains(type)) continue;
+
             int thickness = outer.getThickness();
+            Optional<Integer> value = Optional.empty();
+
             if (thickness == 1) {
-                Optional<Integer> value = clothRepository.findThinByCategoryAndClothType(2, type.intValue());
-                value.ifPresent(integer -> ans.add(Map.of(type, integer)));
-                if (value.isEmpty()) throw new CustomException(ErrorCode.CLOTH_NOT_FOUND);
-            }
-            else if (thickness == 2) {
-                Optional<Integer> value = clothRepository.findNormalByCategoryAndClothType(2, type.intValue());
-                value.ifPresent(integer -> ans.add(Map.of(type, integer)));
-                if (value.isEmpty()) throw new CustomException(ErrorCode.CLOTH_NOT_FOUND);
+                value = clothRepository.findThinByCategoryAndClothType(2, type.intValue());
+            } else if (thickness == 2) {
+                value = clothRepository.findNormalByCategoryAndClothType(2, type.intValue());
+            } else if (thickness == 3) {
+                value = clothRepository.findThickByCategoryAndClothType(2, type.intValue());
             }
 
-            else if (thickness == 3) {
-                Optional<Integer> value = clothRepository.findThickByCategoryAndClothType(2, type.intValue());
-                value.ifPresent(integer -> ans.add(Map.of(type, integer)));
-                if (value.isEmpty()) throw new CustomException(ErrorCode.CLOTH_NOT_FOUND);
+            if (value.isPresent()) {
+                ans.add(Map.of(type, value.get()));
+                seenTypes.add(type);
+            } else {
+                throw new CustomException(ErrorCode.CLOTH_NOT_FOUND);
             }
         }
+
         return ans;
     }
+
 
     private List<Map<Long, Integer>> getAllUppersList(List<Upper> upperList) {
+        Set<Long> seenTypes = new HashSet<>(); // type만으로 중복 체크
         List<Map<Long, Integer>> ans = new ArrayList<>();
+
         for (Upper upper : upperList) {
             Long type = upper.getUpperType();
+            if (seenTypes.contains(type)) continue; // 중복 type 제거
+
             int thickness = upper.getThickness();
+            Optional<Integer> value = Optional.empty();
+
             if (thickness == 1) {
-                Optional<Integer> value = clothRepository.findThinByCategoryAndClothType(1, type.intValue());
-                value.ifPresent(integer -> ans.add(Map.of(type, integer)));
-                if (value.isEmpty()) throw new CustomException(ErrorCode.CLOTH_NOT_FOUND);
-            }
-            else if (thickness == 2) {
-                Optional<Integer> value = clothRepository.findNormalByCategoryAndClothType(1, type.intValue());
-                value.ifPresent(integer -> ans.add(Map.of(type, integer)));
-                if (value.isEmpty()) throw new CustomException(ErrorCode.CLOTH_NOT_FOUND);
+                value = clothRepository.findThinByCategoryAndClothType(1, type.intValue());
+            } else if (thickness == 2) {
+                value = clothRepository.findNormalByCategoryAndClothType(1, type.intValue());
+            } else if (thickness == 3) {
+                value = clothRepository.findThickByCategoryAndClothType(1, type.intValue());
             }
 
-            else if (thickness == 3) {
-                Optional<Integer> value = clothRepository.findThickByCategoryAndClothType(1, type.intValue());
-                value.ifPresent(integer -> ans.add(Map.of(type, integer)));
-                if (value.isEmpty()) throw new CustomException(ErrorCode.CLOTH_NOT_FOUND);
+            if (value.isPresent()) {
+                ans.add(Map.of(type, value.get()));
+                seenTypes.add(type);
+            } else {
+                throw new CustomException(ErrorCode.CLOTH_NOT_FOUND);
             }
         }
+
         return ans;
     }
+
 }
