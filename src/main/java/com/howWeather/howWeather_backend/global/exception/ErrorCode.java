@@ -13,7 +13,8 @@ public enum ErrorCode {
     
     // 회원가입/로그인/로그아웃/비밀번호 설정 관련
     USER_ALREADY_EXISTS("이미 존재하는 사용자입니다.", HttpStatus.BAD_REQUEST),
-    USER_NOT_FOUND("아이디가 존재하지 않습니다.", HttpStatus.UNAUTHORIZED),
+    ID_NOT_FOUND("아이디가 존재하지 않습니다.", HttpStatus.UNAUTHORIZED),
+    USER_NOT_FOUNT("해당 회원이 존재하지 않습니다.", HttpStatus.NOT_FOUND),
     INVALID_CREDENTIALS("비밀번호가 틀렸습니다.", HttpStatus.UNAUTHORIZED),
     LOGIN_ID_ALREADY_EXISTS("이미 사용 중인 아이디입니다.", HttpStatus.CONFLICT),
     INVALID_SOCIAL_PREFIX_LOGIN_ID("'Kakao_', 'Google_'등 소셜 접두어는 사용할 수 없습니다.", HttpStatus.BAD_REQUEST),
