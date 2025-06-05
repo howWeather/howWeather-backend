@@ -14,4 +14,19 @@ public interface ClothRepository extends JpaRepository<Cloth, Long> {
     @Query("SELECT c.url FROM Cloth c WHERE c.category = :category AND c.clothType = :clothType")
     Optional<String> findUrlByCategoryAndClothType(@Param("category") int category,
                                                    @Param("clothType") int clothType);
+
+    @Query("SELECT c.thin FROM Cloth c WHERE c.category = :category AND c.clothType = :clothType")
+    Optional<Integer> findThinByCategoryAndClothType(@Param("category") int category,
+                                                     @Param("clothType") int clothType);
+
+    @Query("SELECT c.normal FROM Cloth c WHERE c.category = :category AND c.clothType = :clothType")
+    Optional<Integer> findNormalByCategoryAndClothType(@Param("category") int category,
+                                                     @Param("clothType") int clothType);
+
+    @Query("SELECT c.thick FROM Cloth c WHERE c.category = :category AND c.clothType = :clothType")
+    Optional<Integer> findThickByCategoryAndClothType(@Param("category") int category,
+                                                       @Param("clothType") int clothType);
+
+
+
 }
