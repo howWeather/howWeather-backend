@@ -4,6 +4,7 @@ import jakarta.persistence.*;
 import lombok.*;
 import lombok.extern.slf4j.Slf4j;
 
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Map;
 
@@ -29,5 +30,7 @@ public class ClothingRecommendation {
     @CollectionTable(name = "recommendation_result", joinColumns = @JoinColumn(name = "recommendation_id"))
     @MapKeyColumn(name = "time")
     @Column(name = "prediction")
-    private Map<String, String> predictionMap;
+    private Map<String, Integer> predictionMap;
+
+    private LocalDate date;
 }

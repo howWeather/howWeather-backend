@@ -9,5 +9,5 @@ import java.util.Map;
 public class RecommendationResult {
     private List<Integer> tops;
     private List<Integer> outers;
-    private Map<String, String> predictFeeling;
+    private Map<String, Integer> predictFeeling;
 }
