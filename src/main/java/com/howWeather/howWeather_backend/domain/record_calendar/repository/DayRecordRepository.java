@@ -37,4 +37,5 @@ public interface DayRecordRepository extends JpaRepository<DayRecord, Long> {
     );
 
     Optional<Integer> findFeelingById(Long id);
+    Optional<Double> findTemperatureById(Long id);
 }

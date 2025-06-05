@@ -21,7 +21,6 @@ import com.howWeather.howWeather_backend.global.exception.CustomException;
 import com.howWeather.howWeather_backend.global.exception.ErrorCode;
 import lombok.AllArgsConstructor;
 import org.springframework.data.domain.PageRequest;
-import org.springframework.security.core.parameters.P;
 import org.springframework.stereotype.Service;
 
 import java.time.*;
@@ -144,12 +143,18 @@ public class RecordCalendarService {
 
     private RecordForModelDto makeRecordModelDto(Long historyId) {
         return RecordForModelDto.builder()
+                .temperature(getTemperatureByDayRecordId(historyId))
                 .feeling(getFeelingByDayRecordId(historyId))
                 .build();
     }
 
     public int getFeelingByDayRecordId(Long id) {
         return dayRecordRepository.findFeelingById(id)
+                .orElseThrow(() -> new CustomException(ErrorCode.RECORD_NOT_FOUND));
+    }
+
+    public double getTemperatureByDayRecordId(Long id) {
+        return dayRecordRepository.findTemperatureById(id)
                 .orElseThrow(() -> new CustomException(ErrorCode.RECORD_NOT_FOUND));
     }
 
