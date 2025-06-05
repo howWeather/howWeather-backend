@@ -1,6 +1,8 @@
 package com.howWeather.howWeather_backend.domain.ai_model.dto;
 
 import com.howWeather.howWeather_backend.global.custom.ValidRange;
+import com.howWeather.howWeather_backend.global.exception.CustomException;
+import com.howWeather.howWeather_backend.global.exception.ErrorCode;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotNull;
@@ -11,19 +13,14 @@ public class HistoryRequestDto {
     public static final int DEFAULT_CNT = 10;
     public static final double DEFAULT_GAP = 2.0;
 
-    @NotNull
     private Long memberId;
 
-    @NotNull @Max(60) @Min(-50)
-    private double temperature;
+    private Double temperature;
 
-    @ValidRange(min = 0, max = 20)
     private Integer cnt;
 
-    @ValidRange(min = 0, max = 10)
     private Double upperGap;
 
-    @ValidRange(min = 0, max = 10)
     private Double lowerGap;
 
     public double getUpperBound() {
@@ -32,5 +29,24 @@ public class HistoryRequestDto {
 
     public double getLowerBound() {
         return temperature - (lowerGap != null ? lowerGap : DEFAULT_GAP);
+    }
+
+    public void validate() {
+        if (memberId == null) {
+            throw new CustomException(ErrorCode.INVALID_INPUT, "사용자 id는 필수입니다.");
+        }
+        if (temperature == null || temperature < -50 || temperature > 60) {
+            throw new CustomException(ErrorCode.INVALID_INPUT);
+        }
+
+        if (cnt != null && (cnt < 0 || cnt > 20)) {
+            throw new CustomException(ErrorCode.INVALID_INPUT);
+        }
+        if (upperGap != null && (upperGap < 0 || upperGap > 10)) {
+            throw new CustomException(ErrorCode.INVALID_INPUT);
+        }
+        if (lowerGap != null && (lowerGap < 0 || lowerGap > 10)) {
+            throw new CustomException(ErrorCode.INVALID_INPUT);
+        }
     }
 }

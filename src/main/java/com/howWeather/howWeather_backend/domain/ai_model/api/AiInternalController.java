@@ -56,8 +56,9 @@ public class AiInternalController {
         return ApiResponse.success(HttpStatus.OK, "예측 결과를 성공적으로 저장했습니다.");
     }
 
-    @PostMapping("/similar-history")
-    public ResponseEntity<ApiResponse<List<RecordForModelDto>>> getSimilarHistory(@Valid @RequestBody HistoryRequestDto dto) {
+    @PostMapping("/history")
+    public ResponseEntity<ApiResponse<List<RecordForModelDto>>> getSimilarHistory(@RequestBody HistoryRequestDto dto) {
+        dto.validate();
         List<RecordForModelDto> result = recordCalendarService.getMemberHistory(dto);
         return ApiResponse.success(HttpStatus.OK, result);
     }
