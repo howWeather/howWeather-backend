@@ -2,11 +2,16 @@ package com.howWeather.howWeather_backend.domain.ai_model.service;
 
 import com.howWeather.howWeather_backend.domain.ai_model.dto.ModelClothingRecommendationDto;
 import com.howWeather.howWeather_backend.domain.ai_model.dto.ModelRecommendationResult;
-import com.howWeather.howWeather_backend.domain.ai_model.dto.RecommendListDto;
 import com.howWeather.howWeather_backend.domain.ai_model.dto.RecommendPredictDto;
+import com.howWeather.howWeather_backend.domain.ai_model.dto.WeatherFeelingDto;
 import com.howWeather.howWeather_backend.domain.ai_model.entity.ClothingRecommendation;
 import com.howWeather.howWeather_backend.domain.ai_model.repository.ClothingRecommendationRepository;
+import com.howWeather.howWeather_backend.domain.closet.entity.Outer;
+import com.howWeather.howWeather_backend.domain.closet.entity.Upper;
+import com.howWeather.howWeather_backend.domain.closet.repository.ClothRepository;
 import com.howWeather.howWeather_backend.domain.member.entity.Member;
+import com.howWeather.howWeather_backend.domain.weather.entity.WeatherForecast;
+import com.howWeather.howWeather_backend.domain.weather.repository.WeatherForecastRepository;
 import com.howWeather.howWeather_backend.global.exception.CustomException;
 import com.howWeather.howWeather_backend.global.exception.ErrorCode;
 import lombok.AllArgsConstructor;
@@ -15,14 +20,17 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
-import java.util.ArrayList;
-import java.util.List;
+import java.time.LocalTime;
+import java.util.*;
+import java.util.stream.Collectors;
 
 @Slf4j
 @Service
 @AllArgsConstructor
 public class RecommendationService {
     private final ClothingRecommendationRepository clothingRecommendationRepository;
+    private final ClothRepository clothRepository;
+    private final WeatherForecastRepository weatherForecastRepository;
 
     @Transactional
     public void save(ModelClothingRecommendationDto dto) {
@@ -50,15 +58,124 @@ public class RecommendationService {
 
         List<RecommendPredictDto> result = new ArrayList<>();
         for (ClothingRecommendation recommendation : modelPredictList) {
-            result.add(makeResultForPredict(recommendation));
+            result.add(makeResultForPredict(member, recommendation));
+        }
+        return result;
+    }
+
+    private RecommendPredictDto makeResultForPredict(Member member, ClothingRecommendation recommendation) {
+        try {
+            List<Integer> upperTypeList = makeUpeerList(member, recommendation.getTops());
+            List<Integer> outerTypeList = makeOuterList(member, recommendation.getOuters());
+            List<WeatherFeelingDto> weatherFeelingDto = makeWeatherFeeling(recommendation.getPredictionMap());
+
+            return RecommendPredictDto.builder()
+                    .feelingList(weatherFeelingDto)
+                    .outersTypeList(outerTypeList)
+                    .uppersTypeList(upperTypeList)
+                    .build();
+        } catch (CustomException e) {
+            throw e;
+        }
+        catch (Exception e) {
+            throw new CustomException(ErrorCode.UNKNOWN_ERROR, "예측 데이터를 가져오던 중 오류가 발생하였습니다.");
+        }
+    }
+
+    private List<WeatherFeelingDto> makeWeatherFeeling(Map<String, Integer> predictionMap) {
+        List<WeatherFeelingDto> feelingList = new ArrayList<>();
+
+        LocalDate today = LocalDate.now();
+        LocalTime now = LocalTime.now();
+        LocalDate forecastDate = now.isBefore(LocalTime.of(6, 0)) ? today.minusDays(1) : today;
+
+        // TODO: 날씨 예보 기반 추천 시스템 기능 제공 지역 한정 -> 추후 확장 예정
+        String regionName = "서울특별시 용산구";
+
+        List<Integer> hours = predictionMap.keySet().stream()
+                .map(Integer::parseInt)
+                .collect(Collectors.toList());
+
+        List<WeatherForecast> forecasts = weatherForecastRepository
+                .findByRegionNameAndForecastDateAndHourIn(regionName, forecastDate, hours);
+
+        Map<Integer, Double> hourToTempMap = forecasts.stream()
+                .collect(Collectors.toMap(WeatherForecast::getHour, WeatherForecast::getTemperature));
+
+        for (Map.Entry<String, Integer> entry : predictionMap.entrySet()) {
+            int hour = Integer.parseInt(entry.getKey());
+            int feeling = entry.getValue();
+            Double temp = hourToTempMap.get(hour);
+
+            if (temp != null) {
+                WeatherFeelingDto dto = WeatherFeelingDto.builder()
+                        .time(hour)
+                        .feeling(feeling)
+                        .temperature(temp)
+                        .build();
+                feelingList.add(dto);
+            } else {
+                throw new CustomException(ErrorCode.WEATHER_DATA_NOT_FOUND);
+            }
+        }
+        return feelingList;
+    }
+
+
+    private List<Integer> makeOuterList(Member member, List<Integer> outers) {
+        if (outers.isEmpty()) {
+            return new ArrayList<>();
         }
 
-        return null;
+        List<Outer> outerList = member.getCloset().getOuterList();
+        Set<Long> ownedClothTypes = outerList.stream()
+                .map(Outer::getOuterType)
+                .collect(Collectors.toSet());
+
+        List<Integer> result = new ArrayList<>();
+
+        for (Integer outerHeat : outers) {
+            List<Long> candidateTypes = clothRepository.findClothTypeByCategoryAndHeat(2, outerHeat);
+
+            for (Long type : candidateTypes) {
+                if (ownedClothTypes.contains(type)) {
+                    result.add(type.intValue());
+                }
+            }
+        }
+
+        if (result.isEmpty()) {
+            throw new CustomException(ErrorCode.NO_RECOMMEND_OUTER);
+        }
+
+        return result;
     }
 
-    private RecommendPredictDto makeResultForPredict(ClothingRecommendation recommendation) {
-        return null;
+
+    private List<Integer> makeUpeerList(Member member, List<Integer> tops) {
+        List<Upper> upperList = member.getCloset().getUpperList();
+        Set<Long> ownedClothTypes = upperList.stream()
+                .map(Upper::getUpperType)
+                .collect(Collectors.toSet());
+
+        List<Integer> result = new ArrayList<>();
+
+        for (Integer topHeat : tops) {
+            List<Long> candidateTypes = clothRepository.findClothTypeByCategoryAndHeat(1, topHeat);
+
+            for (Long type : candidateTypes) {
+                if (ownedClothTypes.contains(type)) {
+                    result.add(type.intValue());
+                }
+            }
+        }
+
+        if (result.isEmpty()) {
+            throw new CustomException(ErrorCode.NO_RECOMMEND_UPPER);
+        }
+        return result;
     }
+
 
     private List<ClothingRecommendation> getModelPrediction(Long id, LocalDate now) {
         try {
