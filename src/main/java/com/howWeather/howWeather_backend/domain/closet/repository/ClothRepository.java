@@ -6,6 +6,7 @@ import org.springframework.stereotype.Repository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+import java.util.List;
 import java.util.Optional;
 
 
@@ -27,6 +28,9 @@ public interface ClothRepository extends JpaRepository<Cloth, Long> {
     Optional<Integer> findThickByCategoryAndClothType(@Param("category") int category,
                                                        @Param("clothType") int clothType);
 
-
-
+    @Query("""
+    SELECT c.clothType FROM Cloth c
+    WHERE c.category = :category AND (c.thin = :heat OR c.normal = :heat OR c.thick = :heat)""")
+    List<Long> findClothTypeByCategoryAndHeat(@Param("category") int category,
+                                              @Param("heat") int heat);
 }
