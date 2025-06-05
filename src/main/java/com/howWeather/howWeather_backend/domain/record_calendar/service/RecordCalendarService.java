@@ -222,7 +222,7 @@ public class RecordCalendarService {
         }
         return result;
     }
-    
+
     public int getFeelingByDayRecordId(Long id) {
         return dayRecordRepository.findFeelingById(id)
                 .orElseThrow(() -> new CustomException(ErrorCode.RECORD_NOT_FOUND));

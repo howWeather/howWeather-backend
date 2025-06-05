@@ -8,7 +8,7 @@ import lombok.Data;
 
 @Data
 public class HistoryRequestDto {
-    public static final int DEFAULT_CNT = 5;
+    public static final int DEFAULT_CNT = 10;
     public static final double DEFAULT_GAP = 2.0;
 
     @NotNull
@@ -17,6 +17,7 @@ public class HistoryRequestDto {
     @NotNull @Max(60) @Min(-50)
     private double temperature;
 
+    @ValidRange(min = 0, max = 20)
     private Integer cnt;
 
     @ValidRange(min = 0, max = 10)
