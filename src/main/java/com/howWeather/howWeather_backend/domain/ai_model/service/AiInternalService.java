@@ -27,7 +27,7 @@ public class AiInternalService {
     public AiPredictionRequestDto makePredictRequest(Member member) {
         List<WeatherPredictDto> dtoList = getWeatherForecast();
         return AiPredictionRequestDto.builder()
-                .userId(String.valueOf(member.getId()))
+                .userId(member.getId())
                 .bodyTypeLabel(member.getConstitution())
                 .weatherForecast(dtoList)
                 .clothingCombinations(fetchClothingCombinationsForUser(member))
