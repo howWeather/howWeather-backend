@@ -14,6 +14,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
+import java.util.List;
 
 @Slf4j
 @Service
@@ -43,6 +44,22 @@ public class RecommendationService {
 
     @Transactional(readOnly = true)
     public RecommendListDto getRecommendList(Member member) {
+        List<ClothingRecommendation> modelPredictList = getModelPrediction(member.getId(), LocalDate.now());
         return null;
+    }
+
+    private List<ClothingRecommendation> getModelPrediction(Long id, LocalDate now) {
+        try {
+            List<ClothingRecommendation> byMemberIdAndDate = clothingRecommendationRepository.findByMemberIdAndDate(id, now);
+            if (byMemberIdAndDate.isEmpty()) {
+                throw new CustomException(ErrorCode.NO_PREDICT_DATA);
+            }
+            return byMemberIdAndDate;
+        } catch (CustomException e) {
+            throw e;
+        }
+        catch (Exception e) {
+            throw new CustomException(ErrorCode.UNKNOWN_ERROR, "예측 데이터를 가져오던 중 오류가 발생하였습니다.");
+        }
     }
 }

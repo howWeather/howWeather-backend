@@ -63,6 +63,9 @@ public enum ErrorCode {
     INVALID_FCM_TOKEN("잘못된 FCM 토큰입니다.", HttpStatus.BAD_REQUEST),
     ALARM_NOT_FOUND("알람 정보를 찾을 수 없습니다.", HttpStatus.NOT_FOUND),
 
+    // 추천 의상 반환 로직
+    NO_PREDICT_DATA("예측된 정보가 없습니다.", HttpStatus.NOT_FOUND),
+
     // 소셜 로그인
     KAKAO_API_CALL_ERROR("Kakao API를 호출하는 중 오류가 발생했습니다", HttpStatus.SERVICE_UNAVAILABLE),
     KAKAO_INVALID_ACCESS_TOKEN("유효하지 않은 카카오 액세스 토큰입니다.", HttpStatus.UNAUTHORIZED),

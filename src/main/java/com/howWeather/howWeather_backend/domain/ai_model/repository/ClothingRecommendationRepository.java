@@ -4,6 +4,10 @@ import com.howWeather.howWeather_backend.domain.ai_model.entity.ClothingRecommen
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
+import java.time.LocalDate;
+import java.util.List;
+
 @Repository
 public interface ClothingRecommendationRepository extends JpaRepository<ClothingRecommendation, Long> {
+    List<ClothingRecommendation> findByMemberIdAndDate(Long memberId, LocalDate date);
 }
