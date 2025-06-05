@@ -12,4 +12,10 @@ public interface WeatherForecastRepository extends JpaRepository<WeatherForecast
     void deleteByForecastDateBefore(LocalDate date);
 
     List<WeatherForecast> findByRegionNameAndForecastDate(String regionName, LocalDate now);
+
+    List<WeatherForecast> findByRegionNameAndForecastDateAndHourIn(
+            String regionName,
+            LocalDate forecastDate,
+            List<Integer> hours);
+
 }
