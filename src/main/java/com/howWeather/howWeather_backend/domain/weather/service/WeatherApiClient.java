@@ -14,6 +14,7 @@ import org.springframework.web.client.RestTemplate;
 import com.howWeather.howWeather_backend.domain.weather.entity.Weather;
 
 import java.time.*;
+import java.time.format.DateTimeFormatter;
 import java.util.*;
 
 @Service
@@ -116,50 +117,54 @@ public class WeatherApiClient {
         return "";
     }
 
-    public List<WeatherPredictDto> fetchHourlyForecast(double lat, double lon) {
+    public List<WeatherPredictDto> fetchForecast(double lat, double lon) {
         String url = String.format(
-                "https://api.openweathermap.org/data/2.5/onecall?lat=%f&lon=%f&exclude=current,minutely,daily,alerts&appid=%s&units=metric&lang=kr",
-                lat, lon, WEATHER_API_KEY);
+                "https://api.openweathermap.org/data/2.5/forecast?lat=%f&lon=%f&appid=%s&units=metric&lang=kr",
+                lat, lon, WEATHER_API_KEY
+        );
 
         ResponseEntity<Map> response;
         try {
             response = restTemplate.exchange(url, HttpMethod.GET, null, Map.class);
         } catch (RestClientException e) {
-            log.error("One Call API 호출 실패: {}", e.getMessage());
-            throw new CustomException(ErrorCode.WEATHER_API_CALL_ERROR, "One Call API 호출 실패");
+            log.error("Forecast API 호출 실패: {}", e.getMessage());
+            throw new CustomException(ErrorCode.WEATHER_API_CALL_ERROR, "Forecast API 호출 실패");
         }
 
         if (!response.getStatusCode().is2xxSuccessful()) {
-            throw new CustomException(ErrorCode.WEATHER_API_CALL_ERROR, "One Call API 호출 실패");
+            throw new CustomException(ErrorCode.WEATHER_API_CALL_ERROR, "Forecast API 호출 실패");
         }
 
         Map<String, Object> body = response.getBody();
-        if (body == null || !body.containsKey("hourly")) {
-            throw new CustomException(ErrorCode.NO_BODY_ERROR, "One Call API 응답에 hourly 데이터가 없습니다.");
+        if (body == null || !body.containsKey("list")) {
+            throw new CustomException(ErrorCode.NO_BODY_ERROR, "Forecast API 응답에 list 데이터가 없습니다.");
         }
 
-        List<Map<String, Object>> hourlyList = (List<Map<String, Object>>) body.get("hourly");
+        List<Map<String, Object>> list = (List<Map<String, Object>>) body.get("list");
 
         List<Integer> targetHours = List.of(9, 12, 15, 18, 21);
-
         List<WeatherPredictDto> forecastList = new ArrayList<>();
 
-        for (Map<String, Object> hourData : hourlyList) {
-            long dt = ((Number) hourData.get("dt")).longValue();
-            ZonedDateTime dateTime = Instant.ofEpochSecond(dt).atZone(ZoneId.of("Asia/Seoul"));
-
+        for (Map<String, Object> forecast : list) {
+            String dtTxt = (String) forecast.get("dt_txt");
+            ZonedDateTime dateTime = ZonedDateTime.of(LocalDateTime.parse(dtTxt, DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")), ZoneId.of("Asia/Seoul"));
             int hour = dateTime.getHour();
-            if (targetHours.contains(hour)) {
-                double temp = getDoubleValue(hourData, "temp");
-                double humidity = getDoubleValue(hourData, "humidity");
-                double windSpeed = getDoubleValue(hourData, "wind_speed");
-                double cloudiness = getDoubleValue(hourData, "clouds");
-                double feelsLike = getDoubleValue(hourData, "feels_like");
-                double precipitation = 0.0;
 
-                if (hourData.containsKey("rain")) {
-                    Map<String, Object> rain = (Map<String, Object>) hourData.get("rain");
-                    precipitation = getDoubleValue(rain, "1h");
+            if (targetHours.contains(hour)) {
+                Map<String, Object> main = (Map<String, Object>) forecast.get("main");
+                Map<String, Object> wind = (Map<String, Object>) forecast.get("wind");
+                Map<String, Object> clouds = (Map<String, Object>) forecast.get("clouds");
+
+                double temp = getDoubleValue(main, "temp");
+                double feelsLike = getDoubleValue(main, "feels_like");
+                double humidity = getDoubleValue(main, "humidity");
+                double windSpeed = getDoubleValue(wind, "speed");
+                double cloudiness = getDoubleValue(clouds, "all");
+
+                double precipitation = 0.0;
+                if (forecast.containsKey("rain")) {
+                    Map<String, Object> rain = (Map<String, Object>) forecast.get("rain");
+                    precipitation = getDoubleValue(rain, "3h");
                 }
 
                 WeatherPredictDto dto = WeatherPredictDto.builder()
@@ -171,11 +176,13 @@ public class WeatherApiClient {
                         .feelsLike(feelsLike)
                         .precipitation(precipitation)
                         .build();
+
                 forecastList.add(dto);
             }
         }
         return forecastList;
     }
+
 
     private double getDoubleValue(Map<String, Object> map, String key) {
         Object value = map.get(key);

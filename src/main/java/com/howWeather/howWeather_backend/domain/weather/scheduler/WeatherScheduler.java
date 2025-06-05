@@ -43,7 +43,7 @@ public class WeatherScheduler {
 
     @Scheduled(cron = "0 0 5 * * *", zone = "Asia/Seoul") // 매일 오전 5시에 예보 데이터
     public void fetchDailyOneCallWeather() {
-        log.info("매일 오전 5시에 One Call API로 용산구의 날씨 예보를 가져옵니다. 시간: {}", LocalDateTime.now());
+        log.info("매일 오전 5시에 Forecast API로 용산구의 날씨 예보를 가져옵니다. 시간: {}", LocalDateTime.now());
         weatherService.fetchHourlyForecast();
     }
 

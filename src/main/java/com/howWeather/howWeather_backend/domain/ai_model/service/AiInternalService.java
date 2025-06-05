@@ -137,18 +137,14 @@ public class AiInternalService {
                 }
             }
         }
-
         return result;
     }
 
-
     private List<Map<Long, Integer>> getAllOutersList(List<Outer> outerList) {
-        Set<Long> seenTypes = new HashSet<>();
         List<Map<Long, Integer>> ans = new ArrayList<>();
 
         for (Outer outer : outerList) {
             Long type = outer.getOuterType();
-            if (seenTypes.contains(type)) continue;
 
             int thickness = outer.getThickness();
             Optional<Integer> value = Optional.empty();
@@ -163,7 +159,6 @@ public class AiInternalService {
 
             if (value.isPresent()) {
                 ans.add(Map.of(type, value.get()));
-                seenTypes.add(type);
             } else {
                 throw new CustomException(ErrorCode.CLOTH_NOT_FOUND);
             }
@@ -172,14 +167,11 @@ public class AiInternalService {
         return ans;
     }
 
-
     private List<Map<Long, Integer>> getAllUppersList(List<Upper> upperList) {
-        Set<Long> seenTypes = new HashSet<>(); // type만으로 중복 체크
         List<Map<Long, Integer>> ans = new ArrayList<>();
 
         for (Upper upper : upperList) {
             Long type = upper.getUpperType();
-            if (seenTypes.contains(type)) continue; // 중복 type 제거
 
             int thickness = upper.getThickness();
             Optional<Integer> value = Optional.empty();
@@ -194,7 +186,6 @@ public class AiInternalService {
 
             if (value.isPresent()) {
                 ans.add(Map.of(type, value.get()));
-                seenTypes.add(type);
             } else {
                 throw new CustomException(ErrorCode.CLOTH_NOT_FOUND);
             }
