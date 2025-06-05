@@ -140,7 +140,7 @@ public class RecordCalendarService {
                 List<Integer> outers = getOuterList(historyId);
                 List<Integer> uppers = getTopList(historyId);
 
-                if (outers == null || outers.isEmpty()) continue;
+                if (outers == null) continue;
                 if (uppers == null || uppers.isEmpty()) continue;
 
                 result.add(makeRecordModelDto(historyId, uppers, outers));
@@ -164,9 +164,9 @@ public class RecordCalendarService {
 
     private List<Integer> getOuterList(Long historyId) {
         List<DayRecordOuter> dayRecordOuters = dayRecordOuterRepository.findByDayRecordId(historyId);
-        if (dayRecordOuters.isEmpty()) return null;
 
         List<Integer> result = new ArrayList<>();
+        if (dayRecordOuters.isEmpty()) return result;
 
         for (DayRecordOuter dro : dayRecordOuters) {
             Outer outer = dro.getOuter();
