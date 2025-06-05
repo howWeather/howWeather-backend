@@ -5,7 +5,7 @@ import lombok.Data;
 import java.util.List;
 
 @Data
-public class ClothingRecommendationDto {
+public class ModelClothingRecommendationDto {
     private Long userId;
-    private List<RecommendationResult> result;
+    private List<ModelRecommendationResult> result;
 }

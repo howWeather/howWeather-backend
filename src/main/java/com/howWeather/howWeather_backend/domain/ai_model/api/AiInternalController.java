@@ -1,7 +1,7 @@
 package com.howWeather.howWeather_backend.domain.ai_model.api;
 
 import com.howWeather.howWeather_backend.domain.ai_model.dto.AiPredictionRequestDto;
-import com.howWeather.howWeather_backend.domain.ai_model.dto.ClothingRecommendationDto;
+import com.howWeather.howWeather_backend.domain.ai_model.dto.ModelClothingRecommendationDto;
 import com.howWeather.howWeather_backend.domain.ai_model.service.AiInternalService;
 import com.howWeather.howWeather_backend.domain.ai_model.service.RecommendationService;
 import com.howWeather.howWeather_backend.domain.member.entity.Member;
@@ -46,7 +46,7 @@ public class AiInternalController {
     }
 
     @PostMapping("/recommendation")
-    public ResponseEntity<ApiResponse<String>> saveRecommendations(@RequestBody ClothingRecommendationDto dto) {
+    public ResponseEntity<ApiResponse<String>> saveRecommendations(@RequestBody ModelClothingRecommendationDto dto) {
         recommendationService.save(dto);
         return ApiResponse.success(HttpStatus.OK, "예측 결과를 성공적으로 저장했습니다.");
     }

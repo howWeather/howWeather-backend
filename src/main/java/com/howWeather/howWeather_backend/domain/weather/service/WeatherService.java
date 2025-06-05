@@ -42,9 +42,10 @@ public class WeatherService {
     }
 
     @Transactional
-    public void deleteYesterdayWeather() {
-        weatherRepository.deleteByDate(LocalDate.now().minusDays(1));
+    public void deleteOldWeather() {
+        weatherRepository.deleteByDateBeforeEqual(LocalDate.now().minusDays(1));
     }
+
 
     @Transactional(readOnly = true)
     public double getTemperature(WeatherSimpleDto dto) {
