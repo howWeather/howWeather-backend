@@ -1,10 +1,12 @@
 package com.howWeather.howWeather_backend.domain.record_calendar.service;
 
+import com.howWeather.howWeather_backend.domain.ai_model.dto.HistoryRequestDto;
 import com.howWeather.howWeather_backend.domain.closet.entity.Closet;
 import com.howWeather.howWeather_backend.domain.closet.repository.OuterRepository;
 import com.howWeather.howWeather_backend.domain.closet.repository.UpperRepository;
 import com.howWeather.howWeather_backend.domain.member.entity.Member;
 import com.howWeather.howWeather_backend.domain.member.repository.MemberRepository;
+import com.howWeather.howWeather_backend.domain.record_calendar.dto.RecordForModelDto;
 import com.howWeather.howWeather_backend.domain.record_calendar.dto.RecordRequestDto;
 import com.howWeather.howWeather_backend.domain.closet.entity.Upper;
 import com.howWeather.howWeather_backend.domain.record_calendar.dto.RecordResponseDto;
@@ -18,12 +20,15 @@ import com.howWeather.howWeather_backend.domain.weather.repository.WeatherReposi
 import com.howWeather.howWeather_backend.global.exception.CustomException;
 import com.howWeather.howWeather_backend.global.exception.ErrorCode;
 import lombok.AllArgsConstructor;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.security.core.parameters.P;
 import org.springframework.stereotype.Service;
 
 import java.time.*;
 
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -119,6 +124,50 @@ public class RecordCalendarService {
                 .collect(Collectors.toList());
     }
 
+    @Transactional
+    public List<RecordForModelDto> getMemberHistory(HistoryRequestDto dto) {
+        try {
+            memberCheck(dto.getMemberId());
+            List<RecordForModelDto> result = new ArrayList<>();
+
+            List<Long> historyIdList = getSimilarHistoryIds(dto);
+            for (Long historyId : historyIdList) {
+                result.add(makeRecordModelDto(historyId));
+            }
+            return result;
+        } catch (CustomException e){
+            throw e;
+        } catch (Exception e) {
+            throw new CustomException(ErrorCode.UNKNOWN_ERROR, e.getMessage());
+        }
+    }
+
+    private RecordForModelDto makeRecordModelDto(Long historyId) {
+        return RecordForModelDto.builder()
+                .feeling(getFeelingByDayRecordId(historyId))
+                .build();
+    }
+
+    public int getFeelingByDayRecordId(Long id) {
+        return dayRecordRepository.findFeelingById(id)
+                .orElseThrow(() -> new CustomException(ErrorCode.RECORD_NOT_FOUND));
+    }
+
+    private List<Long> getSimilarHistoryIds(HistoryRequestDto dto) {
+        int count = (dto.getCnt() != null) ? dto.getCnt() : HistoryRequestDto.DEFAULT_CNT;
+        double upperBound = dto.getUpperBound();
+        double lowerBound = dto.getLowerBound();
+        return dayRecordRepository.findRecentRecordIdsByMemberIdAndTemperatureRange(
+                dto.getMemberId(), lowerBound, upperBound, PageRequest.of(0, count)
+        );
+    }
+
+    private void memberCheck(Long id) {
+        if (!memberRepository.existsByIdAndIsDeletedFalse(id)) {
+            throw new CustomException(ErrorCode.USER_NOT_FOUND, "존재하지 않는 회원입니다");
+        }
+    }
+
     private void validateRecordTime(LocalDate date, int timeSlot) {
         ZoneId zoneId = ZoneId.of("Asia/Seoul");
         ZonedDateTime now = ZonedDateTime.now(zoneId);
@@ -148,7 +197,6 @@ public class RecordCalendarService {
         throw new CustomException(ErrorCode.INVALID_DATE, "오늘 또는 어제 날짜에 대해서만 기록을 작성할 수 있습니다.");
     }
 
-
     private LocalDateTime getAvailableTime(LocalDate date, int timeSlot) {
         return switch (timeSlot) {
             case 1 -> date.atTime(9, 0);
@@ -166,7 +214,6 @@ public class RecordCalendarService {
             default -> "알 수 없음";
         };
     }
-
 
     private Closet getClosetOrThrow(Member member) {
         Closet closet = member.getCloset();
