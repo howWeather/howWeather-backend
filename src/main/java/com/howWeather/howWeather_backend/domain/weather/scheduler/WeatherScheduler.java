@@ -40,7 +40,7 @@ public class WeatherScheduler {
     @Scheduled(cron = "0 0 6 * * *", zone = "Asia/Seoul") // 매일 오전 6시에 전날 데이터 삭제
     public void deleteOldWeatherData() {
         log.info("전날 날씨 데이터를 삭제합니다. 시간: {}", LocalDateTime.now());
-        weatherService.deleteYesterdayWeather();
+        weatherService.deleteOldWeather();
     }
 
     @Scheduled(cron = "0 0 5 * * *", zone = "Asia/Seoul") // 매일 오전 5시에 예보 데이터
