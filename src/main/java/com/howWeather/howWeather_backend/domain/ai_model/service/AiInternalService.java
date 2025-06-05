@@ -81,7 +81,8 @@ public class AiInternalService {
             combinations.add(dto);
         }
 
-        return combinations;
+        Set<ClothingCombinationDto> unique = new LinkedHashSet<>(combinations);
+        return new ArrayList<>(unique);
     }
 
 
@@ -94,49 +95,54 @@ public class AiInternalService {
         return makeOneOrTwoElementArrays(getAllUppersList(upperList));
     }
 
-    private List<int[]> makeOneElementArrays(List<Map<Long, Integer>> outersList) {
+    private List<int[]> makeOneElementArrays(List<Map<Long, Integer>> clothList) {
         List<int[]> result = new ArrayList<>();
-        Set<Integer> seen = new HashSet<>();
+        Set<String> seen = new HashSet<>();
 
-        for (Map<Long, Integer> map : outersList) {
-            for (Integer value : map.values()) {
-                if (!seen.contains(value)) {
-                    seen.add(value);
-                    result.add(new int[] { value });
+        for (Map<Long, Integer> map : clothList) {
+            for (Map.Entry<Long, Integer> entry : map.entrySet()) {
+                String key = entry.getKey() + ":" + entry.getValue();
+                if (!seen.contains(key)) {
+                    seen.add(key);
+                    result.add(new int[] { entry.getValue() });
                 }
             }
         }
         return result;
     }
 
-    private List<int[]> makeOneOrTwoElementArrays(List<Map<Long, Integer>> uppersList) {
-        Set<Integer> allValues = uppersList.stream()
-                .flatMap(map -> map.values().stream())
-                .collect(Collectors.toSet());
-
+    private List<int[]> makeOneOrTwoElementArrays(List<Map<Long, Integer>> clothList) {
         List<int[]> result = new ArrayList<>();
         Set<String> seen = new HashSet<>();
 
-        for (Integer val : allValues) {
-            int[] one = new int[] { val };
-            String key = Arrays.toString(one);
-            if (seen.add(key)) {
-                result.add(one);
-            }
-        }
-
-        List<Integer> valueList = new ArrayList<>(allValues);
-        int n = valueList.size();
-        for (int i = 0; i < n; i++) {
-            for (int j = i + 1; j < n; j++) {
-                int[] two = new int[] { valueList.get(i), valueList.get(j) };
-                Arrays.sort(two);
-                String key = Arrays.toString(two);
+        for (Map<Long, Integer> map : clothList) {
+            for (Map.Entry<Long, Integer> entry : map.entrySet()) {
+                String key = entry.getKey() + ":" + entry.getValue();
                 if (seen.add(key)) {
-                    result.add(two);
+                    result.add(new int[] { entry.getValue() });
                 }
             }
         }
+
+        List<Map.Entry<Long, Integer>> entries = clothList.stream()
+                .flatMap(m -> m.entrySet().stream())
+                .toList();
+
+        int n = entries.size();
+        for (int i = 0; i < n; i++) {
+            for (int j = i + 1; j < n; j++) {
+                int[] pair = new int[] { entries.get(i).getValue(), entries.get(j).getValue() };
+                Arrays.sort(pair);
+
+                String key = entries.get(i).getKey() + ":" + entries.get(i).getValue() + "," +
+                        entries.get(j).getKey() + ":" + entries.get(j).getValue();
+
+                if (seen.add(key)) {
+                    result.add(pair);
+                }
+            }
+        }
+
         return result;
     }
 
