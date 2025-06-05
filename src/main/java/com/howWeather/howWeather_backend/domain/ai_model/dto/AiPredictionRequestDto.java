@@ -8,7 +8,7 @@ import java.util.List;
 @Data
 @Builder
 public class AiPredictionRequestDto {
-    private String userId;
+    private Long userId;
     private int bodyTypeLabel;
     private List<WeatherPredictDto> weatherForecast;
     private List<ClothingCombinationDto> clothingCombinations;
