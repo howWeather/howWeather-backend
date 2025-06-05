@@ -52,6 +52,7 @@ public enum ErrorCode {
     INVALID_MONTH_REQUEST("한 달의 데이터를 조회하기 위해서는 YYYY-MM 형태를 사용해야 합니다.", HttpStatus.BAD_REQUEST),
     INVALID_TEMP_GAP("온도 범위는 0 ~ 10도 사이의 값으로 설정 가능합니다.", HttpStatus.BAD_REQUEST),
     INVALID_TEMP("현재 온도는 섭씨로 -50 이상 60 이하의 값이어야 합니다.", HttpStatus.BAD_REQUEST),
+    RECORD_NOT_FOUND("해당 기록이 존재하지 않습니다", HttpStatus.NOT_FOUND),
 
     // 닐씨
     WEATHER_API_CALL_ERROR("날씨 API를 호출하는 중 오류가 발생했습니다", HttpStatus.SERVICE_UNAVAILABLE),
