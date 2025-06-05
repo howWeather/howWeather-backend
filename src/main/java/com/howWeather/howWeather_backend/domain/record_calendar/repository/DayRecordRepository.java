@@ -36,6 +36,9 @@ public interface DayRecordRepository extends JpaRepository<DayRecord, Long> {
             Pageable pageable
     );
 
-    Optional<Integer> findFeelingById(Long id);
-    Optional<Double> findTemperatureById(Long id);
+    @Query("SELECT d.temperature FROM DayRecord d WHERE d.id = :id")
+    Optional<Double> findTemperatureById(@Param("id") Long id);
+
+    @Query("SELECT d.feeling FROM DayRecord d WHERE d.id = :id")
+    Optional<Integer> findFeelingById(@Param("id") Long id);
 }
