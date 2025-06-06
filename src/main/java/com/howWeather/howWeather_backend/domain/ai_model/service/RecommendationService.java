@@ -146,11 +146,7 @@ public class RecommendationService {
     }
 
     private List<ClothingRecommendation> getModelPrediction(Long id, LocalDate now) {
-        List<ClothingRecommendation> list = clothingRecommendationRepository.findByMemberIdAndDate(id, now);
-        if (list.isEmpty()) {
-            throw new CustomException(ErrorCode.NO_PREDICT_DATA);
-        }
-        return list;
+        return clothingRecommendationRepository.findByMemberIdAndDate(id, now);
     }
 
     @Transactional
