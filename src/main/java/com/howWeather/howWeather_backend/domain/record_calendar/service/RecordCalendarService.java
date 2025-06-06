@@ -7,6 +7,7 @@ import com.howWeather.howWeather_backend.domain.closet.repository.OuterRepositor
 import com.howWeather.howWeather_backend.domain.closet.repository.UpperRepository;
 import com.howWeather.howWeather_backend.domain.member.entity.Member;
 import com.howWeather.howWeather_backend.domain.member.repository.MemberRepository;
+import com.howWeather.howWeather_backend.domain.record_calendar.dto.ClothInfoDto;
 import com.howWeather.howWeather_backend.domain.record_calendar.dto.RecordForModelDto;
 import com.howWeather.howWeather_backend.domain.record_calendar.dto.RecordRequestDto;
 import com.howWeather.howWeather_backend.domain.closet.entity.Upper;
@@ -87,10 +88,18 @@ public class RecordCalendarService {
                         .feeling(record.getFeeling())
                         .date(record.getDate())
                         .uppers(record.getUpperList().stream()
-                                .map(u -> u.getUpper().getId().intValue())
+                                .map(u -> ClothInfoDto.builder()
+                                        .id(u.getUpper().getId())
+                                        .clothType(u.getUpper().getUpperType())
+                                        .color(u.getUpper().getColor())
+                                        .build())
                                 .collect(Collectors.toList()))
                         .outers(record.getOuterList().stream()
-                                .map(o -> o.getOuter().getId().intValue())
+                                .map(o -> ClothInfoDto.builder()
+                                        .id(o.getOuter().getId())
+                                        .clothType(o.getOuter().getOuterType())
+                                        .color(o.getOuter().getColor())
+                                        .build())
                                 .collect(Collectors.toList()))
                         .build())
                 .collect(Collectors.toList());

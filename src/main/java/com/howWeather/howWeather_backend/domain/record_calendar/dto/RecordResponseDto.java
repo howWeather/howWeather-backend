@@ -15,6 +15,6 @@ public class RecordResponseDto {
     double temperature;
     int feeling;
     LocalDate date;
-    List<Integer> uppers;
-    List<Integer> outers;
+    List<ClothInfoDto> uppers;
+    List<ClothInfoDto> outers;
 }
