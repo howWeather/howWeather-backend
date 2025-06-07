@@ -18,6 +18,7 @@ import org.springframework.beans.factory.annotation.Value;
 
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 @Component
@@ -32,24 +33,46 @@ public class ModelSchedular {
     @Value("${ai.server.url}")
     private String aiServerUrl;
 
-    // 테스트 용도
-    @Scheduled(cron = "0 40 12 * * *")
+    /**
+     * 매일 새벽 5시에 모델 서버로 예측에 필요한 데이터를 전송합니다.
+     */
+    @Scheduled(cron = "0 30 13 * * *")
     public void pushPredictionDataToAiServer() {
         try {
             List<Member> members = memberRepository.findAllByIsDeletedFalse();
 
             List<AiPredictionRequestDto> allDtos = members.stream()
                     .filter(member -> member.getCloset() != null)
-                    .map(aiInternalService::makePredictRequest)
+                    .map(member -> {
+                        try {
+                            return aiInternalService.makePredictRequest(member);
+                        } catch (Exception e) {
+                            log.error("멤버 {} 예측 데이터 생성 실패: {}", member.getId(), e.getMessage());
+                            return null;
+                        }
+                    })
+                    .filter(Objects::nonNull)
                     .collect(Collectors.toList());
+
+            if (allDtos.isEmpty()) {
+                log.info("AI 서버로 전송할 데이터가 없습니다.");
+                return;
+            }
 
             HttpHeaders headers = new HttpHeaders();
             headers.setContentType(MediaType.APPLICATION_JSON);
+
             HttpEntity<List<AiPredictionRequestDto>> requestEntity = new HttpEntity<>(allDtos, headers);
             ResponseEntity<String> response = restTemplate.postForEntity(aiServerUrl, requestEntity, String.class);
-            log.info("AI 서버에 예측 데이터 전송 완료. 응답: {}", response.getStatusCode());
+
+            if (response.getStatusCode().is2xxSuccessful()) {
+                log.info("AI 서버에 예측 데이터 전송 완료. 응답: {}", response.getStatusCode());
+            } else {
+                log.warn("AI 서버 응답 실패. 상태코드: {}, 응답본문: {}", response.getStatusCode(), response.getBody());
+            }
+
         } catch (Exception e) {
-            log.error("AI 서버 전송 실패: {}", e.getMessage(), e);
+            log.error("AI 서버 전송 실패", e);
         }
     }
 
