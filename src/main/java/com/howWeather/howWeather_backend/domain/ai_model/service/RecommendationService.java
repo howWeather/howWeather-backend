@@ -123,27 +123,36 @@ public class RecommendationService {
         List<WeatherForecast> forecasts = weatherForecastRepository
                 .findByRegionNameAndForecastDateAndHourIn(regionName, forecastDate, hours);
 
-        Map<Integer, Double> hourToTempMap = forecasts.stream()
-                .collect(Collectors.toMap(WeatherForecast::getHour, WeatherForecast::getTemperature));
+        // hour 기준으로 forecast 객체를 통째로 저장 (중복 방지 및 날짜 포함용)
+        Map<Integer, WeatherForecast> hourToForecastMap = forecasts.stream()
+                .collect(Collectors.toMap(
+                        WeatherForecast::getHour,
+                        forecast -> forecast,
+                        (oldVal, newVal) -> newVal // 중복 시간대가 있다면 최신 데이터로 덮기
+                ));
 
         for (Map.Entry<String, Integer> entry : predictionMap.entrySet()) {
             int hour = Integer.parseInt(entry.getKey());
             int feeling = entry.getValue();
-            Double temp = hourToTempMap.get(hour);
+            WeatherForecast forecast = hourToForecastMap.get(hour);
 
-            if (temp != null) {
+            if (forecast != null) {
                 WeatherFeelingDto dto = WeatherFeelingDto.builder()
+                        .date(forecast.getForecastDate()) // 추가
                         .time(hour)
                         .feeling(feeling)
-                        .temperature(temp)
+                        .temperature(forecast.getTemperature())
                         .build();
+
                 feelingList.add(dto);
             } else {
                 throw new CustomException(ErrorCode.WEATHER_DATA_NOT_FOUND);
             }
         }
+
         return feelingList;
     }
+
 
     private List<ClothingRecommendation> getModelPrediction(Long id, LocalDate now) {
         List<ClothingRecommendation> list = clothingRecommendationRepository.findByMemberIdAndDate(id, now);
