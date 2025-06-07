@@ -12,6 +12,7 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.http.HttpHeaders;
 import org.springframework.beans.factory.annotation.Value;
@@ -36,7 +37,8 @@ public class ModelSchedular {
     /**
      * 매일 새벽 5시에 모델 서버로 예측에 필요한 데이터를 전송합니다.
      */
-    @Scheduled(cron = "0 30 13 * * *")
+    @Transactional
+    @Scheduled(cron = "0 45 13 * * *")
     public void pushPredictionDataToAiServer() {
         try {
             List<Member> members = memberRepository.findAllByIsDeletedFalse();
