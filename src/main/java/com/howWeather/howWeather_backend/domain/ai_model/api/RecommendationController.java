@@ -14,6 +14,7 @@ import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.util.ArrayList;
 import java.util.List;
 
 @Slf4j
@@ -26,8 +27,13 @@ public class RecommendationController {
     @GetMapping("/recommendation")
     public ResponseEntity<ApiResponse<List<RecommendPredictDto>>> getRecommendList(@RequestHeader("Authorization") String accessTokenHeader,
                                                                                    @AuthenticationPrincipal Member member) {
+        try {
+            List<RecommendPredictDto> recommendList = recommendationService.getRecommendList(member);
+            return ApiResponse.success(HttpStatus.OK, recommendList);
+        } catch (Exception e ){
+            log.error(e.getMessage());
+            return ApiResponse.success(HttpStatus.OK, new ArrayList<>());
+        }
 
-        List<RecommendPredictDto> recommendList = recommendationService.getRecommendList(member);
-        return ApiResponse.success(HttpStatus.OK, recommendList);
     }
 }
