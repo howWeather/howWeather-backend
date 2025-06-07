@@ -102,7 +102,7 @@ public class FcmTokenService {
 
     @Transactional(readOnly = true)
     public void sendPushNotificationToAllAtTime(AlarmTime time, String title, String body) {
-        List<FcmAlarmPreference> preferences = fcmAlarmPreferenceRepository.findAllByTimeEnabled(time);
+        List<FcmAlarmPreference> preferences = fcmAlarmPreferenceRepository.findAllByTime(time);
 
         for (FcmAlarmPreference preference : preferences) {
             List<FcmToken> tokens = fcmTokenRepository.findByMemberId(preference.getMember().getId());
