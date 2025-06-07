@@ -13,6 +13,7 @@ import com.howWeather.howWeather_backend.global.exception.CustomException;
 import com.howWeather.howWeather_backend.global.exception.ErrorCode;
 import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
 import java.util.*;
@@ -24,6 +25,7 @@ public class AiInternalService {
     private final ClothRepository clothRepository;
     private final WeatherForecastRepository weatherForecastRepository;
 
+    @Transactional
     public AiPredictionRequestDto makePredictRequest(Member member) {
         List<WeatherPredictDto> dtoList = getWeatherForecast();
         return AiPredictionRequestDto.builder()
