@@ -38,7 +38,7 @@ public class ModelSchedular {
      * 매일 새벽 5시에 모델 서버로 예측에 필요한 데이터를 전송합니다.
      */
     @Transactional
-    @Scheduled(cron = "0 45 13 * * *")
+    @Scheduled(cron = "0 0 5 * * *")
     public void pushPredictionDataToAiServer() {
         try {
             List<Member> members = memberRepository.findAllByIsDeletedFalse();
