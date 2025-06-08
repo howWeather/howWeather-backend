@@ -1,12 +1,15 @@
 package com.howWeather.howWeather_backend.domain.ai_model.schedular;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.howWeather.howWeather_backend.domain.ai_model.dto.AiPredictionRequestDto;
 import com.howWeather.howWeather_backend.domain.ai_model.repository.ClothingRecommendationRepository;
 import com.howWeather.howWeather_backend.domain.ai_model.service.AiInternalService;
 import com.howWeather.howWeather_backend.domain.member.entity.Member;
 import com.howWeather.howWeather_backend.domain.member.repository.MemberRepository;
+import com.howWeather.howWeather_backend.global.cipher.AESCipher;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -19,6 +22,7 @@ import org.springframework.beans.factory.annotation.Value;
 
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
@@ -30,6 +34,8 @@ public class ModelSchedular {
     private final AiInternalService aiInternalService;
     private final RestTemplate restTemplate;
     private final ClothingRecommendationRepository clothingRecommendationRepository;
+    private final AESCipher aesCipher;
+    private final ObjectMapper objectMapper;
 
     @Value("${ai.server.url}")
     private String aiServerUrl;
@@ -64,6 +70,10 @@ public class ModelSchedular {
             HttpHeaders headers = new HttpHeaders();
             headers.setContentType(MediaType.APPLICATION_JSON);
 
+            // ✅ 암호화 버전
+            // Map<String, String> encrypted = encryptPredictionData(allDtos);
+            // HttpEntity<Map<String, String>> requestEntity = new HttpEntity<>(encrypted, headers);
+
             HttpEntity<List<AiPredictionRequestDto>> requestEntity = new HttpEntity<>(allDtos, headers);
             ResponseEntity<String> response = restTemplate.postForEntity(aiServerUrl, requestEntity, String.class);
 
@@ -75,6 +85,16 @@ public class ModelSchedular {
 
         } catch (Exception e) {
             log.error("AI 서버 전송 실패", e);
+        }
+    }
+
+    private Map<String, String> encryptPredictionData(List<AiPredictionRequestDto> dtos) {
+        try {
+            String jsonData = objectMapper.writeValueAsString(dtos);
+            return aesCipher.encrypt(jsonData); // { "iv": "...", "payload": "..." }
+        } catch (Exception e) {
+            log.error("예측 데이터 암호화 실패: {}", e.getMessage());
+            return null;
         }
     }
 
