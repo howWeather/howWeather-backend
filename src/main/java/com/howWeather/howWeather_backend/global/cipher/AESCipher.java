@@ -37,4 +37,24 @@ public class AESCipher {
         result.put("payload", Base64.getEncoder().encodeToString(encrypted));
         return result;
     }
+
+    public String decrypt(Map<String, String> encryptedData) {
+        try {
+            byte[] keyBytes = secretKey.getBytes(StandardCharsets.UTF_8);
+            SecretKeySpec keySpec = new SecretKeySpec(keyBytes, "AES");
+
+            byte[] iv = Base64.getDecoder().decode(encryptedData.get("iv"));
+            IvParameterSpec ivSpec = new IvParameterSpec(iv);
+
+            byte[] payload = Base64.getDecoder().decode(encryptedData.get("payload"));
+
+            Cipher cipher = Cipher.getInstance(algorithm);
+            cipher.init(Cipher.DECRYPT_MODE, keySpec, ivSpec);
+
+            byte[] decrypted = cipher.doFinal(payload);
+            return new String(decrypted, StandardCharsets.UTF_8);
+        } catch (Exception e) {
+            throw new RuntimeException("복호화 실패", e);
+        }
+    }
 }

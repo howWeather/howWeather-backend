@@ -12,7 +12,8 @@ import com.howWeather.howWeather_backend.domain.record_calendar.dto.RecordForMod
 import com.howWeather.howWeather_backend.domain.record_calendar.service.RecordCalendarService;
 import com.howWeather.howWeather_backend.global.Response.ApiResponse;
 import com.howWeather.howWeather_backend.global.cipher.AESCipher;
-import jakarta.validation.Valid;
+import com.howWeather.howWeather_backend.global.exception.CustomException;
+import com.howWeather.howWeather_backend.global.exception.ExceptionDto;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
@@ -78,6 +79,30 @@ public class AiInternalController {
     public ResponseEntity<ApiResponse<String>> saveRecommendations(@RequestBody ModelClothingRecommendationDto dto) {
         recommendationService.save(dto);
         return ApiResponse.success(HttpStatus.OK, "예측 결과를 성공적으로 저장했습니다.");
+    }
+
+    @PostMapping("/aes-recommendation")
+    public ResponseEntity<ApiResponse<String>> saveRecommendations(@RequestBody Map<String, String> encryptedBody) {
+        try {
+            String decryptedJson = aesCipher.decrypt(encryptedBody);
+            ModelClothingRecommendationDto dto = objectMapper.readValue(decryptedJson, ModelClothingRecommendationDto.class);
+            recommendationService.save(dto);
+            return ApiResponse.success(HttpStatus.OK, "예측 결과를 성공적으로 저장했습니다.");
+        } catch (CustomException e) {
+            log.error("커스텀 예외 발생: {}", e.getMessage(), e);
+            return ResponseEntity
+                    .status(e.getHttpStatus())
+                    .body(ApiResponse.fail(e));
+        } catch (Exception e) {
+            log.error("예측 결과 복호화 또는 저장 실패: {}", e.getMessage(), e);
+            ApiResponse<String> errorResponse = new ApiResponse<>(
+                    HttpStatus.BAD_REQUEST,
+                    false,
+                    null,
+                    new ExceptionDto("UNKNOWN_ERROR", e.getMessage())
+            );
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponse);
+        }
     }
 
     @PostMapping("/history")
