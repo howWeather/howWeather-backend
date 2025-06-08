@@ -41,7 +41,7 @@ public class SecurityConfig {
                         authorizeRequestsConfig
                                 .requestMatchers("/api/auth/email-exist-check", "/api/auth/login",
                                         "/login/oauth2/**", "/api/oauth/**", "/internal-api/model/**",
-                                        "/api/auth/signup", "/api/auth/loginid-exist-check",
+                                        "/api/auth/signup", "/api/auth/loginid-exist-check", "/api/aes-test/**",
                                         "/api/auth/reset-password").permitAll()
                                 .anyRequest().authenticated()
                 ).oauth2Login(oauth2 -> oauth2
