@@ -62,7 +62,17 @@ public class AiInternalController {
     public ResponseEntity<ApiResponse<String>> saveRecommendations(@RequestBody Map<String, String> encryptedBody) {
         try {
             String decryptedJson = aesCipher.decrypt(encryptedBody);
-            ModelClothingRecommendationDto dto = objectMapper.readValue(decryptedJson, ModelClothingRecommendationDto.class);
+            log.info("🔓 복호화된 데이터:\n{}", decryptedJson);
+
+            if (decryptedJson.startsWith("\"") && decryptedJson.endsWith("\"")) {
+                decryptedJson = objectMapper.readValue(decryptedJson, String.class);
+            }
+
+            ModelClothingRecommendationDto dto = objectMapper.readValue(
+                    decryptedJson,
+                    ModelClothingRecommendationDto.class
+            );
+
             recommendationService.save(dto);
             return ApiResponse.success(HttpStatus.OK, "예측 결과를 성공적으로 저장했습니다.");
         } catch (CustomException e) {
