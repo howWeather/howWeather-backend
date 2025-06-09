@@ -1,11 +1,7 @@
 package com.howWeather.howWeather_backend.domain.ai_model.dto;
 
-import com.howWeather.howWeather_backend.global.custom.ValidRange;
 import com.howWeather.howWeather_backend.global.exception.CustomException;
 import com.howWeather.howWeather_backend.global.exception.ErrorCode;
-import jakarta.validation.constraints.Max;
-import jakarta.validation.constraints.Min;
-import jakarta.validation.constraints.NotNull;
 import lombok.Data;
 
 @Data
