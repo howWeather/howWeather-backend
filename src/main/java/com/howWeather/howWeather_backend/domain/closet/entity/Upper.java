@@ -23,6 +23,7 @@ public class Upper {
 
     private int thickness;
 
+    @Setter
     private boolean isActive;
 
     private boolean isLayerFlexible;

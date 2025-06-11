@@ -291,7 +291,8 @@ public class ClosetService {
             Closet closet = getCloset(member);
             Upper upper = upperRepository.findByIdAndCloset(clothId, closet)
                     .orElseThrow(() -> new CustomException(ErrorCode.CLOTH_NOT_FOUND, "해당 상의를 찾을 수 없습니다."));
-            upperRepository.delete(upper);
+
+            upper.setActive(false);
         } catch (CustomException e) {
             throw e;
         } catch (Exception e) {
@@ -306,7 +307,8 @@ public class ClosetService {
             Closet closet = getCloset(member);
             Outer outer = outerRepository.findByIdAndCloset(clothId, closet)
                     .orElseThrow(() -> new CustomException(ErrorCode.CLOTH_NOT_FOUND, "해당 아우터를 찾을 수 없습니다."));
-            outerRepository.delete(outer);
+
+            outer.setActive(false);
         } catch (CustomException e) {
             throw e;
         } catch (Exception e) {
