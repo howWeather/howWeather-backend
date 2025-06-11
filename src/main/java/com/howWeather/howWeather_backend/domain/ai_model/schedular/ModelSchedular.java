@@ -89,7 +89,7 @@ public class ModelSchedular {
      * 매일 새벽 5시에 모델 서버로 예측에 필요한 데이터를 암호화된 형태로 전송합니다.
      */
     @Transactional
-    @Scheduled(cron = "0 0 20 * * *") 
+    @Scheduled(cron = "0 0 5 * * *")
     public void pushPredictionAESDataToAiServer() {
         try {
             List<Member> members = memberRepository.findAllByIsDeletedFalse();
