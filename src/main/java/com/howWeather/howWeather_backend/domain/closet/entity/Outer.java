@@ -23,6 +23,7 @@ public class Outer {
 
     private int thickness;
 
+    @Setter
     private boolean isActive;
 
     private boolean isLayerFlexible;
