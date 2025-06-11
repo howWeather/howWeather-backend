@@ -12,7 +12,7 @@ import static jakarta.persistence.FetchType.LAZY;
 
 @Entity @Table(name = "closet")
 @Getter
-@NoArgsConstructor(access = AccessLevel.PROTECTED)
+@NoArgsConstructor
 @AllArgsConstructor
 @Builder
 public class Closet {

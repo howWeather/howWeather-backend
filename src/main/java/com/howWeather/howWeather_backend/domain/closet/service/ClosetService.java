@@ -57,10 +57,14 @@ public class ClosetService {
         }
     }
 
-    @Transactional(readOnly = true)
+    @Transactional
     public Closet getCloset(Member member) {
         return closetRepository.findByMember(member)
-                .orElseThrow(() -> new CustomException(ErrorCode.CLOSET_NOT_FOUND, "해당 유저의 옷장이 존재하지 않습니다."));
+                .orElseGet(() -> {
+                    Closet newCloset = new Closet();
+                    newCloset.setMember(member);
+                    return closetRepository.save(newCloset);
+                });
     }
 
     private void addUpperClothes(Closet closet, List<ClothRegisterDto> uppers) {
