@@ -19,4 +19,5 @@
 - GitHub Actions (CI/CD)
 
 ### 🎯 시스템 아키텍쳐
-![백엔드 시스템 아키텍처](https://github.com/user-attachments/assets/d0b6b45e-2a27-421b-889b-18d093c1d5af)
+![백엔드 시스템 아키텍처](https://github.com/user-attachments/assets/c3651b9f-1e95-41c6-bcc5-4452d376c0e4)
+
