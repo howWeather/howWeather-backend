@@ -6,4 +6,5 @@ import org.springframework.data.jpa.repository.JpaRepository;
 
 @Registered
 public interface RegionRepository extends JpaRepository<Region, Long> {
+    boolean existsByName(String name);
 }
