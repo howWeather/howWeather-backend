@@ -219,34 +219,6 @@ public class ClosetService {
         }
     }
 
-    @Transactional(readOnly = true)
-    public ClothListDto findLayerFlexibleOuters(Member member) { // 상의가 될 수 있는 아우터
-        Closet closet = getCloset(member);
-
-        return findLayerFlexibleClothes(
-                OUTER,
-                closet.getOuterList(),
-                layerFlexibleOuter,
-                Outer::isActive,
-                Outer::getOuterType,
-                this::mapOuterToDto
-        );
-    }
-
-    @Transactional(readOnly = true)
-    public ClothListDto findLayerFlexibleUppers(Member member) { // 아우터가 될 수 있는 상의
-        Closet closet = getCloset(member);
-
-        return findLayerFlexibleClothes(
-                UPPER,
-                closet.getUpperList(),
-                layerFlexibleUpper,
-                Upper::isActive,
-                Upper::getUpperType,
-                this::mapUpperToDto
-        );
-    }
-
     @Transactional
     public void updateUpper(Long clothId, UpdateClothDto updateDto, Member member) {
         try {
