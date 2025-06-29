@@ -5,6 +5,7 @@ import com.howWeather.howWeather_backend.domain.location.dto.RegionInfoDto;
 import com.howWeather.howWeather_backend.domain.location.dto.RegionTemperatureDto;
 import com.howWeather.howWeather_backend.domain.location.service.LocationService;
 import com.howWeather.howWeather_backend.global.Response.ApiResponse;
+import com.howWeather.howWeather_backend.global.jwt.CheckAuthenticatedUser;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -17,6 +18,7 @@ import org.springframework.web.bind.annotation.*;
 public class LocationController {
     private final LocationService locationService;
     @PostMapping("/region")
+    @CheckAuthenticatedUser
     public ResponseEntity<ApiResponse<RegionInfoDto>> getRegionFromCoords(@RequestHeader("Authorization") String accessTokenHeader,
                                                                           @RequestBody @Valid LocationWeatherRequestDto request) {
         RegionInfoDto region = locationService.reverseGeocode(request.getLatitude(), request.getLongitude());
@@ -24,6 +26,7 @@ public class LocationController {
     }
 
     @PostMapping("/region/temperature")
+    @CheckAuthenticatedUser
     public ResponseEntity<ApiResponse<RegionTemperatureDto>> getRegionTemperature(@RequestHeader("Authorization") String accessTokenHeader,
                                                                                   @RequestBody @Valid LocationWeatherRequestDto request) {
         RegionTemperatureDto dto = locationService.getRegionTemperatureFromCoords(
