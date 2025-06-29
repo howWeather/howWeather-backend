@@ -50,6 +50,9 @@ public class Member implements UserDetails {
     @Column(name="body_type")
     private int bodyType;
 
+    @Column(name="region_name")
+    private String regionName;
+
     @Column(name="gender", nullable = false)
     private int gender;
 
@@ -114,6 +117,10 @@ public class Member implements UserDetails {
 
     public void changeNickname(String s) {
         this.nickname = s;
+    }
+
+    public void changeRegion(String regionName) {
+        this.regionName = regionName;
     }
 
     public void changeConstitution(int v) {
