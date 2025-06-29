@@ -77,6 +77,9 @@ public enum ErrorCode {
     GOOGLE_INVALID_ACCESS_TOKEN("유효하지 않은 구글 액세스 토큰입니다.", HttpStatus.UNAUTHORIZED), 
     NO_OAUTH2_CLIENT("Auth2AuthorizedClient가 존재하지 않습니다.", HttpStatus.UNAUTHORIZED),
     OAUTH2_TOKEN_NOT_FOUND("OAuth2 access token을 찾을 수 없습니다.", HttpStatus.UNAUTHORIZED),
+
+    // 지역
+    KAKAO_API_REGION_NOT_FOUND("해당 지역을 찾는 데 실패했습니다.", HttpStatus.NOT_FOUND)
     ;
 
     private final String message;
