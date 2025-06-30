@@ -6,6 +6,6 @@ import lombok.Data;
 @Data
 @AllArgsConstructor
 public class RegionTemperatureDto {
-    private RegionInfoDto regionInfo;
+    private String regionName;
     private Double temperature;
 }
