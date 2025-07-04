@@ -85,7 +85,6 @@ public class RecommendationService {
             }
         }
 
-        // if (result.isEmpty()) throw new CustomException(ErrorCode.NO_RECOMMEND_OUTER);
         return new ArrayList<>(resultSet);
     }
 
@@ -103,7 +102,6 @@ public class RecommendationService {
                 }
             }
         }
-        // if (result.isEmpty()) throw new CustomException(ErrorCode.NO_RECOMMEND_UPPER);
         return new ArrayList<>(resultSet);
     }
 
@@ -123,12 +121,11 @@ public class RecommendationService {
         List<WeatherForecast> forecasts = weatherForecastRepository
                 .findByRegionNameAndForecastDateAndHourIn(regionName, forecastDate, hours);
 
-        // hour 기준으로 forecast 객체를 통째로 저장 (중복 방지 및 날짜 포함용)
         Map<Integer, WeatherForecast> hourToForecastMap = forecasts.stream()
                 .collect(Collectors.toMap(
                         WeatherForecast::getHour,
                         forecast -> forecast,
-                        (oldVal, newVal) -> newVal // 중복 시간대가 있다면 최신 데이터로 덮기
+                        (oldVal, newVal) -> newVal
                 ));
 
         for (Map.Entry<String, Integer> entry : predictionMap.entrySet()) {
@@ -160,7 +157,6 @@ public class RecommendationService {
             throw new CustomException(ErrorCode.NO_PREDICT_DATA);
         }
         return list;
-        // return clothingRecommendationRepository.findByMemberIdAndDate(id, now);
     }
 
     @Transactional
