@@ -112,14 +112,7 @@ public class ModelSchedular {
                 return;
             }
 
-            ObjectMapper objectMapper = new ObjectMapper();
-            String plainJson = objectMapper.writerWithDefaultPrettyPrinter().writeValueAsString(allDtos);
-            log.info("✅ 예측 데이터 (평문 JSON):\n{}", plainJson);
-
             Map<String, String> encrypted = encryptPredictionData(allDtos);
-
-            String encryptedJson = objectMapper.writerWithDefaultPrettyPrinter().writeValueAsString(encrypted);
-            log.info("🔒 예측 데이터 (암호화된 JSON):\n{}", encryptedJson);
 
             HttpHeaders headers = new HttpHeaders();
             headers.setContentType(MediaType.APPLICATION_JSON);
@@ -139,7 +132,7 @@ public class ModelSchedular {
     private Map<String, String> encryptPredictionData(List<AiPredictionRequestDto> dtos) {
         try {
             String jsonData = objectMapper.writeValueAsString(dtos);
-            return aesCipher.encrypt(jsonData); // { "iv": "...", "payload": "..." }
+            return aesCipher.encrypt(jsonData);
         } catch (Exception e) {
             log.error("예측 데이터 암호화 실패: {}", e.getMessage());
             return null;

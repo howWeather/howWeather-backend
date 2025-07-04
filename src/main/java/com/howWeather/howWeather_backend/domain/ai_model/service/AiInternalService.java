@@ -28,7 +28,7 @@ public class AiInternalService {
 
     @Transactional
     public AiPredictionRequestDto makePredictRequest(Member member) {
-        List<WeatherPredictDto> dtoList = getWeatherForecast();
+        List<WeatherPredictDto> dtoList = getWeatherForecast(member);
         return AiPredictionRequestDto.builder()
                 .userId(member.getId())
                 .bodyTypeLabel(member.getConstitution())
@@ -37,11 +37,12 @@ public class AiInternalService {
                 .build();
     }
 
-    private List<WeatherPredictDto> getWeatherForecast() {
+    private List<WeatherPredictDto> getWeatherForecast(Member member) {
         List<Integer> targetHours = List.of(9, 12, 15, 18, 21);
+        String regionName = member.getRegionName() != null ? member.getRegionName() : "서울특별시 용산구";
 
         List<WeatherForecast> forecasts = weatherForecastRepository
-                .findByRegionNameAndForecastDateAndHourIn("서울특별시 용산구", LocalDate.now(), targetHours);
+                .findByRegionNameAndForecastDateAndHourIn(regionName, LocalDate.now(), targetHours);
 
         return forecasts.stream()
                 .map(this::convertToDto)

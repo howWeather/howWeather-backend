@@ -53,7 +53,7 @@ public class WeatherService {
             LocalDate localDate = LocalDate.parse(dto.getDate());
             return weatherRepository.findByRegionNameAndDateAndTimeSlot(dto.getCity(), localDate, dto.getTimeSlot())
                     .map(Weather::getTemperature)
-                    .orElseThrow(() -> new CustomException(ErrorCode.REGION_NOT_FOUND, "해당 지역과 시간대의 온도는 현재 제공하지 않습니다."));
+                    .orElseThrow(() -> new CustomException(ErrorCode. REGION_AND_TIME_NOT_FOUND));
         } catch (CustomException e){
             throw  e;
         } catch (Exception e) {
@@ -61,37 +61,47 @@ public class WeatherService {
         }
     }
 
+    @Transactional
     public void fetchHourlyForecast() {
-        double lat = 37.53138497;
-        double lon = 126.979907;
-        String regionName = "서울특별시 용산구"; // TODO: 추후 동적 지역명으로 변경
-
-        List<WeatherPredictDto> forecasts = weatherApiClient.fetchForecast(lat, lon);
-
+        List<Region> regions = regionRepository.findByCurrentUserCountGreaterThan(0);
         LocalDate baseDate = LocalDate.now();
-        int cnt = 0;
 
-        List<WeatherForecast> entities = new ArrayList<>();
-
-        for (WeatherPredictDto dto : forecasts) {
-            LocalDate forecastDate = baseDate.plusDays(cnt / 5);
-
-            WeatherForecast entity = WeatherForecast.builder()
-                    .regionName(regionName)
-                    .forecastDate(forecastDate)
-                    .hour(dto.getHour())
-                    .temperature(dto.getTemperature())
-                    .humidity(dto.getHumidity())
-                    .windSpeed(dto.getWindSpeed())
-                    .precipitation(dto.getPrecipitation())
-                    .cloudAmount(dto.getCloudAmount())
-                    .feelsLike(dto.getFeelsLike())
-                    .build();
-
-            entities.add(entity);
-            cnt++;
+        String defaultRegionName = "서울특별시 용산구";
+        boolean hasDefaultRegion = regions.stream()
+                .anyMatch(r -> r.getName().equals(defaultRegionName));
+        if (!hasDefaultRegion) {
+            regionRepository.findByName(defaultRegionName).ifPresent(regions::add);
         }
-        weatherForecastRepository.saveAll(entities);
-    }
 
+        List<WeatherForecast> allForecasts = new ArrayList<>();
+
+        for (Region region : regions) {
+            double lat = region.getLat();
+            double lon = region.getLon();
+            String regionName = region.getName();
+
+            List<WeatherPredictDto> forecasts = weatherApiClient.fetchForecast(lat, lon);
+
+            int cnt = 0;
+            for (WeatherPredictDto dto : forecasts) {
+                LocalDate forecastDate = baseDate.plusDays(cnt / 5);
+
+                WeatherForecast entity = WeatherForecast.builder()
+                        .regionName(regionName)
+                        .forecastDate(forecastDate)
+                        .hour(dto.getHour())
+                        .temperature(dto.getTemperature())
+                        .humidity(dto.getHumidity())
+                        .windSpeed(dto.getWindSpeed())
+                        .precipitation(dto.getPrecipitation())
+                        .cloudAmount(dto.getCloudAmount())
+                        .feelsLike(dto.getFeelsLike())
+                        .build();
+
+                allForecasts.add(entity);
+                cnt++;
+            }
+        }
+        weatherForecastRepository.saveAll(allForecasts);
+    }
 }

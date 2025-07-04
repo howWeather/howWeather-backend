@@ -58,7 +58,8 @@ public enum ErrorCode {
     // 닐씨
     WEATHER_API_CALL_ERROR("날씨 API를 호출하는 중 오류가 발생했습니다", HttpStatus.SERVICE_UNAVAILABLE),
     NO_BODY_ERROR("날씨 데이터가 존재하지 않습니다", HttpStatus.NOT_FOUND),
-    REGION_NOT_FOUND("해당 지역과 시간대에 대해서는 서비스를 제공하지 않습니다.", HttpStatus.NOT_FOUND),
+    REGION_AND_TIME_NOT_FOUND("해당 지역과 시간대의 온도는 현재 제공하지 않습니다.", HttpStatus.NOT_FOUND),
+    REGION_NOT_FOUND("해당 지역에 대해서는 서비스를 제공하지 않습니다.", HttpStatus.NOT_FOUND),
 
     // 알림 관리
     DUPLICATE_FCM_TOKEN("이미 등록된 FCM 토큰입니다.", HttpStatus.CONFLICT),
@@ -77,6 +78,10 @@ public enum ErrorCode {
     GOOGLE_INVALID_ACCESS_TOKEN("유효하지 않은 구글 액세스 토큰입니다.", HttpStatus.UNAUTHORIZED), 
     NO_OAUTH2_CLIENT("Auth2AuthorizedClient가 존재하지 않습니다.", HttpStatus.UNAUTHORIZED),
     OAUTH2_TOKEN_NOT_FOUND("OAuth2 access token을 찾을 수 없습니다.", HttpStatus.UNAUTHORIZED),
+
+    // 지역
+    KAKAO_API_REGION_NOT_FOUND("해당 지역을 찾는 데 실패했습니다.", HttpStatus.NOT_FOUND),
+    TIME_RESTRICTED_FOR_REGION_CHANGE("오전 4:00 ~ 오전 7:00 사이에는 지역 설정을 변경할 수 없습니다.", HttpStatus.BAD_REQUEST)
     ;
 
     private final String message;

@@ -7,6 +7,8 @@ import com.howWeather.howWeather_backend.domain.member.entity.LoginType;
 import com.howWeather.howWeather_backend.domain.member.entity.Member;
 import com.howWeather.howWeather_backend.domain.member.repository.MemberRepository;
 import com.howWeather.howWeather_backend.domain.closet.repository.ClosetRepository;
+import com.howWeather.howWeather_backend.domain.weather.entity.Region;
+import com.howWeather.howWeather_backend.domain.weather.repository.RegionRepository;
 import com.howWeather.howWeather_backend.global.exception.CustomException;
 import com.howWeather.howWeather_backend.global.exception.ErrorCode;
 import com.howWeather.howWeather_backend.global.exception.LoginException;
@@ -29,6 +31,7 @@ import org.springframework.security.oauth2.client.authentication.OAuth2Authentic
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalTime;
 import java.util.Date;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
@@ -48,6 +51,7 @@ public class AuthService {
     private final FcmAlarmPreferenceService fcmAlarmPreferenceService;
     private final CustomOAuth2UserService customOAuth2UserService;
     private final OAuth2AuthorizedClientService authorizedClientService;
+    private final RegionRepository regionRepository;
 
     @Transactional
     public void signup(SignupRequestDto signupRequestDto) {
@@ -299,6 +303,63 @@ public class AuthService {
         }
     }
 
+    @Transactional(readOnly = true)
+    public String getLoccation(Member member) {
+        try {
+            String region = member.getRegionName();
+
+            if (region == null || region.trim().isEmpty())
+                return "서울특별시 용산구";
+
+            return region;
+
+        } catch (CustomException e) {
+            throw e;
+        }catch (Exception e) {
+            log.error("지역 조회 중 에러 발생: {}", e.getMessage(), e);
+            throw new CustomException(ErrorCode.UNKNOWN_ERROR, "지역 조회 중 오류가 발생했습니다.");
+        }
+    }
+
+    @Transactional
+    public void updateLocation(Member member, RegionDto regionDto) {
+        try {
+            LocalTime now = LocalTime.now();
+            if (!now.isBefore(LocalTime.of(4, 00)) && now.isBefore(LocalTime.of(7, 0))) {
+                throw new CustomException(ErrorCode.TIME_RESTRICTED_FOR_REGION_CHANGE);
+            }
+            validateRegion(regionDto.getRegionName());
+
+            Member persistedMember = memberRepository.findById(member.getId())
+                    .orElseThrow(() -> new CustomException(ErrorCode.ID_NOT_FOUND, "회원 정보를 찾을 수 없습니다."));
+
+            String oldRegionName = persistedMember.getRegionName();
+            String newRegionName = regionDto.getRegionName();
+
+            if (oldRegionName == null || !newRegionName.equals(oldRegionName)) {
+                if (oldRegionName != null) {
+                    regionRepository.findByName(oldRegionName).ifPresent(Region::decrementCurrentUserCount);
+                }
+
+                Region newRegion = regionRepository.findByName(newRegionName)
+                        .orElseThrow(() -> new CustomException(ErrorCode.REGION_NOT_FOUND));
+                newRegion.incrementCurrentUserCount();
+                persistedMember.changeRegion(newRegionName);
+            }
+        } catch (CustomException e) {
+            throw e;
+        } catch (Exception e) {
+            log.error("지역 수정 중 에러 발생: {}", e.getMessage(), e);
+            throw new CustomException(ErrorCode.UNKNOWN_ERROR, "지역 수정 중 오류가 발생했습니다.");
+        }
+    }
+
+    private void validateRegion(String regionName) {
+        if (regionName == null || regionName.isEmpty() || !regionRepository.existsByName(regionName)) {
+            throw new CustomException(ErrorCode.REGION_NOT_FOUND);
+        }
+    }
+
     private void validateIntData(Integer data, int s, int e) {
         if (data < s || data > e) {
             throw new CustomException(ErrorCode.INVALID_INPUT, "유효하지 않은 입력값입니다.");
@@ -366,7 +427,7 @@ public class AuthService {
             memberRepository.flush();
             mailService.sendTemporaryPassword(member.getEmail(), tempPassword);
             return member.getEmail();
-        }  catch (CustomException e) {
+        } catch (CustomException e) {
             throw e;
         } catch (Exception e) {
             log.error("비밀번호 초기화 중 에러 발생: {}", e.getMessage(), e);
