@@ -7,6 +7,7 @@ import com.howWeather.howWeather_backend.domain.member.entity.LoginType;
 import com.howWeather.howWeather_backend.domain.member.entity.Member;
 import com.howWeather.howWeather_backend.domain.member.repository.MemberRepository;
 import com.howWeather.howWeather_backend.domain.closet.repository.ClosetRepository;
+import com.howWeather.howWeather_backend.domain.weather.entity.Region;
 import com.howWeather.howWeather_backend.domain.weather.repository.RegionRepository;
 import com.howWeather.howWeather_backend.global.exception.CustomException;
 import com.howWeather.howWeather_backend.global.exception.ErrorCode;
@@ -323,9 +324,23 @@ public class AuthService {
     public void updateLocation(Member member, RegionDto regionDto) {
         try {
             validateRegion(regionDto.getRegionName());
+
             Member persistedMember = memberRepository.findById(member.getId())
                     .orElseThrow(() -> new CustomException(ErrorCode.ID_NOT_FOUND, "회원 정보를 찾을 수 없습니다."));
-            persistedMember.changeRegion(regionDto.getRegionName());
+
+            String oldRegionName = persistedMember.getRegionName();
+            String newRegionName = regionDto.getRegionName();
+
+            if (oldRegionName == null || !newRegionName.equals(oldRegionName)) {
+                if (oldRegionName != null) {
+                    regionRepository.findByName(oldRegionName).ifPresent(Region::decrementCurrentUserCount);
+                }
+
+                Region newRegion = regionRepository.findByName(newRegionName)
+                        .orElseThrow(() -> new CustomException(ErrorCode.REGION_NOT_FOUND));
+                newRegion.incrementCurrentUserCount();
+                persistedMember.changeRegion(newRegionName);
+            }
         } catch (CustomException e) {
             throw e;
         } catch (Exception e) {
