@@ -301,6 +301,24 @@ public class AuthService {
         }
     }
 
+    @Transactional(readOnly = true)
+    public String getLoccation(Member member) {
+        try {
+            String region = member.getRegionName();
+
+            if (region == null || region.trim().isEmpty())
+                return "서울특별시 용산구";
+
+            return region;
+
+        } catch (CustomException e) {
+            throw e;
+        }catch (Exception e) {
+            log.error("지역 조회 중 에러 발생: {}", e.getMessage(), e);
+            throw new CustomException(ErrorCode.UNKNOWN_ERROR, "지역 조회 중 오류가 발생했습니다.");
+        }
+    }
+
     @Transactional
     public void updateLocation(Member member, RegionDto regionDto) {
         try {
@@ -318,7 +336,7 @@ public class AuthService {
 
     private void validateRegion(String regionName) {
         if (regionName == null || regionName.isEmpty() || !regionRepository.existsByName(regionName)) {
-            throw new CustomException(ErrorCode.REGION_NOT_FOUND, "해당 지역은 서비스를 제공하지 않습니다.");
+            throw new CustomException(ErrorCode.REGION_NOT_FOUND);
         }
     }
 

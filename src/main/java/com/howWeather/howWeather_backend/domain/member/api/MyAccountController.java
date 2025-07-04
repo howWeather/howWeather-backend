@@ -69,6 +69,14 @@ public class MyAccountController {
         return ApiResponse.success(HttpStatus.OK, "체질을 성공적으로 수정하였습니다.");
     }
 
+    @GetMapping("/location")
+    @CheckAuthenticatedUser
+    public ResponseEntity<ApiResponse<String>> getLocation(@RequestHeader("Authorization") String accessTokenHeader,
+                                                           @AuthenticationPrincipal Member member) {
+        String location = authService.getLoccation(member);
+        return ApiResponse.success(HttpStatus.OK, location);
+    }
+
     @PatchMapping("/update-location")
     @CheckAuthenticatedUser
     public ResponseEntity<ApiResponse<String>> updateLocation(@RequestHeader("Authorization") String accessTokenHeader,
