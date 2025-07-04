@@ -43,16 +43,16 @@ public class RecommendationService {
         Closet closet = getClosetWithAll(member);
         List<RecommendPredictDto> result = new ArrayList<>();
         for (ClothingRecommendation recommendation : modelPredictList) {
-            result.add(makeResultForPredict(closet, recommendation));
+            result.add(makeResultForPredict(closet, recommendation, member));
         }
         return result;
     }
 
-    private RecommendPredictDto makeResultForPredict(Closet closet, ClothingRecommendation recommendation) {
+    private RecommendPredictDto makeResultForPredict(Closet closet, ClothingRecommendation recommendation, Member member) {
         try {
             List<Integer> upperTypeList = makeUpperList(closet, recommendation.getTops());
             List<Integer> outerTypeList = makeOuterList(closet, recommendation.getOuters());
-            List<WeatherFeelingDto> weatherFeelingDto = makeWeatherFeeling(recommendation.getPredictionMap());
+            List<WeatherFeelingDto> weatherFeelingDto = makeWeatherFeeling(recommendation.getPredictionMap(), member);
 
             return RecommendPredictDto.builder()
                     .feelingList(weatherFeelingDto)
@@ -65,7 +65,7 @@ public class RecommendationService {
             throw new CustomException(ErrorCode.UNKNOWN_ERROR, "예측 데이터를 변환하는 중 오류가 발생하였습니다: " + e.getMessage());
         }
     }
-
+    
     // TODO : AI 학습 이후 사용자가 대량으로 의상을 삭제해서 추천할 의상이 없어져버리는 경우에 대한 고민이 필요해보임.
 
     private List<Integer> makeOuterList(Closet closet, List<Integer> outers) {
@@ -105,14 +105,14 @@ public class RecommendationService {
         return new ArrayList<>(resultSet);
     }
 
-    private List<WeatherFeelingDto> makeWeatherFeeling(Map<String, Integer> predictionMap) {
+    private List<WeatherFeelingDto> makeWeatherFeeling(Map<String, Integer> predictionMap, Member member) {
         List<WeatherFeelingDto> feelingList = new ArrayList<>();
 
         LocalDate today = LocalDate.now();
         LocalTime now = LocalTime.now();
         LocalDate forecastDate = now.isBefore(LocalTime.of(6, 0)) ? today.minusDays(1) : today;
 
-        String regionName = "서울특별시 용산구";
+        String regionName = (member.getRegionName() != null) ? member.getRegionName() : "서울특별시 용산구";
 
         List<Integer> hours = predictionMap.keySet().stream()
                 .map(Integer::parseInt)
@@ -140,7 +140,6 @@ public class RecommendationService {
                         .feeling(feeling)
                         .temperature(forecast.getTemperature())
                         .build();
-
                 feelingList.add(dto);
             } else {
                 throw new CustomException(ErrorCode.WEATHER_DATA_NOT_FOUND);
@@ -149,7 +148,6 @@ public class RecommendationService {
 
         return feelingList;
     }
-
 
     private List<ClothingRecommendation> getModelPrediction(Long id, LocalDate now) {
         List<ClothingRecommendation> list = clothingRecommendationRepository.findByMemberIdAndDate(id, now);
