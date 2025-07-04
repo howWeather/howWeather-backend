@@ -16,4 +16,6 @@ public interface RegionRepository extends JpaRepository<Region, Long> {
 
     @Query("SELECT r.name FROM Region r")
     List<String> findAllRegionNames();
+
+    List<Region> findByCurrentUserCountGreaterThan(int count);
 }

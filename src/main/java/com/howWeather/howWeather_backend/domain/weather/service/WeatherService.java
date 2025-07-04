@@ -61,37 +61,41 @@ public class WeatherService {
         }
     }
 
+    @Transactional
     public void fetchHourlyForecast() {
-        double lat = 37.53138497;
-        double lon = 126.979907;
-        String regionName = "서울특별시 용산구"; // TODO: 추후 동적 지역명으로 변경
-
-        List<WeatherPredictDto> forecasts = weatherApiClient.fetchForecast(lat, lon);
-
+        List<Region> regions = regionRepository.findByCurrentUserCountGreaterThan(0);
         LocalDate baseDate = LocalDate.now();
-        int cnt = 0;
 
-        List<WeatherForecast> entities = new ArrayList<>();
+        List<WeatherForecast> allForecasts = new ArrayList<>();
 
-        for (WeatherPredictDto dto : forecasts) {
-            LocalDate forecastDate = baseDate.plusDays(cnt / 5);
+        for (Region region : regions) {
+            double lat = region.getLat();
+            double lon = region.getLon();
+            String regionName = region.getName();
 
-            WeatherForecast entity = WeatherForecast.builder()
-                    .regionName(regionName)
-                    .forecastDate(forecastDate)
-                    .hour(dto.getHour())
-                    .temperature(dto.getTemperature())
-                    .humidity(dto.getHumidity())
-                    .windSpeed(dto.getWindSpeed())
-                    .precipitation(dto.getPrecipitation())
-                    .cloudAmount(dto.getCloudAmount())
-                    .feelsLike(dto.getFeelsLike())
-                    .build();
+            List<WeatherPredictDto> forecasts = weatherApiClient.fetchForecast(lat, lon);
 
-            entities.add(entity);
-            cnt++;
+            int cnt = 0;
+            for (WeatherPredictDto dto : forecasts) {
+                LocalDate forecastDate = baseDate.plusDays(cnt / 5);
+
+                WeatherForecast entity = WeatherForecast.builder()
+                        .regionName(regionName)
+                        .forecastDate(forecastDate)
+                        .hour(dto.getHour())
+                        .temperature(dto.getTemperature())
+                        .humidity(dto.getHumidity())
+                        .windSpeed(dto.getWindSpeed())
+                        .precipitation(dto.getPrecipitation())
+                        .cloudAmount(dto.getCloudAmount())
+                        .feelsLike(dto.getFeelsLike())
+                        .build();
+
+                allForecasts.add(entity);
+                cnt++;
+            }
         }
-        weatherForecastRepository.saveAll(entities);
+        weatherForecastRepository.saveAll(allForecasts);
     }
 
 }
