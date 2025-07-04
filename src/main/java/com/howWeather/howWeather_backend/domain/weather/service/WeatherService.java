@@ -66,6 +66,13 @@ public class WeatherService {
         List<Region> regions = regionRepository.findByCurrentUserCountGreaterThan(0);
         LocalDate baseDate = LocalDate.now();
 
+        String defaultRegionName = "서울특별시 용산구";
+        boolean hasDefaultRegion = regions.stream()
+                .anyMatch(r -> r.getName().equals(defaultRegionName));
+        if (!hasDefaultRegion) {
+            regionRepository.findByName(defaultRegionName).ifPresent(regions::add);
+        }
+
         List<WeatherForecast> allForecasts = new ArrayList<>();
 
         for (Region region : regions) {
@@ -97,5 +104,4 @@ public class WeatherService {
         }
         weatherForecastRepository.saveAll(allForecasts);
     }
-
 }

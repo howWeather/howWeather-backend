@@ -135,7 +135,7 @@ public class RecommendationService {
 
             if (forecast != null) {
                 WeatherFeelingDto dto = WeatherFeelingDto.builder()
-                        .date(forecast.getForecastDate()) // 추가
+                        .date(forecast.getForecastDate())
                         .time(hour)
                         .feeling(feeling)
                         .temperature(forecast.getTemperature())
