@@ -31,6 +31,7 @@ import org.springframework.security.oauth2.client.authentication.OAuth2Authentic
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalTime;
 import java.util.Date;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
@@ -323,6 +324,10 @@ public class AuthService {
     @Transactional
     public void updateLocation(Member member, RegionDto regionDto) {
         try {
+            LocalTime now = LocalTime.now();
+            if (!now.isBefore(LocalTime.of(4, 00)) && now.isBefore(LocalTime.of(7, 0))) {
+                throw new CustomException(ErrorCode.TIME_RESTRICTED_FOR_REGION_CHANGE);
+            }
             validateRegion(regionDto.getRegionName());
 
             Member persistedMember = memberRepository.findById(member.getId())

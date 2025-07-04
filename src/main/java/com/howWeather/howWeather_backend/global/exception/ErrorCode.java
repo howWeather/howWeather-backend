@@ -80,7 +80,8 @@ public enum ErrorCode {
     OAUTH2_TOKEN_NOT_FOUND("OAuth2 access token을 찾을 수 없습니다.", HttpStatus.UNAUTHORIZED),
 
     // 지역
-    KAKAO_API_REGION_NOT_FOUND("해당 지역을 찾는 데 실패했습니다.", HttpStatus.NOT_FOUND)
+    KAKAO_API_REGION_NOT_FOUND("해당 지역을 찾는 데 실패했습니다.", HttpStatus.NOT_FOUND),
+    TIME_RESTRICTED_FOR_REGION_CHANGE("오전 4:00 ~ 오전 7:00 사이에는 지역 설정을 변경할 수 없습니다.", HttpStatus.BAD_REQUEST)
     ;
 
     private final String message;

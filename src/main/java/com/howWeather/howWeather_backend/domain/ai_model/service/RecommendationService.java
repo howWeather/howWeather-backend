@@ -65,7 +65,6 @@ public class RecommendationService {
             throw new CustomException(ErrorCode.UNKNOWN_ERROR, "예측 데이터를 변환하는 중 오류가 발생하였습니다: " + e.getMessage());
         }
     }
-    
     // TODO : AI 학습 이후 사용자가 대량으로 의상을 삭제해서 추천할 의상이 없어져버리는 경우에 대한 고민이 필요해보임.
 
     private List<Integer> makeOuterList(Closet closet, List<Integer> outers) {
