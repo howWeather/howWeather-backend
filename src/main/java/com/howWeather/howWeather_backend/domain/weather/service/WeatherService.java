@@ -53,7 +53,7 @@ public class WeatherService {
             LocalDate localDate = LocalDate.parse(dto.getDate());
             return weatherRepository.findByRegionNameAndDateAndTimeSlot(dto.getCity(), localDate, dto.getTimeSlot())
                     .map(Weather::getTemperature)
-                    .orElseThrow(() -> new CustomException(ErrorCode.REGION_NOT_FOUND, "해당 지역과 시간대의 온도는 현재 제공하지 않습니다."));
+                    .orElseThrow(() -> new CustomException(ErrorCode. REGION_AND_TIME_NOT_FOUND));
         } catch (CustomException e){
             throw  e;
         } catch (Exception e) {
