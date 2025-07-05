@@ -24,16 +24,27 @@ public class EmailVerificationService {
     private final RedisTemplate<String, String> redisTemplate;
     private final SpringTemplateEngine templateEngine;
     private static final long CODE_TTL_MINUTES = 10;
+    private static final int MAX_REQUESTS_PER_DAY = 5;
 
     public void sendVerificationCode(String email) {
-        String code = generateCode();
+        String requestCountKey = "emailRequestCount:" + email;
 
+        Long requestCount = redisTemplate.opsForValue().increment(requestCountKey);
+
+        if (requestCount != null && requestCount == 1) {
+            redisTemplate.expire(requestCountKey, 1, TimeUnit.DAYS);
+        }
+
+        if (requestCount != null && requestCount > MAX_REQUESTS_PER_DAY) {
+            throw new CustomException(ErrorCode.EMAIL_CODE_REQUEST_LIMIT_EXCEEDED);
+        }
+
+        String code = generateCode();
         String key = "emailAuth:" + email;
         redisTemplate.opsForValue().set(key, code, CODE_TTL_MINUTES, TimeUnit.MINUTES);
 
         Context context = new Context();
         context.setVariable("verificationCode", code);
-
         String htmlContent = templateEngine.process("email/verification-code", context);
 
         try {
@@ -53,5 +64,19 @@ public class EmailVerificationService {
     private String generateCode() {
         int code = ThreadLocalRandom.current().nextInt(100000, 1000000);
         return String.valueOf(code);
+    }
+
+    public void verifyCode(String email, String inputCode) {
+        String key = "emailAuth:" + email;
+        String savedCode = redisTemplate.opsForValue().get(key);
+
+        if (savedCode == null) {
+            throw new CustomException(ErrorCode.EMAIL_VERDICT_CODE_NOT_FOUND);
+        }
+
+        if (!savedCode.equals(inputCode)) {
+            throw new CustomException(ErrorCode.EMAIL_VERDICT_CODE_MISMATCH);
+        }
+        redisTemplate.delete(key);
     }
 }
