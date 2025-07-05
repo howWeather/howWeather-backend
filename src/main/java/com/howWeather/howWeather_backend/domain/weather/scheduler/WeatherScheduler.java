@@ -7,6 +7,7 @@ import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -66,6 +67,7 @@ public class WeatherScheduler {
     /**
      * 매일 오전 7시에 오늘 이전의 예보 데이터를 삭제합니다.
      */
+    @Transactional
     @Scheduled(cron = "0 0 7 * * *", zone = "Asia/Seoul")
     public void deleteOldForecastData() {
         LocalDate today = LocalDate.now();
