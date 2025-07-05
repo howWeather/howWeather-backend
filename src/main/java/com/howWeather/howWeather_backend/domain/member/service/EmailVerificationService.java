@@ -45,7 +45,7 @@ public class EmailVerificationService {
 
         Context context = new Context();
         context.setVariable("verificationCode", code);
-        String htmlContent = templateEngine.process("email/verification-code", context);
+        String htmlContent = templateEngine.process("mail/verification-code", context);
 
         try {
             MimeMessage mimeMessage = mailSender.createMimeMessage();
