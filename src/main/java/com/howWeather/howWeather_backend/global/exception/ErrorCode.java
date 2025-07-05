@@ -23,8 +23,12 @@ public enum ErrorCode {
     PASSWORD_MISMATCH("변경할 비밀번호가 일치하지 않습니다.", HttpStatus.BAD_REQUEST),
     SAME_PASSWORD("변경할 비밀번호는 기존의 비밀번호와 달라야 합니다.", HttpStatus.BAD_REQUEST),
     ALREADY_DELETED("탈퇴한 계정입니다.", HttpStatus.BAD_REQUEST),
-    EMAIL_SEND_FAIL("임시 비밀번호 이메일 전송에 실패했습니다.", HttpStatus.SERVICE_UNAVAILABLE),
+    EMAIL_SEND_FAIL_PASSWORD("임시 비밀번호 이메일 전송에 실패했습니다.", HttpStatus.SERVICE_UNAVAILABLE),
     ID_OR_EMAIL_NOT_FOUND("해당 아이디나 이메일을 사용하는 계정이 없습니다", HttpStatus.NOT_FOUND),
+    EMAIL_SEND_FAIL_VERDICT("이메일 인증 메일 전송에 실패했습니다.", HttpStatus.SERVICE_UNAVAILABLE),
+    EMAIL_VERDICT_CODE_MISMATCH("이메일 인증 코드가 일치하지 않습니다", HttpStatus.BAD_REQUEST),
+    EMAIL_VERDICT_CODE_NOT_FOUND("인증 코드가 만료되었거나 요청을 찾을 수 없습니다. 인증을 재요청하시길 바랍니다.", HttpStatus.NOT_FOUND),
+    EMAIL_CODE_REQUEST_LIMIT_EXCEEDED("하루에 인증 요청은 최대 5번 가능합니다. 다음 날 다시 시도해주세요.", HttpStatus.BAD_REQUEST),
 
     // JWT 토큰
     INVALID_TOKEN("유효하지 않은 토큰입니다.", HttpStatus.BAD_REQUEST),

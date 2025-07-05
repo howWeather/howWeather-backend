@@ -39,7 +39,7 @@ public class SecurityConfig {
                 .cors(Customizer.withDefaults())
                 .authorizeHttpRequests((authorizeRequestsConfig)->
                         authorizeRequestsConfig
-                                .requestMatchers("/api/auth/email-exist-check", "/api/auth/login",
+                                .requestMatchers("/api/auth/email-exist-check", "/api/auth/login", "/api/auth/email/**",
                                         "/login/oauth2/**", "/api/oauth/**", "/internal-api/model/**",
                                         "/api/auth/signup", "/api/auth/loginid-exist-check", "/api/aes-test/**",
                                         "/api/auth/reset-password").permitAll()
