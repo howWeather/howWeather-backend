@@ -18,7 +18,7 @@ import org.springframework.web.bind.annotation.*;
 @RequiredArgsConstructor
 public class LocationController {
     private final LocationService locationService;
-    @GetMapping("/region")
+    @GetMapping("")
     @CheckAuthenticatedUser
     public ResponseEntity<ApiResponse<String>> getRegionFromCoords(@RequestHeader("Authorization") String accessTokenHeader,
                                                                           @RequestBody @Valid LocationWeatherRequestDto request) {
@@ -26,7 +26,7 @@ public class LocationController {
         return ApiResponse.success(HttpStatus.OK, region);
     }
 
-    @GetMapping("/region/temperature")
+    @GetMapping("/temperature")
     @CheckAuthenticatedUser
     public ResponseEntity<ApiResponse<RegionTemperatureDto>> getRegionTemperature(@RequestHeader("Authorization") String accessTokenHeader,
                                                                                   @RequestBody @Valid LocationWeatherRequestDto request) {
