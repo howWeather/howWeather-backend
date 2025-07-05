@@ -142,6 +142,7 @@ public class ModelSchedular {
     /**
      * 매일 오전 7시 30분에 오늘 이전의 의상 추천 데이터 및 예측 체감 정보를 삭제합니다.
      */
+    @Transactional
     @Scheduled(cron = "0 30 7 * * *")
     public void deleteOldRecommendations() {
         LocalDate today = LocalDate.now();
