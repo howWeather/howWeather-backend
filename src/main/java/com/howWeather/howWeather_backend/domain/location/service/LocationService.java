@@ -21,6 +21,9 @@ import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpMethod;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
 import java.util.List;
 import java.util.Optional;
 
@@ -87,6 +90,7 @@ public class LocationService {
             if (date == null) {
                 date = LocalDate.now();
             }
+            validateRecordTime(date, timeSlot);
 
             Weather weather = weatherRepository.findByRegionNameAndDateAndTimeSlot(
                     matchedRegionName, date, timeSlot
@@ -100,6 +104,53 @@ public class LocationService {
             log.error("위치 처리 실패: {}", e.getMessage(), e);
             throw new CustomException(ErrorCode.UNKNOWN_ERROR, "위치 처리 실패");
         }
+    }
+
+    private void validateRecordTime(LocalDate date, int timeSlot) {
+        ZoneId zoneId = ZoneId.of("Asia/Seoul");
+        ZonedDateTime now = ZonedDateTime.now(zoneId);
+        LocalDate today = now.toLocalDate();
+        LocalDate yesterday = today.minusDays(1);
+
+        if (timeSlot < 1 || timeSlot > 3) {
+            throw new CustomException(ErrorCode.INVALID_TIMESLOT, "유효하지 않은 시간대 기록 요청입니다.");
+        }
+
+        if (date.equals(today)) {
+            LocalDateTime availableTime = getAvailableTime(date, timeSlot);
+            if (now.toLocalDateTime().isBefore(availableTime)) {
+                throw new CustomException(ErrorCode.UNABLE_RECORD_TIME, "아직 해당 시간대(" + timeSlotToLabel(timeSlot) + ") 기록을 작성할 수 없습니다.");
+            }
+            return;
+        }
+
+        if (date.equals(yesterday)) {
+            ZonedDateTime deadline = today.atTime(5, 30).atZone(zoneId);
+            if (now.isAfter(deadline)) {
+                throw new CustomException(ErrorCode.TOO_LATE_TO_RECORD, "전날 기록은 오늘 새벽 5시 30분 이전까지만 작성할 수 있습니다.");
+            }
+            return;
+        }
+
+        throw new CustomException(ErrorCode.INVALID_DATE, "오늘 또는 어제 날짜에 대해서만 기록을 작성할 수 있습니다.");
+    }
+
+    private LocalDateTime getAvailableTime(LocalDate date, int timeSlot) {
+        return switch (timeSlot) {
+            case 1 -> date.atTime(9, 0);
+            case 2 -> date.atTime(14, 0);
+            case 3 -> date.atTime(20, 0);
+            default -> throw new CustomException(ErrorCode.INVALID_TIMESLOT, "유효하지 않은 시간대 기록 요청입니다.");
+        };
+    }
+
+    private String timeSlotToLabel(int timeSlot) {
+        return switch (timeSlot) {
+            case 1 -> "오전";
+            case 2 -> "오후";
+            case 3 -> "저녁";
+            default -> "알 수 없음";
+        };
     }
 
     public String resolveRegionName(String fullRegionFromKakao) {
