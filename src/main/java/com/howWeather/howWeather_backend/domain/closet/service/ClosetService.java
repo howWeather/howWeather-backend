@@ -35,8 +35,6 @@ public class ClosetService {
     private static final Long MAX_UPPER_ID = 9L;
     private static final String UPPER = "uppers";
     private static final String OUTER = "outers";
-    private final List<Long> layerFlexibleUpper = new ArrayList<>(List.of(9L)); // 아우터로 할 수 있는 상의
-    private final List<Long> layerFlexibleOuter = new ArrayList<>(List.of(3L)); // 상의로 할 수 있는 아우터
 
 
     @Transactional
@@ -71,14 +69,11 @@ public class ClosetService {
         for (ClothRegisterDto c : uppers) {
             validateClothDto(c, UPPER);
 
-            boolean isLayerFlexible = layerFlexibleUpper.contains(c.getClothType());
-
             Upper newUpper = Upper.builder()
                     .upperType(c.getClothType())
                     .color(c.getColor())
                     .thickness(c.getThickness())
                     .isActive(true)
-                    .isLayerFlexible(isLayerFlexible)
                     .build();
 
             boolean isDuplicate = closet.getUpperList().stream()
@@ -94,14 +89,11 @@ public class ClosetService {
         for (ClothRegisterDto c : outers) {
             validateClothDto(c, OUTER);
 
-            boolean isLayerFlexible = layerFlexibleOuter.contains(c.getClothType());
-
             Outer newOuter = Outer.builder()
                     .outerType(c.getClothType())
                     .color(c.getColor())
                     .thickness(c.getThickness())
                     .isActive(true)
-                    .isLayerFlexible(isLayerFlexible)
                     .build();
 
             boolean isDuplicate = closet.getOuterList().stream()
@@ -205,7 +197,6 @@ public class ClosetService {
         } catch (Exception e) {
             throw new CustomException(ErrorCode.UNKNOWN_ERROR, "아우터 조회 중 서버 오류가 발생했습니다.");
         }
-
     }
 
     @Transactional(readOnly = true)
