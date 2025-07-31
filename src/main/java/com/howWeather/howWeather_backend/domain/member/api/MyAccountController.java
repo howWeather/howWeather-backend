@@ -72,7 +72,7 @@ public class MyAccountController {
     @CheckAuthenticatedUser
     public ResponseEntity<ApiResponse<String>> getLocation(@RequestHeader("Authorization") String accessTokenHeader,
                                                            @AuthenticationPrincipal Member member) {
-        String location = authService.getLoccation(member);
+        String location = myAccountService.getLoccation(member);
         return ApiResponse.success(HttpStatus.OK, location);
     }
 
@@ -81,7 +81,7 @@ public class MyAccountController {
     public ResponseEntity<ApiResponse<String>> updateLocation(@RequestHeader("Authorization") String accessTokenHeader,
                                                               @Valid @RequestBody RegionDto regionDto,
                                                               @AuthenticationPrincipal Member member) {
-        authService.updateLocation(member, regionDto);
+        myAccountService.updateLocation(member, regionDto);
         return ApiResponse.success(HttpStatus.OK, "지역을 성공적으로 수정하였습니다.");
     }
 }
