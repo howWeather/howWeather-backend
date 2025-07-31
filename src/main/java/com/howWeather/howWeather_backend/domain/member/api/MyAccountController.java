@@ -4,8 +4,7 @@ import com.howWeather.howWeather_backend.domain.member.dto.NicknameDto;
 import com.howWeather.howWeather_backend.domain.member.dto.ProfileChangeIntDto;
 import com.howWeather.howWeather_backend.domain.member.dto.ProfileDto;
 import com.howWeather.howWeather_backend.domain.member.entity.Member;
-import com.howWeather.howWeather_backend.domain.member.repository.MemberRepository;
-import com.howWeather.howWeather_backend.domain.member.service.AuthService;
+import com.howWeather.howWeather_backend.domain.member.service.MyAccountService;
 import com.howWeather.howWeather_backend.global.Response.ApiResponse;
 import com.howWeather.howWeather_backend.global.jwt.CheckAuthenticatedUser;
 import lombok.RequiredArgsConstructor;
@@ -22,13 +21,13 @@ import javax.validation.Valid;
 @RequiredArgsConstructor
 @RequestMapping("/api/mypage")
 public class MyAccountController {
-    private final AuthService authService;
+    private final MyAccountService myAccountService;
 
     @GetMapping("/profile")
     @CheckAuthenticatedUser
     public ResponseEntity<ProfileDto> getProfile(@RequestHeader("Authorization") String accessTokenHeader,
                                                               @AuthenticationPrincipal Member member) {
-        ProfileDto profile = authService.getProfile(member);
+        ProfileDto profile = myAccountService.getProfile(member);
         return ResponseEntity.ok(profile);
     }
 
@@ -37,7 +36,7 @@ public class MyAccountController {
     public ResponseEntity<ApiResponse<String>> updateGender(@RequestHeader("Authorization") String accessTokenHeader,
                                                             @RequestBody ProfileChangeIntDto profileChangeDto,
                                                             @AuthenticationPrincipal Member member) {
-        authService.updateGender(member, profileChangeDto);
+        myAccountService.updateGender(member, profileChangeDto);
         return ApiResponse.success(HttpStatus.OK, "성별을 성공적으로 수정하였습니다.");
     }
 
@@ -46,7 +45,7 @@ public class MyAccountController {
     public ResponseEntity<ApiResponse<String>> updateAgeGroup(@RequestHeader("Authorization") String accessTokenHeader,
                                                             @RequestBody ProfileChangeIntDto profileChangeDto,
                                                             @AuthenticationPrincipal Member member) {
-        authService.updateAgeGroup(member, profileChangeDto);
+        myAccountService.updateAgeGroup(member, profileChangeDto);
         return ApiResponse.success(HttpStatus.OK, "연령대를 성공적으로 수정하였습니다.");
     }
 
@@ -55,7 +54,7 @@ public class MyAccountController {
     public ResponseEntity<ApiResponse<String>> updateNickname(@RequestHeader("Authorization") String accessTokenHeader,
                                                               @Valid @RequestBody NicknameDto nicknameDto,
                                                               @AuthenticationPrincipal Member member) {
-        authService.updateNickname(member,nicknameDto);
+        myAccountService.updateNickname(member,nicknameDto);
         return ApiResponse.success(HttpStatus.OK, "닉네임을 성공적으로 수정하였습니다.");
     }
 
@@ -64,7 +63,7 @@ public class MyAccountController {
     public ResponseEntity<ApiResponse<String>> updateConstitution(@RequestHeader("Authorization") String accessTokenHeader,
                                                               @Valid @RequestBody ProfileChangeIntDto profileChangeDto,
                                                               @AuthenticationPrincipal Member member) {
-        authService.updateConstitution(member, profileChangeDto);
+        myAccountService.updateConstitution(member, profileChangeDto);
         return ApiResponse.success(HttpStatus.OK, "체질을 성공적으로 수정하였습니다.");
     }
 }
