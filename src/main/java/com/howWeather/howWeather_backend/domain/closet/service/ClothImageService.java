@@ -11,7 +11,7 @@ import org.springframework.transaction.annotation.Transactional;
 @Service
 @Slf4j
 @AllArgsConstructor
-public class ClothService {
+public class ClothImageService {
     private final ClothRepository clothRepository;
 
     @Transactional(readOnly = true)
