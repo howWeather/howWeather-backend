@@ -109,17 +109,6 @@ public class JwtTokenProvider {
                 .build();
     }
 
-//    public Authentication getAuthentication(String token) {
-//        Claims claims = parseClaims(token);
-//        String loginId = claims.getSubject();
-//
-//        UserDetails userDetails = customUserDetailsService.loadUserByUsername(loginId);
-//
-//        System.out.println("userDetails = " + userDetails);
-//        return new UsernamePasswordAuthenticationToken(userDetails, token, userDetails.getAuthorities());
-//    }
-
-
     public Authentication getAuthentication(String token) {
         Claims claims = parseClaims(token);
         if (claims == null || claims.getSubject() == null) {

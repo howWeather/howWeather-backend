@@ -1,6 +1,5 @@
 package com.howWeather.howWeather_backend.domain.weather.scheduler;
 
-import com.howWeather.howWeather_backend.domain.ai_model.repository.ClothingRecommendationRepository;
 import com.howWeather.howWeather_backend.domain.weather.repository.WeatherForecastRepository;
 import com.howWeather.howWeather_backend.domain.weather.service.WeatherService;
 import lombok.AllArgsConstructor;
@@ -57,7 +56,7 @@ public class WeatherScheduler {
     /**
      * 매일 오전 4시 30분에 ai 학습에 이용될 오늘의 예보 데이터를 가져옵니다.
      */
-    @Scheduled(cron = "0 30 4 * * *", zone = "Asia/Seoul") // 매일 오전 4시 30분에 예보 데이터
+    @Scheduled(cron = "0 30 4 * * *", zone = "Asia/Seoul")
     public void fetchDailyOneCallWeather() {
         log.info("Forecast API로 용산구의 날씨 예보를 가져옵니다. 시간: {}", LocalDateTime.now());
         weatherService.fetchHourlyForecast();
@@ -66,7 +65,7 @@ public class WeatherScheduler {
     /**
      * 매일 오전 7시에 오늘 이전의 예보 데이터를 삭제합니다.
      */
-    @Scheduled(cron = "0 0 7 * * *", zone = "Asia/Seoul") // 매일 오전 7시
+    @Scheduled(cron = "0 0 7 * * *", zone = "Asia/Seoul")
     public void deleteOldForecastData() {
         LocalDate today = LocalDate.now();
         weatherForecastRepository.deleteByForecastDateBefore(today);
