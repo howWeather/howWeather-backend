@@ -38,7 +38,12 @@ public class RecommendationService {
 
     @Transactional(readOnly = true)
     public List<RecommendPredictDto> getRecommendList(Member member) {
-        List<ClothingRecommendation> modelPredictList = getModelPrediction(member.getId(), LocalDate.now());
+        LocalDate today = LocalDate.now();
+        LocalTime now = LocalTime.now();
+        
+        LocalDate targetDate = now.isBefore(LocalTime.of(6, 0)) ? today.minusDays(1) : today;
+
+        List<ClothingRecommendation> modelPredictList = getModelPrediction(member.getId(), targetDate);
 
         Closet closet = getClosetWithAll(member);
         List<RecommendPredictDto> result = new ArrayList<>();
