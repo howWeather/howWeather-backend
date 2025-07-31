@@ -42,7 +42,7 @@ public class MailService {
             log.info("임시 비밀번호 이메일 전송 성공: {}", toEmail);
         } catch (Exception e) {
             log.error("임시 비밀번호 이메일 전송 실패: {}", e.getMessage(), e);
-            throw new CustomException(ErrorCode.EMAIL_SEND_FAIL);
+            throw new CustomException(ErrorCode.EMAIL_SEND_FAIL_PASSWORD);
         }
     }
 }

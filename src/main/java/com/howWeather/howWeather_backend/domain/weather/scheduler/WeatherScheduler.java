@@ -6,6 +6,7 @@ import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -58,13 +59,14 @@ public class WeatherScheduler {
      */
     @Scheduled(cron = "0 30 4 * * *", zone = "Asia/Seoul")
     public void fetchDailyOneCallWeather() {
-        log.info("Forecast API로 용산구의 날씨 예보를 가져옵니다. 시간: {}", LocalDateTime.now());
+        log.info("Forecast API로 용산구를 포함한 사용자가 예보를 희망하는 지역의 날씨 예보를 가져옵니다. 시간: {}", LocalDateTime.now());
         weatherService.fetchHourlyForecast();
     }
 
     /**
      * 매일 오전 7시에 오늘 이전의 예보 데이터를 삭제합니다.
      */
+    @Transactional
     @Scheduled(cron = "0 0 7 * * *", zone = "Asia/Seoul")
     public void deleteOldForecastData() {
         LocalDate today = LocalDate.now();

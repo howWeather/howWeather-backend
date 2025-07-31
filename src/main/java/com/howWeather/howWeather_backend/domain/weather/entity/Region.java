@@ -21,4 +21,16 @@ public class Region {
     private double lon;
 
     private String name;
+
+    private int currentUserCount;
+
+    public void incrementCurrentUserCount() {
+        this.currentUserCount++;
+    }
+
+    public void decrementCurrentUserCount() {
+        if (this.currentUserCount > 0) {
+            this.currentUserCount--;
+        }
+    }
 }
