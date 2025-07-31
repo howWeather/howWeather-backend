@@ -30,7 +30,7 @@ import java.util.stream.Collectors;
 @Slf4j
 @RestController
 @RequiredArgsConstructor
-@RequestMapping("/internal-api/model")
+@RequestMapping("${service-api.ai}")
 public class AiInternalController {
     private final AiInternalService aiInternalService;
     private final MemberRepository memberRepository;

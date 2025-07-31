@@ -13,10 +13,9 @@ import java.util.List;
 import java.util.Map;
 
 @RestController
-@RequestMapping("/api/aes-test")
+@RequestMapping("${service-api.aes}")
 @RequiredArgsConstructor
 public class AesTestController {
-
     private final AESCipher aesCipher;
     private final ObjectMapper objectMapper;
 
