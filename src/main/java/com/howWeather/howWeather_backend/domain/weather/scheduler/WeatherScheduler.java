@@ -1,6 +1,5 @@
 package com.howWeather.howWeather_backend.domain.weather.scheduler;
 
-import com.howWeather.howWeather_backend.domain.ai_model.repository.ClothingRecommendationRepository;
 import com.howWeather.howWeather_backend.domain.weather.repository.WeatherForecastRepository;
 import com.howWeather.howWeather_backend.domain.weather.service.WeatherService;
 import lombok.AllArgsConstructor;

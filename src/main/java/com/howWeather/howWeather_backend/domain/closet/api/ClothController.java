@@ -1,6 +1,6 @@
 package com.howWeather.howWeather_backend.domain.closet.api;
 
-import com.howWeather.howWeather_backend.domain.closet.service.ClothService;
+import com.howWeather.howWeather_backend.domain.closet.service.ClothImageService;
 import com.howWeather.howWeather_backend.domain.member.entity.Member;
 import com.howWeather.howWeather_backend.global.Response.ApiResponse;
 import com.howWeather.howWeather_backend.global.jwt.CheckAuthenticatedUser;
@@ -16,14 +16,14 @@ import org.springframework.web.bind.annotation.*;
 @RequiredArgsConstructor
 @RequestMapping("/api/cloth")
 public class ClothController {
-    private final ClothService clothService;
+    private final ClothImageService clothImageService;
 
     @GetMapping("/upper-image/{clothType}")
     @CheckAuthenticatedUser
     public ResponseEntity<ApiResponse<String>> upperImage(@RequestHeader("Authorization") String accessTokenHeader,
                                                           @AuthenticationPrincipal Member member,
                                                           @PathVariable("clothType") int clothType) {
-        String url = clothService.getUpperImage(clothType);
+        String url = clothImageService.getUpperImage(clothType);
         return ApiResponse.success(HttpStatus.OK, url);
     }
 
@@ -32,7 +32,7 @@ public class ClothController {
     public ResponseEntity<ApiResponse<String>> outerImage(@RequestHeader("Authorization") String accessTokenHeader,
                                                           @AuthenticationPrincipal Member member,
                                                           @PathVariable("clothType") int clothType) {
-        String url = clothService.getOuterImage(clothType);
+        String url = clothImageService.getOuterImage(clothType);
         return ApiResponse.success(HttpStatus.OK, url);
     }
 }

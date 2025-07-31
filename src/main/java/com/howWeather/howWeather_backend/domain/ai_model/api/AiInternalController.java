@@ -30,7 +30,7 @@ import java.util.stream.Collectors;
 @Slf4j
 @RestController
 @RequiredArgsConstructor
-@RequestMapping("/internal-api/model")
+@RequestMapping("${service-api.ai}")
 public class AiInternalController {
     private final AiInternalService aiInternalService;
     private final MemberRepository memberRepository;
@@ -75,7 +75,6 @@ public class AiInternalController {
             recommendationService.save(dto);
             return ApiResponse.success(HttpStatus.OK, "예측 결과를 성공적으로 저장했습니다.");
         } catch (CustomException e) {
-            log.error("커스텀 예외 발생: {}", e.getMessage(), e);
             return ResponseEntity
                     .status(e.getHttpStatus())
                     .body(ApiResponse.fail(e));
@@ -115,35 +114,4 @@ public class AiInternalController {
             return null;
         }
     }
-    
-    // TODO : 암/복호화 API 연결 이후 아래 코드 삭제
-//    @PostMapping("/prediction")
-//    public ResponseEntity<List<AiPredictionRequestDto>> sendAllUsersPredictionData() {
-//        try {
-//            List<Member> members = memberRepository.findAllByIsDeletedFalse();
-//
-//            List<AiPredictionRequestDto> allDtos = members.stream()
-//                    .filter(member -> member.getCloset() != null)
-//                    .map(aiInternalService::makePredictRequest)
-//                    .collect(Collectors.toList());
-//
-//            return ResponseEntity.ok(allDtos);
-//        } catch (Exception e) {
-//            log.error(e.getMessage());
-//        }
-//        return null;
-//    }
-//
-//    @PostMapping("/recommendation")
-//    public ResponseEntity<ApiResponse<String>> saveRecommendations(@RequestBody ModelClothingRecommendationDto dto) {
-//        recommendationService.save(dto);
-//        return ApiResponse.success(HttpStatus.OK, "예측 결과를 성공적으로 저장했습니다.");
-//    }
-//
-//    @PostMapping("/history")
-//    public ResponseEntity<ApiResponse<List<RecordForModelDto>>> getSimilarHistory(@RequestBody HistoryRequestDto dto) {
-//        dto.validate();
-//        List<RecordForModelDto> result = recordCalendarService.getMemberHistory(dto);
-//        return ApiResponse.success(HttpStatus.OK, result);
-//    }
 }
