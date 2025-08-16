@@ -4,6 +4,7 @@ import com.howWeather.howWeather_backend.domain.closet.dto.*;
 import com.howWeather.howWeather_backend.domain.closet.entity.Closet;
 import com.howWeather.howWeather_backend.domain.closet.entity.Outer;
 import com.howWeather.howWeather_backend.domain.closet.entity.Upper;
+import com.howWeather.howWeather_backend.domain.closet.repository.ClothRepository;
 import com.howWeather.howWeather_backend.domain.closet.repository.OuterRepository;
 import com.howWeather.howWeather_backend.domain.closet.repository.UpperRepository;
 import com.howWeather.howWeather_backend.domain.member.entity.Member;
@@ -28,8 +29,10 @@ import java.util.stream.Collectors;
 @AllArgsConstructor
 public class ClosetService {
     private final ClosetRepository closetRepository;
+    private final ClothRepository clothRepository;
     private final UpperRepository upperRepository;
     private final OuterRepository outerRepository;
+
     private static final Long MIN_CLOTH_ID = 1L;
     private static final Long MAX_OUTER_ID = 18L;
     private static final Long MAX_UPPER_ID = 9L;
@@ -74,6 +77,7 @@ public class ClosetService {
                     .color(c.getColor())
                     .thickness(c.getThickness())
                     .isActive(true)
+                    .warmthIndex(getWorthIdx(1, c.getClothType(), c.getThickness()))
                     .build();
 
             boolean isDuplicate = closet.getUpperList().stream()
@@ -93,6 +97,7 @@ public class ClosetService {
                     .outerType(c.getClothType())
                     .color(c.getColor())
                     .thickness(c.getThickness())
+                    .warmthIndex(getWorthIdx(2, c.getClothType(), c.getThickness()))
                     .isActive(true)
                     .build();
 
@@ -102,6 +107,24 @@ public class ClosetService {
             if (!isDuplicate) {
                 closet.addOuter(newOuter);
             }
+        }
+    }
+
+    private Integer getWorthIdx(int category, Long type, int thickness) {
+        Optional<Integer> value = Optional.empty();
+
+        if (thickness == 1) {
+            value = clothRepository.findThinByCategoryAndClothType(category, type.intValue());
+        } else if (thickness == 2) {
+            value = clothRepository.findNormalByCategoryAndClothType(category, type.intValue());
+        } else if (thickness == 3) {
+            value = clothRepository.findThickByCategoryAndClothType(category, type.intValue());
+        }
+
+        if (value.isPresent()) {
+            return value.get();
+        } else {
+            throw new CustomException(ErrorCode.CLOTH_NOT_FOUND);
         }
     }
 
@@ -220,7 +243,12 @@ public class ClosetService {
                     .findFirst()
                     .orElseThrow(() -> new CustomException(ErrorCode.CLOTH_NOT_FOUND, "해당 상의를 찾을 수 없습니다."));
 
-            upper.patchAttributes(updateDto.getColor(), updateDto.getThickness());
+            upper.patchAttributes(
+                    updateDto.getColor(),
+                    updateDto.getThickness(),
+                    (type, t) -> getWorthIdx(1, type, t)
+            );
+
         } catch (CustomException e) {
             throw e;
         } catch (Exception e) {
@@ -239,7 +267,9 @@ public class ClosetService {
                     .findFirst()
                     .orElseThrow(() -> new CustomException(ErrorCode.CLOTH_NOT_FOUND, "해당 아우터를 찾을 수 없습니다."));
 
-            outer.patchAttributes(updateDto.getColor(), updateDto.getThickness());
+            outer.patchAttributes(updateDto.getColor(),
+                    updateDto.getThickness(),
+                    (type, t) -> getWorthIdx(2, type, t));
         } catch (CustomException e) {
             throw e;
         } catch (Exception e) {
