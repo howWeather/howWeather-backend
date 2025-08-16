@@ -25,7 +25,7 @@ public class Outer {
 
     private int thickness;
 
-    @Setter
+    @Column(nullable = false)
     private Integer warmthIndex;
 
     @Setter

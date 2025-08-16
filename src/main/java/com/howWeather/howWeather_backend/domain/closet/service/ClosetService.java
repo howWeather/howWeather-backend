@@ -384,27 +384,4 @@ public class ClosetService {
         dto.setClothType(outer.getOuterType());
         return dto;
     }
-
-    @Transactional
-    public int fillWarmthIndexForNullUppersByCategory() {
-        List<Upper> uppers = upperRepository.findByWarmthIndexIsNull();
-
-        for (Upper upper : uppers) {
-            Integer warmthIdx = getWorthIdx(1, upper.getUpperType(), upper.getThickness());
-            upper.setWarmthIndex(warmthIdx);
-        }
-
-        return uppers.size();
-    }
-
-    @Transactional
-    public int fillWarmthIndexForNullOutersByCategory() {
-        List<Outer> outers = outerRepository.findByWarmthIndexIsNull();
-
-        for (Outer outer : outers) {
-            Integer warmthIdx = getWorthIdx(2, outer.getOuterType(), outer.getThickness());
-            outer.setWarmthIndex(warmthIdx);
-        }
-        return outers.size();
-    }
 }
