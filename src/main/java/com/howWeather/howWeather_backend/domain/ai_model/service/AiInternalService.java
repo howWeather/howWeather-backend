@@ -154,24 +154,7 @@ public class AiInternalService {
         List<Map<Long, Integer>> ans = new ArrayList<>();
 
         for (Outer outer : outerList) {
-            Long type = outer.getOuterType();
-
-            int thickness = outer.getThickness();
-            Optional<Integer> value = Optional.empty();
-
-            if (thickness == 1) {
-                value = clothRepository.findThinByCategoryAndClothType(2, type.intValue());
-            } else if (thickness == 2) {
-                value = clothRepository.findNormalByCategoryAndClothType(2, type.intValue());
-            } else if (thickness == 3) {
-                value = clothRepository.findThickByCategoryAndClothType(2, type.intValue());
-            }
-
-            if (value.isPresent()) {
-                ans.add(Map.of(type, value.get()));
-            } else {
-                throw new CustomException(ErrorCode.CLOTH_NOT_FOUND);
-            }
+            ans.add(Map.of(outer.getOuterType(), outer.getWarmthIndex()));
         }
 
         return ans;
@@ -181,27 +164,9 @@ public class AiInternalService {
         List<Map<Long, Integer>> ans = new ArrayList<>();
 
         for (Upper upper : upperList) {
-            Long type = upper.getUpperType();
-
-            int thickness = upper.getThickness();
-            Optional<Integer> value = Optional.empty();
-
-            if (thickness == 1) {
-                value = clothRepository.findThinByCategoryAndClothType(1, type.intValue());
-            } else if (thickness == 2) {
-                value = clothRepository.findNormalByCategoryAndClothType(1, type.intValue());
-            } else if (thickness == 3) {
-                value = clothRepository.findThickByCategoryAndClothType(1, type.intValue());
-            }
-
-            if (value.isPresent()) {
-                ans.add(Map.of(type, value.get()));
-            } else {
-                throw new CustomException(ErrorCode.CLOTH_NOT_FOUND);
-            }
+            ans.add(Map.of(upper.getUpperType(), upper.getWarmthIndex()));
         }
 
         return ans;
     }
-
 }
