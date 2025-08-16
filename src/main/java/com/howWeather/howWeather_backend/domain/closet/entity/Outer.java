@@ -3,6 +3,8 @@ package com.howWeather.howWeather_backend.domain.closet.entity;
 import jakarta.persistence.*;
 import lombok.*;
 
+import java.util.function.BiFunction;
+
 import static jakarta.persistence.FetchType.*;
 
 @Entity
@@ -30,12 +32,14 @@ public class Outer {
 
     private boolean isLayerFlexible;
 
-    public void patchAttributes(Integer color, Integer thickness) {
+    public void patchAttributes(Integer color, Integer thickness,
+                                BiFunction<Long, Integer, Integer> warmthCalculator) {
         if (color != null) {
             this.color = color;
         }
         if (thickness != null) {
             this.thickness = thickness;
+            this.warmthIndex = warmthCalculator.apply(this.outerType, thickness);
         }
     }
 

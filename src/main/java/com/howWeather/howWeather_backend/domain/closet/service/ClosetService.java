@@ -243,7 +243,12 @@ public class ClosetService {
                     .findFirst()
                     .orElseThrow(() -> new CustomException(ErrorCode.CLOTH_NOT_FOUND, "해당 상의를 찾을 수 없습니다."));
 
-            upper.patchAttributes(updateDto.getColor(), updateDto.getThickness());
+            upper.patchAttributes(
+                    updateDto.getColor(),
+                    updateDto.getThickness(),
+                    (type, t) -> getWorthIdx(1, type, t)
+            );
+
         } catch (CustomException e) {
             throw e;
         } catch (Exception e) {
@@ -262,7 +267,9 @@ public class ClosetService {
                     .findFirst()
                     .orElseThrow(() -> new CustomException(ErrorCode.CLOTH_NOT_FOUND, "해당 아우터를 찾을 수 없습니다."));
 
-            outer.patchAttributes(updateDto.getColor(), updateDto.getThickness());
+            outer.patchAttributes(updateDto.getColor(),
+                    updateDto.getThickness(),
+                    (type, t) -> getWorthIdx(2, type, t));
         } catch (CustomException e) {
             throw e;
         } catch (Exception e) {
