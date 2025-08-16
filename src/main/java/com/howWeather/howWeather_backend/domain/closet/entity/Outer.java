@@ -23,7 +23,7 @@ public class Outer {
 
     private int thickness;
 
-    private int warmthIndex;
+    private Integer warmthIndex;
 
     @Setter
     private boolean isActive;
