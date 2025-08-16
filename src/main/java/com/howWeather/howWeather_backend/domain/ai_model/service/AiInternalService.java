@@ -9,8 +9,6 @@ import com.howWeather.howWeather_backend.domain.closet.repository.ClothRepositor
 import com.howWeather.howWeather_backend.domain.member.entity.Member;
 import com.howWeather.howWeather_backend.domain.weather.entity.WeatherForecast;
 import com.howWeather.howWeather_backend.domain.weather.repository.WeatherForecastRepository;
-import com.howWeather.howWeather_backend.global.exception.CustomException;
-import com.howWeather.howWeather_backend.global.exception.ErrorCode;
 import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -18,6 +16,8 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDate;
 import java.util.*;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
+import java.util.stream.Stream;
 
 @Transactional
 @Service
@@ -62,92 +62,83 @@ public class AiInternalService {
     }
 
     private List<ClothingCombinationDto> fetchClothingCombinationsForUser(Member member) {
-        List<int[]> uppers = getAllUppersCombi(member.getCloset().getUpperList());
-        List<int[]> outers = getAllOutersCombi(member.getCloset().getOuterList());
+        List<Map<Long, Integer>> uppers = getAllUppersList(member.getCloset().getUpperList());
+        List<Map<Long, Integer>> outers = getAllOutersList(member.getCloset().getOuterList());
 
-        List<ClothingCombinationDto> combinations = new ArrayList<>();
-
-        for (int[] upper : uppers) {
-            for (int[] outer : outers) {
-                ClothingCombinationDto dto = ClothingCombinationDto.builder()
-                        .top(Arrays.stream(upper).boxed().collect(Collectors.toList()))
-                        .outer(Arrays.stream(outer).boxed().collect(Collectors.toList()))
-                        .build();
-                combinations.add(dto);
-            }
-        }
-
-        for (int[] upper : uppers) {
-            ClothingCombinationDto dto = ClothingCombinationDto.builder()
-                    .top(Arrays.stream(upper).boxed().collect(Collectors.toList()))
-                    .outer(new ArrayList<>())
-                    .build();
-            combinations.add(dto);
-        }
-
-        Set<ClothingCombinationDto> unique = new LinkedHashSet<>(combinations);
-        return new ArrayList<>(unique);
+        return fetchClothingCombinationsForUserStream(uppers, outers).distinct().collect(Collectors.toList());
     }
 
+    private Stream<ClothingCombinationDto> fetchClothingCombinationsForUserStream(
+            List<Map<Long, Integer>> uppers, List<Map<Long, Integer>> outers) {
 
-    private List<int[]> getAllOutersCombi(List<Outer> outerList) {
-        return makeOneElementArrays(getAllOutersList(outerList));
+        Stream<ClothingCombinationDto> upperOne = generateUpperOneCombinations(uppers, outers);
+        Stream<ClothingCombinationDto> upperTwo = generateUpperTwoCombinations(uppers, outers);
+
+        return Stream.concat(upperOne, upperTwo);
     }
 
+    private Stream<ClothingCombinationDto> generateUpperOneCombinations(
+            List<Map<Long, Integer>> uppers, List<Map<Long, Integer>> outers) {
 
-    private List<int[]> getAllUppersCombi(List<Upper> upperList) {
-        return makeOneOrTwoElementArrays(getAllUppersList(upperList));
+        return uppers.stream()
+                .flatMap(u -> {
+                    Integer upperType = u.keySet().iterator().next().intValue();
+                    ClothingCombinationDto withoutOuter = createCombination(upperType, null); // 아우터 0벌
+                    Stream<ClothingCombinationDto> withOuter = outers.stream() // 아우터 1벌
+                            .map(o -> {
+                                Integer outerType = o.keySet().iterator().next().intValue();
+                                return createCombination(upperType, outerType);
+                            });
+
+                    return Stream.concat(Stream.of(withoutOuter), withOuter);
+                });
+    }
+    private Stream<ClothingCombinationDto> generateUpperTwoCombinations(
+            List<Map<Long, Integer>> uppers, List<Map<Long, Integer>> outers) {
+
+        return IntStream.range(0, uppers.size())
+                .boxed()
+                .flatMap(i -> IntStream.range(i + 1, uppers.size())
+                        .mapToObj(j -> {
+                            Map<Long, Integer> u1 = uppers.get(i);
+                            Map<Long, Integer> u2 = uppers.get(j);
+
+                            Integer type1 = u1.keySet().iterator().next().intValue();
+                            Integer type2 = u2.keySet().iterator().next().intValue();
+
+                            if (type1.equals(type2)) return null;
+
+                            ClothingCombinationDto withoutOuter = createCombination(type1, type2, null);
+
+                            Stream<ClothingCombinationDto> withOuter = outers.stream()
+                                    .map(o -> {
+                                        Integer outerType = o.keySet().iterator().next().intValue();
+                                        return createCombination(type1, type2, outerType);
+                                    });
+
+                            return Stream.concat(Stream.of(withoutOuter), withOuter);
+                        })
+                        .filter(Objects::nonNull)
+                        .flatMap(s -> s)
+                );
     }
 
-    private List<int[]> makeOneElementArrays(List<Map<Long, Integer>> clothList) {
-        List<int[]> result = new ArrayList<>();
-        Set<String> seen = new HashSet<>();
-
-        for (Map<Long, Integer> map : clothList) {
-            for (Map.Entry<Long, Integer> entry : map.entrySet()) {
-                String key = entry.getKey() + ":" + entry.getValue();
-                if (!seen.contains(key)) {
-                    seen.add(key);
-                    result.add(new int[] { entry.getValue() });
-                }
-            }
-        }
-        return result;
+    private ClothingCombinationDto createCombination(Integer upperType, Integer outerType) {
+        List<Integer> top = List.of(upperType);
+        List<Integer> outerList = outerType != null ? List.of(outerType) : new ArrayList<>();
+        return ClothingCombinationDto.builder()
+                .top(top)
+                .outer(outerList)
+                .build();
     }
 
-    private List<int[]> makeOneOrTwoElementArrays(List<Map<Long, Integer>> clothList) {
-        List<int[]> result = new ArrayList<>();
-        Set<String> seen = new HashSet<>();
-
-        for (Map<Long, Integer> map : clothList) {
-            for (Map.Entry<Long, Integer> entry : map.entrySet()) {
-                String key = entry.getKey() + ":" + entry.getValue();
-                if (seen.add(key)) {
-                    result.add(new int[] { entry.getValue() });
-                }
-            }
-        }
-
-        List<Map.Entry<Long, Integer>> entries = clothList.stream()
-                .flatMap(m -> m.entrySet().stream())
-                .toList();
-
-        int n = entries.size();
-        for (int i = 0; i < n; i++) {
-            for (int j = i + 1; j < n; j++) {
-                int[] pair = new int[] { entries.get(i).getValue(), entries.get(j).getValue() };
-                Arrays.sort(pair);
-
-                String key = entries.get(i).getKey() + ":" + entries.get(i).getValue() + "," +
-                        entries.get(j).getKey() + ":" + entries.get(j).getValue();
-
-                if (seen.add(key)) {
-                    result.add(pair);
-                }
-            }
-        }
-
-        return result;
+    private ClothingCombinationDto createCombination(Integer upperType1, Integer upperType2, Integer outerType) {
+        List<Integer> top = List.of(upperType1, upperType2);
+        List<Integer> outerList = outerType != null ? List.of(outerType) : new ArrayList<>();
+        return ClothingCombinationDto.builder()
+                .top(top)
+                .outer(outerList)
+                .build();
     }
 
     private List<Map<Long, Integer>> getAllOutersList(List<Outer> outerList) {
