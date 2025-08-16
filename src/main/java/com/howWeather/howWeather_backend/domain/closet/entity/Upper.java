@@ -25,6 +25,7 @@ public class Upper {
 
     private int thickness;
 
+    @Setter
     private Integer warmthIndex;
 
     @Setter

@@ -105,4 +105,18 @@ public class ClosetController {
         closetService.deleteOuter(clothId, member);
         return ApiResponse.success(HttpStatus.NO_CONTENT, "아우터를 성공적으로 삭제하였습니다.");
     }
+
+    @PostMapping("/admin/fill-warmth-index-uppers")
+    public ResponseEntity<String> fillWarmthIndexForNullUppers() {
+        int updatedCount = closetService.fillWarmthIndexForNullUppersByCategory();
+        return ResponseEntity.ok(updatedCount + " rows updated");
+    }
+
+    @PostMapping("/admin/fill-warmth-index-outers")
+    public ResponseEntity<String> fillWarmthIndexForNullOuters() {
+        int updatedCount = closetService.fillWarmthIndexForNullOutersByCategory();
+        return ResponseEntity.ok(updatedCount + " rows updated");
+    }
+
+
 }

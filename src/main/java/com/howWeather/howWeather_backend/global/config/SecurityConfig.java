@@ -42,7 +42,7 @@ public class SecurityConfig {
                                 .requestMatchers("/api/auth/email-exist-check", "/api/auth/login", "/api/auth/email/**",
                                         "/login/oauth2/**", "/api/oauth/**", "/internal-api/model/**",
                                         "/api/auth/signup", "/api/auth/loginid-exist-check", "/api/aes-test/**",
-                                        "/api/auth/reset-password").permitAll()
+                                        "/api/auth/reset-password", "/api/closet/admin/**").permitAll()
                                 .anyRequest().authenticated()
                 ).oauth2Login(oauth2 -> oauth2
                         .userInfoEndpoint(userInfo -> userInfo.userService(customOAuth2UserService))
