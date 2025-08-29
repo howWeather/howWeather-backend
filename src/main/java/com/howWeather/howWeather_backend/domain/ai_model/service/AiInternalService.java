@@ -189,23 +189,17 @@ public class AiInternalService {
                 .build();
     }
 
-    private List<Map<Long, Integer>> getAllOutersList(List<Outer> outerList) {
-        List<Map<Long, Integer>> ans = new ArrayList<>();
-
-        for (Outer outer : outerList) {
-            ans.add(Map.of(outer.getOuterType(), outer.getWarmthIndex()));
-        }
-
-        return ans;
+    private List<Map<Long, Integer>> getAllUppersList(List<Upper> upperList) {
+        return upperList.stream()
+                .filter(Upper::isActive)
+                .map(u -> Map.of(u.getUpperType(), u.getWarmthIndex()))
+                .collect(Collectors.toList());
     }
 
-    private List<Map<Long, Integer>> getAllUppersList(List<Upper> upperList) {
-        List<Map<Long, Integer>> ans = new ArrayList<>();
-
-        for (Upper upper : upperList) {
-            ans.add(Map.of(upper.getUpperType(), upper.getWarmthIndex()));
-        }
-
-        return ans;
+    private List<Map<Long, Integer>> getAllOutersList(List<Outer> outerList) {
+        return outerList.stream()
+                .filter(Outer::isActive)
+                .map(o -> Map.of(o.getOuterType(), o.getWarmthIndex()))
+                .collect(Collectors.toList());
     }
 }
