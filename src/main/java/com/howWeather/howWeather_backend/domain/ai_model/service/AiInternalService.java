@@ -1,7 +1,6 @@
 package com.howWeather.howWeather_backend.domain.ai_model.service;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.howWeather.howWeather_backend.domain.ai_model.dto.AiPredictionRequestDto;
 import com.howWeather.howWeather_backend.domain.ai_model.dto.ClothingCombinationDto;
@@ -44,7 +43,7 @@ public class AiInternalService {
                         return makePredictRequest(member);
                     } catch (Exception e) {
                         log.error("멤버 {} 예측 데이터 생성 실패: {}", member.getId(), e.getMessage());
-                        return null; // 실패 시 null 반환
+                        return null;
                     }
                 })
                 .filter(Objects::nonNull)
@@ -69,19 +68,6 @@ public class AiInternalService {
                 .weatherForecast(weather)
                 .clothingCombinations(combinations)
                 .build();
-    }
-
-    private void saveCombinations(Long memberId, List<ClothingCombinationDto> combinations) {
-        try {
-            String json = objectMapper.writeValueAsString(combinations);
-            ClothingCombination entity = combinationRepository.findByMemberId(memberId)
-                    .orElse(ClothingCombination.builder().memberId(memberId).build());
-
-            entity.updateCombinations(json, LocalDate.now());
-            combinationRepository.save(entity);
-        } catch (JsonProcessingException e) {
-            throw new RuntimeException("조합 JSON 변환 실패", e);
-        }
     }
 
     private List<WeatherPredictDto> getWeatherForecast(Member member) {
