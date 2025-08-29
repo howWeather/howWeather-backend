@@ -1,8 +1,13 @@
 package com.howWeather.howWeather_backend.domain.ai_model.service;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.howWeather.howWeather_backend.domain.ai_model.dto.AiPredictionRequestDto;
 import com.howWeather.howWeather_backend.domain.ai_model.dto.ClothingCombinationDto;
 import com.howWeather.howWeather_backend.domain.ai_model.dto.WeatherPredictDto;
+import com.howWeather.howWeather_backend.domain.ai_model.entity.ClothingCombination;
+import com.howWeather.howWeather_backend.domain.ai_model.repository.ClothingCombinationRepository;
 import com.howWeather.howWeather_backend.domain.closet.entity.Outer;
 import com.howWeather.howWeather_backend.domain.closet.entity.Upper;
 import com.howWeather.howWeather_backend.domain.closet.repository.ClothRepository;
@@ -10,6 +15,7 @@ import com.howWeather.howWeather_backend.domain.member.entity.Member;
 import com.howWeather.howWeather_backend.domain.weather.entity.WeatherForecast;
 import com.howWeather.howWeather_backend.domain.weather.repository.WeatherForecastRepository;
 import lombok.AllArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -22,19 +28,60 @@ import java.util.stream.Stream;
 @Transactional
 @Service
 @AllArgsConstructor
+@Slf4j
 public class AiInternalService {
     private final ClothRepository clothRepository;
     private final WeatherForecastRepository weatherForecastRepository;
+    private final ClothingCombinationRepository combinationRepository;
+    private final ClothingCombinationService combinationService;
+    private final ObjectMapper objectMapper;
+
+    public List<AiPredictionRequestDto> makePredictRequestsSafely(List<Member> members) {
+        return members.stream()
+                .filter(member -> member.getCloset() != null)
+                .map(member -> {
+                    try {
+                        return makePredictRequest(member);
+                    } catch (Exception e) {
+                        log.error("멤버 {} 예측 데이터 생성 실패: {}", member.getId(), e.getMessage());
+                        return null; // 실패 시 null 반환
+                    }
+                })
+                .filter(Objects::nonNull)
+                .collect(Collectors.toList());
+    }
 
     @Transactional
     public AiPredictionRequestDto makePredictRequest(Member member) {
-        List<WeatherPredictDto> dtoList = getWeatherForecast(member);
+        List<WeatherPredictDto> weather = getWeatherForecast(member);
+
+        List<ClothingCombinationDto> combinations;
+        try {
+            combinations = combinationService.getOrCalculateCombinations(member);
+        } catch (JsonProcessingException e) {
+            log.error("의상 조합 가져오기 실패: {}", e.getMessage(), e);
+            combinations = Collections.emptyList();
+        }
+
         return AiPredictionRequestDto.builder()
                 .userId(member.getId())
                 .bodyTypeLabel(member.getConstitution())
-                .weatherForecast(dtoList)
-                .clothingCombinations(fetchClothingCombinationsForUser(member))
+                .weatherForecast(weather)
+                .clothingCombinations(combinations)
                 .build();
+    }
+
+    private void saveCombinations(Long memberId, List<ClothingCombinationDto> combinations) {
+        try {
+            String json = objectMapper.writeValueAsString(combinations);
+            ClothingCombination entity = combinationRepository.findByMemberId(memberId)
+                    .orElse(ClothingCombination.builder().memberId(memberId).build());
+
+            entity.updateCombinations(json, LocalDate.now());
+            combinationRepository.save(entity);
+        } catch (JsonProcessingException e) {
+            throw new RuntimeException("조합 JSON 변환 실패", e);
+        }
     }
 
     private List<WeatherPredictDto> getWeatherForecast(Member member) {
@@ -61,7 +108,7 @@ public class AiInternalService {
                 .build();
     }
 
-    private List<ClothingCombinationDto> fetchClothingCombinationsForUser(Member member) {
+    public List<ClothingCombinationDto> fetchClothingCombinationsForUser(Member member) {
         List<Map<Long, Integer>> uppers = getAllUppersList(member.getCloset().getUpperList());
         List<Map<Long, Integer>> outers = getAllOutersList(member.getCloset().getOuterList());
 
@@ -93,6 +140,7 @@ public class AiInternalService {
                     return Stream.concat(Stream.of(withoutOuter), withOuter);
                 });
     }
+
     private Stream<ClothingCombinationDto> generateUpperTwoCombinations(
             List<Map<Long, Integer>> uppers, List<Map<Long, Integer>> outers) {
 

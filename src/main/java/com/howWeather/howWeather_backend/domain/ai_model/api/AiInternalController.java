@@ -43,19 +43,21 @@ public class AiInternalController {
     public ResponseEntity<Map<String, String>> sendAllUsersPredictionDataSecure() {
         try {
             List<Member> members = memberRepository.findAllByIsDeletedFalse();
+            List<AiPredictionRequestDto> allDtos = aiInternalService.makePredictRequestsSafely(members);
 
-            List<AiPredictionRequestDto> allDtos = members.stream()
-                    .filter(member -> member.getCloset() != null)
-                    .map(aiInternalService::makePredictRequest)
-                    .collect(Collectors.toList());
+            if (allDtos.isEmpty()) {
+                log.info("AI 서버로 전송할 데이터가 없습니다.");
+                return ResponseEntity.ok(Map.of());
+            }
 
             Map<String, String> encrypted = encryptPredictionData(allDtos);
             return ResponseEntity.ok(encrypted);
 
         } catch (Exception e) {
-            log.error(e.getMessage());
+            log.error("전체 예측 데이터 암호화 또는 전송 실패: {}", e.getMessage(), e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("error", e.getMessage()));
         }
-        return null;
     }
 
     @PostMapping("/aes-recommendation")
