@@ -17,6 +17,7 @@ import java.util.*;
 
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -34,6 +35,7 @@ public class ClosetService {
     private final UpperRepository upperRepository;
     private final OuterRepository outerRepository;
     private final ClothingCombinationService combinationService;
+    private final ClosetService self;
 
     private static final Long MIN_CLOTH_ID = 1L;
     private static final Long MAX_OUTER_ID = 18L;
@@ -41,8 +43,13 @@ public class ClosetService {
     private static final String UPPER = "uppers";
     private static final String OUTER = "outers";
 
-    private void updateClothCombination(Member member) {
-        combinationService.refreshCombinations(member);
+    @Async
+    public void updateClothCombination(Member member) {
+        try {
+            combinationService.refreshCombinations(member);
+        } catch (Exception e) {
+            log.error("비동기 의상 조합 재계산 실패 for memberId {}: {}", member.getId(), e.getMessage(), e);
+        }
     }
 
     @Transactional
@@ -61,7 +68,7 @@ public class ClosetService {
         } catch (Exception e) {
             throw new CustomException(ErrorCode.UNKNOWN_ERROR, "의상 등록 중 서버 오류가 발생했습니다.");
         }
-        updateClothCombination(member);
+        self.updateClothCombination(member);
     }
 
     @Transactional
@@ -262,7 +269,7 @@ public class ClosetService {
             throw new CustomException(ErrorCode.UNKNOWN_ERROR, "상의 수정 중 오류가 발생했습니다.");
         }
 
-        updateClothCombination(member);
+        self.updateClothCombination(member);
     }
 
     @Transactional
@@ -285,7 +292,7 @@ public class ClosetService {
             throw new CustomException(ErrorCode.UNKNOWN_ERROR, "아우터 수정 중 오류가 발생했습니다.");
         }
 
-        updateClothCombination(member);
+        self.updateClothCombination(member);
     }
 
     @Transactional
@@ -303,7 +310,7 @@ public class ClosetService {
             throw new CustomException(ErrorCode.UNKNOWN_ERROR, "상의 삭제 중 오류가 발생했습니다.");
         }
 
-        updateClothCombination(member);
+        self.updateClothCombination(member);
     }
 
     @Transactional
@@ -321,7 +328,7 @@ public class ClosetService {
             throw new CustomException(ErrorCode.UNKNOWN_ERROR, "아우터 삭제 중 오류가 발생했습니다.");
         }
 
-        updateClothCombination(member);
+        self.updateClothCombination(member);
     }
 
     private <T> ClothListDto findActiveClothes(
