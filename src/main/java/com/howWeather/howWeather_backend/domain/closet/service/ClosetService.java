@@ -1,5 +1,6 @@
 package com.howWeather.howWeather_backend.domain.closet.service;
 
+import com.howWeather.howWeather_backend.domain.ai_model.service.ClothingCombinationService;
 import com.howWeather.howWeather_backend.domain.closet.dto.*;
 import com.howWeather.howWeather_backend.domain.closet.entity.Closet;
 import com.howWeather.howWeather_backend.domain.closet.entity.Outer;
@@ -32,6 +33,7 @@ public class ClosetService {
     private final ClothRepository clothRepository;
     private final UpperRepository upperRepository;
     private final OuterRepository outerRepository;
+    private final ClothingCombinationService combinationService;
 
     private static final Long MIN_CLOTH_ID = 1L;
     private static final Long MAX_OUTER_ID = 18L;
@@ -39,6 +41,9 @@ public class ClosetService {
     private static final String UPPER = "uppers";
     private static final String OUTER = "outers";
 
+    private void updateClothCombination(Member member) {
+        combinationService.refreshCombinations(member);
+    }
 
     @Transactional
     public void registerCloset(Member member, AddClothesDto addClothesDto) {
@@ -56,6 +61,7 @@ public class ClosetService {
         } catch (Exception e) {
             throw new CustomException(ErrorCode.UNKNOWN_ERROR, "의상 등록 중 서버 오류가 발생했습니다.");
         }
+        updateClothCombination(member);
     }
 
     @Transactional
@@ -255,6 +261,8 @@ public class ClosetService {
             log.error("상의 수정 중 예외 발생: {}", e.getMessage(), e);
             throw new CustomException(ErrorCode.UNKNOWN_ERROR, "상의 수정 중 오류가 발생했습니다.");
         }
+
+        updateClothCombination(member);
     }
 
     @Transactional
@@ -276,6 +284,8 @@ public class ClosetService {
             log.error("아우터 수정 중 예외 발생: {}", e.getMessage(), e);
             throw new CustomException(ErrorCode.UNKNOWN_ERROR, "아우터 수정 중 오류가 발생했습니다.");
         }
+
+        updateClothCombination(member);
     }
 
     @Transactional
@@ -292,6 +302,8 @@ public class ClosetService {
             log.error("상의 삭제 중 예외 발생: {}", e.getMessage(), e);
             throw new CustomException(ErrorCode.UNKNOWN_ERROR, "상의 삭제 중 오류가 발생했습니다.");
         }
+
+        updateClothCombination(member);
     }
 
     @Transactional
@@ -308,6 +320,8 @@ public class ClosetService {
             log.error("아우터 삭제 중 예외 발생: {}", e.getMessage(), e);
             throw new CustomException(ErrorCode.UNKNOWN_ERROR, "아우터 삭제 중 오류가 발생했습니다.");
         }
+
+        updateClothCombination(member);
     }
 
     private <T> ClothListDto findActiveClothes(
