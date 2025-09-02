@@ -1,5 +1,6 @@
 package com.howWeather.howWeather_backend.domain.ai_model.schedular;
 
+import com.howWeather.howWeather_backend.domain.ai_model.service.ClothingCombinationService;
 import com.howWeather.howWeather_backend.domain.member.entity.Member;
 import com.howWeather.howWeather_backend.domain.member.repository.MemberRepository;
 import lombok.AllArgsConstructor;
@@ -18,7 +19,7 @@ import java.util.List;
 public class DailyCombinationScheduler {
 
     private final MemberRepository memberRepository;
-    private final ClothingCombinationBatchService batchService;
+    private final ClothingCombinationService batchService;
 
 
     @Scheduled(cron = "0 0 1 * * *") // 매일 새벽 1시
@@ -35,7 +36,7 @@ public class DailyCombinationScheduler {
         log.info("조합 갱신 대상 회원 수: {}", targets.size());
 
         for (Member member : targets) {
-            batchService.refreshCombinations(member);
+            batchService.refreshDailyCombinations(member);
         }
 
         log.info("조합 갱신 완료");
