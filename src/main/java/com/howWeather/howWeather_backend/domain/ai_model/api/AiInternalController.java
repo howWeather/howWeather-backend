@@ -6,6 +6,8 @@ import com.howWeather.howWeather_backend.domain.ai_model.dto.HistoryRequestDto;
 import com.howWeather.howWeather_backend.domain.ai_model.dto.ModelClothingRecommendationDto;
 import com.howWeather.howWeather_backend.domain.ai_model.service.AiInternalService;
 import com.howWeather.howWeather_backend.domain.ai_model.service.RecommendationService;
+import com.howWeather.howWeather_backend.domain.closet.entity.Closet;
+import com.howWeather.howWeather_backend.domain.closet.repository.ClosetRepository;
 import com.howWeather.howWeather_backend.domain.member.entity.Member;
 import com.howWeather.howWeather_backend.domain.member.repository.MemberRepository;
 import com.howWeather.howWeather_backend.domain.record_calendar.dto.RecordForModelDto;
@@ -18,14 +20,11 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 @Slf4j
 @RestController
@@ -39,23 +38,27 @@ public class AiInternalController {
     private final AESCipher aesCipher;
     private final ObjectMapper objectMapper;
 
+    private final ClosetRepository closetRepository;
+
     @PostMapping("/aes-prediction")
     public ResponseEntity<Map<String, String>> sendAllUsersPredictionDataSecure() {
         try {
             List<Member> members = memberRepository.findAllByIsDeletedFalse();
+            List<AiPredictionRequestDto> allDtos = aiInternalService.makePredictRequestsSafely(members);
 
-            List<AiPredictionRequestDto> allDtos = members.stream()
-                    .filter(member -> member.getCloset() != null)
-                    .map(aiInternalService::makePredictRequest)
-                    .collect(Collectors.toList());
+            if (allDtos.isEmpty()) {
+                log.info("AI 서버로 전송할 데이터가 없습니다.");
+                return ResponseEntity.ok(Map.of());
+            }
 
             Map<String, String> encrypted = encryptPredictionData(allDtos);
             return ResponseEntity.ok(encrypted);
 
         } catch (Exception e) {
-            log.error(e.getMessage());
+            log.error("전체 예측 데이터 암호화 또는 전송 실패: {}", e.getMessage(), e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("error", e.getMessage()));
         }
-        return null;
     }
 
     @PostMapping("/aes-recommendation")
@@ -112,6 +115,39 @@ public class AiInternalController {
         } catch (Exception e) {
             log.error("예측 데이터 암호화 실패: {}", e.getMessage());
             return null;
+        }
+    }
+
+    // TODO : 테스트용 추후 삭제
+    @GetMapping("/refresh-mark")
+    @Transactional
+    public ResponseEntity<String> refreshClosetMark() {
+        List<Closet> closets = closetRepository.findAll();
+        for (Closet closet : closets) {
+            closet.markNeedsRefresh();
+        }
+        log.info("모든 Closet의 needsCombinationRefresh를 true로 초기화 완료");
+        return ResponseEntity.ok("모든 Closet의 needsCombinationRefresh가 true로 초기화되었습니다.");
+    }
+
+    // TODO : 테스트용 추후 삭제
+    @GetMapping("/test-prediction-data")
+    public ResponseEntity<List<AiPredictionRequestDto>> getAllUsersPredictionDataForTest() {
+        try {
+            List<Member> members = memberRepository.findAllByIsDeletedFalse();
+            List<AiPredictionRequestDto> allDtos = aiInternalService.makePredictRequestsSafely(members);
+
+            if (allDtos.isEmpty()) {
+                log.info("AI 서버로 전송할 테스트 데이터가 없습니다.");
+                return ResponseEntity.ok(List.of());
+            }
+
+            return ResponseEntity.ok(allDtos);
+
+        } catch (Exception e) {
+            log.error("전체 예측 데이터 테스트 조회 실패: {}", e.getMessage(), e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(List.of());
         }
     }
 }

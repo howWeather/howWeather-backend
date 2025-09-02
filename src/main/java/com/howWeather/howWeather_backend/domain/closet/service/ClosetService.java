@@ -20,7 +20,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.function.Function;
-import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 
@@ -249,6 +248,7 @@ public class ClosetService {
                     (type, t) -> getWorthIdx(1, type, t)
             );
 
+            closet.markNeedsRefresh();
         } catch (CustomException e) {
             throw e;
         } catch (Exception e) {
@@ -270,6 +270,7 @@ public class ClosetService {
             outer.patchAttributes(updateDto.getColor(),
                     updateDto.getThickness(),
                     (type, t) -> getWorthIdx(2, type, t));
+            closet.markNeedsRefresh();
         } catch (CustomException e) {
             throw e;
         } catch (Exception e) {
@@ -286,6 +287,7 @@ public class ClosetService {
                     .orElseThrow(() -> new CustomException(ErrorCode.CLOTH_NOT_FOUND, "해당 상의를 찾을 수 없습니다."));
 
             upper.setActive(false);
+            closet.markNeedsRefresh();
         } catch (CustomException e) {
             throw e;
         } catch (Exception e) {
@@ -302,6 +304,7 @@ public class ClosetService {
                     .orElseThrow(() -> new CustomException(ErrorCode.CLOTH_NOT_FOUND, "해당 아우터를 찾을 수 없습니다."));
 
             outer.setActive(false);
+            closet.markNeedsRefresh();
         } catch (CustomException e) {
             throw e;
         } catch (Exception e) {
@@ -337,51 +340,5 @@ public class ClosetService {
 
         result.setClothList(groupedList);
         return result;
-    }
-
-    private <T> ClothListDto findLayerFlexibleClothes(
-            String category,
-            List<T> clothes,
-            List<Long> layerFlexibleTypes,
-            Predicate<T> isActivePredicate,
-            Function<T, Long> typeExtractor,
-            Function<T, ClothDetailDto> dtoMapper
-    ) {
-        Map<Long, List<T>> groupedClothes = clothes.stream()
-                .filter(isActivePredicate)
-                .filter(c -> layerFlexibleTypes.contains(typeExtractor.apply(c)))
-                .collect(Collectors.groupingBy(typeExtractor));
-
-        List<GroupedClothDto> groupedDtoList = groupedClothes.entrySet().stream()
-                .map(entry -> {
-                    List<ClothDetailDto> items = entry.getValue().stream()
-                            .map(dtoMapper)
-                            .collect(Collectors.toList());
-                    return new GroupedClothDto(entry.getKey(), items);
-                })
-                .collect(Collectors.toList());
-
-        ClothListDto result = new ClothListDto();
-        result.setCategory(category);
-        result.setClothList(groupedDtoList);
-        return result;
-    }
-
-    private ClothDetailDto mapUpperToDto(Upper upper) {
-        ClothDetailDto dto = new ClothDetailDto();
-        dto.setClothId(upper.getId());
-        dto.setColor(upper.getColor());
-        dto.setThickness(upper.getThickness());
-        dto.setClothType(upper.getUpperType());
-        return dto;
-    }
-
-    private ClothDetailDto mapOuterToDto(Outer outer) {
-        ClothDetailDto dto = new ClothDetailDto();
-        dto.setClothId(outer.getId());
-        dto.setColor(outer.getColor());
-        dto.setThickness(outer.getThickness());
-        dto.setClothType(outer.getOuterType());
-        return dto;
     }
 }

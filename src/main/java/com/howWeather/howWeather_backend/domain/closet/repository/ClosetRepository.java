@@ -1,6 +1,5 @@
 package com.howWeather.howWeather_backend.domain.closet.repository;
 
-import com.howWeather.howWeather_backend.domain.closet.entity.Upper;
 import com.howWeather.howWeather_backend.domain.member.entity.Member;
 import org.springframework.data.jpa.repository.JpaRepository;
 import com.howWeather.howWeather_backend.domain.closet.entity.Closet;
@@ -18,4 +17,6 @@ public interface ClosetRepository extends JpaRepository<Closet, Long> {
 
     @Query("SELECT c FROM Closet c LEFT JOIN FETCH c.outerList WHERE c.id = :closetId")
     Optional<Closet> findClosetWithOuters(@Param("closetId") Long closetId);
+
+    List<Closet> findAllByNeedsCombinationRefreshTrue();
 }
