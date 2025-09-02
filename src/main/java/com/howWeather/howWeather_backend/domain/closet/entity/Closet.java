@@ -4,7 +4,10 @@ import com.howWeather.howWeather_backend.domain.member.entity.Member;
 
 import jakarta.persistence.*;
 import lombok.*;
+import org.springframework.data.annotation.LastModifiedDate;
+import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -15,6 +18,7 @@ import static jakarta.persistence.FetchType.LAZY;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
+@EntityListeners(AuditingEntityListener.class)
 public class Closet {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -32,6 +36,9 @@ public class Closet {
     @OneToMany(mappedBy = "closet", cascade = CascadeType.ALL, orphanRemoval = true)
     @Builder.Default
     private List<Outer> outerList = new ArrayList<>();
+
+    @LastModifiedDate
+    private LocalDateTime lastModified;
 
     public void setMember(Member member) {
         this.member = member;
