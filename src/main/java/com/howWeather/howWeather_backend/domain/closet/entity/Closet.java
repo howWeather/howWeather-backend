@@ -37,8 +37,8 @@ public class Closet {
     @Builder.Default
     private List<Outer> outerList = new ArrayList<>();
 
-    @LastModifiedDate
-    private LocalDateTime lastModified;
+    @Builder.Default
+    private boolean needsCombinationRefresh = false;
 
     public void setMember(Member member) {
         this.member = member;
@@ -48,10 +48,20 @@ public class Closet {
     public void addUpper(Upper upper) {
         upper.setCloset(this);
         this.upperList.add(upper);
+        this.needsCombinationRefresh = true;
     }
 
     public void addOuter(Outer outer) {
         outer.setCloset(this);
         this.outerList.add(outer);
+        this.needsCombinationRefresh = true;
+    }
+
+    public void markNeedsRefresh() {
+        this.needsCombinationRefresh = true;
+    }
+
+    public void updateFinish() {
+        this.needsCombinationRefresh = false;
     }
 }

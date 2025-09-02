@@ -248,6 +248,7 @@ public class ClosetService {
                     (type, t) -> getWorthIdx(1, type, t)
             );
 
+            closet.markNeedsRefresh();
         } catch (CustomException e) {
             throw e;
         } catch (Exception e) {
@@ -269,6 +270,7 @@ public class ClosetService {
             outer.patchAttributes(updateDto.getColor(),
                     updateDto.getThickness(),
                     (type, t) -> getWorthIdx(2, type, t));
+            closet.markNeedsRefresh();
         } catch (CustomException e) {
             throw e;
         } catch (Exception e) {
@@ -285,6 +287,7 @@ public class ClosetService {
                     .orElseThrow(() -> new CustomException(ErrorCode.CLOTH_NOT_FOUND, "해당 상의를 찾을 수 없습니다."));
 
             upper.setActive(false);
+            closet.markNeedsRefresh();
         } catch (CustomException e) {
             throw e;
         } catch (Exception e) {
@@ -301,6 +304,7 @@ public class ClosetService {
                     .orElseThrow(() -> new CustomException(ErrorCode.CLOTH_NOT_FOUND, "해당 아우터를 찾을 수 없습니다."));
 
             outer.setActive(false);
+            closet.markNeedsRefresh();
         } catch (CustomException e) {
             throw e;
         } catch (Exception e) {
