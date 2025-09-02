@@ -79,7 +79,9 @@ public class AuthService {
 
             memberRepository.save(member);
 
-            Closet closet = Closet.builder().build();
+            Closet closet = Closet.builder()
+                    .needsCombinationRefresh(true)
+                    .build();
             closet.setMember(member);
             closetRepository.save(closet);
             fcmAlarmPreferenceService.createDefaultPreference(member);

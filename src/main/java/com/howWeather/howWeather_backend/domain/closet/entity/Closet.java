@@ -36,8 +36,8 @@ public class Closet {
     private List<Outer> outerList = new ArrayList<>();
 
     @Builder.Default
-    @Column(nullable = false, columnDefinition = "boolean default false")
-    private boolean needsCombinationRefresh = false;
+    @Column(nullable = false, columnDefinition = "boolean default true")
+    private boolean needsCombinationRefresh = true;
 
     public void setMember(Member member) {
         this.member = member;
