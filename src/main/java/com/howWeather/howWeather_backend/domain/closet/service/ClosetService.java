@@ -1,7 +1,5 @@
 package com.howWeather.howWeather_backend.domain.closet.service;
 
-import com.howWeather.howWeather_backend.domain.ai_model.service.ClothingCombinationService;
-import com.howWeather.howWeather_backend.domain.closet.api.ClosetAsyncService;
 import com.howWeather.howWeather_backend.domain.closet.dto.*;
 import com.howWeather.howWeather_backend.domain.closet.entity.Closet;
 import com.howWeather.howWeather_backend.domain.closet.entity.Outer;
@@ -18,7 +16,6 @@ import java.util.*;
 
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -35,8 +32,6 @@ public class ClosetService {
     private final ClothRepository clothRepository;
     private final UpperRepository upperRepository;
     private final OuterRepository outerRepository;
-    private final ClothingCombinationService combinationService;
-    private final ClosetAsyncService asyncService;
 
     private static final Long MIN_CLOTH_ID = 1L;
     private static final Long MAX_OUTER_ID = 18L;
@@ -44,14 +39,6 @@ public class ClosetService {
     private static final String UPPER = "uppers";
     private static final String OUTER = "outers";
 
-    @Async
-    public void updateClothCombination(Member member) {
-        try {
-            combinationService.refreshCombinations(member);
-        } catch (Exception e) {
-            log.error("비동기 의상 조합 재계산 실패 for memberId {}: {}", member.getId(), e.getMessage(), e);
-        }
-    }
 
     @Transactional
     public void registerCloset(Member member, AddClothesDto addClothesDto) {
@@ -69,7 +56,6 @@ public class ClosetService {
         } catch (Exception e) {
             throw new CustomException(ErrorCode.UNKNOWN_ERROR, "의상 등록 중 서버 오류가 발생했습니다.");
         }
-        asyncService.updateClothCombination(member);
     }
 
     @Transactional
@@ -269,8 +255,6 @@ public class ClosetService {
             log.error("상의 수정 중 예외 발생: {}", e.getMessage(), e);
             throw new CustomException(ErrorCode.UNKNOWN_ERROR, "상의 수정 중 오류가 발생했습니다.");
         }
-
-        asyncService.updateClothCombination(member);
     }
 
     @Transactional
@@ -292,8 +276,6 @@ public class ClosetService {
             log.error("아우터 수정 중 예외 발생: {}", e.getMessage(), e);
             throw new CustomException(ErrorCode.UNKNOWN_ERROR, "아우터 수정 중 오류가 발생했습니다.");
         }
-
-        asyncService.updateClothCombination(member);
     }
 
     @Transactional
@@ -310,8 +292,6 @@ public class ClosetService {
             log.error("상의 삭제 중 예외 발생: {}", e.getMessage(), e);
             throw new CustomException(ErrorCode.UNKNOWN_ERROR, "상의 삭제 중 오류가 발생했습니다.");
         }
-
-        asyncService.updateClothCombination(member);
     }
 
     @Transactional
@@ -328,8 +308,6 @@ public class ClosetService {
             log.error("아우터 삭제 중 예외 발생: {}", e.getMessage(), e);
             throw new CustomException(ErrorCode.UNKNOWN_ERROR, "아우터 삭제 중 오류가 발생했습니다.");
         }
-
-        asyncService.updateClothCombination(member);
     }
 
     private <T> ClothListDto findActiveClothes(
@@ -359,51 +337,5 @@ public class ClosetService {
 
         result.setClothList(groupedList);
         return result;
-    }
-
-    private <T> ClothListDto findLayerFlexibleClothes(
-            String category,
-            List<T> clothes,
-            List<Long> layerFlexibleTypes,
-            Predicate<T> isActivePredicate,
-            Function<T, Long> typeExtractor,
-            Function<T, ClothDetailDto> dtoMapper
-    ) {
-        Map<Long, List<T>> groupedClothes = clothes.stream()
-                .filter(isActivePredicate)
-                .filter(c -> layerFlexibleTypes.contains(typeExtractor.apply(c)))
-                .collect(Collectors.groupingBy(typeExtractor));
-
-        List<GroupedClothDto> groupedDtoList = groupedClothes.entrySet().stream()
-                .map(entry -> {
-                    List<ClothDetailDto> items = entry.getValue().stream()
-                            .map(dtoMapper)
-                            .collect(Collectors.toList());
-                    return new GroupedClothDto(entry.getKey(), items);
-                })
-                .collect(Collectors.toList());
-
-        ClothListDto result = new ClothListDto();
-        result.setCategory(category);
-        result.setClothList(groupedDtoList);
-        return result;
-    }
-
-    private ClothDetailDto mapUpperToDto(Upper upper) {
-        ClothDetailDto dto = new ClothDetailDto();
-        dto.setClothId(upper.getId());
-        dto.setColor(upper.getColor());
-        dto.setThickness(upper.getThickness());
-        dto.setClothType(upper.getUpperType());
-        return dto;
-    }
-
-    private ClothDetailDto mapOuterToDto(Outer outer) {
-        ClothDetailDto dto = new ClothDetailDto();
-        dto.setClothId(outer.getId());
-        dto.setColor(outer.getColor());
-        dto.setThickness(outer.getThickness());
-        dto.setClothType(outer.getOuterType());
-        return dto;
     }
 }
