@@ -9,7 +9,6 @@ import com.howWeather.howWeather_backend.domain.member.repository.MemberReposito
 import com.howWeather.howWeather_backend.global.cipher.AESCipher;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -29,7 +28,7 @@ import java.util.stream.Collectors;
 @Component
 @RequiredArgsConstructor
 @Slf4j
-public class ModelSchedular {
+public class ModelScheduler {
     private final MemberRepository memberRepository;
     private final AiInternalService aiInternalService;
     private final RestTemplate restTemplate;
