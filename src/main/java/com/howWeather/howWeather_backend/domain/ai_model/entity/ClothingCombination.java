@@ -6,7 +6,7 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
-import java.time.LocalDate;
+import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "clothing_combinations")
@@ -23,10 +23,10 @@ public class ClothingCombination {
     @Lob
     private String combinationsJson;
 
-    private LocalDate lastUpdated;
+    private LocalDateTime lastModified;
 
-    public void updateCombinations(String combinationsJson, LocalDate updatedDate) {
+    public void updateCombinations(String combinationsJson, LocalDateTime updatedDate) {
         this.combinationsJson = combinationsJson;
-        this.lastUpdated = updatedDate;
+        this.lastModified = updatedDate;
     }
 }
