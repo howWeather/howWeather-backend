@@ -5,7 +5,6 @@ import com.howWeather.howWeather_backend.domain.member.entity.Member;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
-import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
@@ -20,7 +19,4 @@ public interface MemberRepository extends JpaRepository<Member, Long> {
     Optional<Object> findByEmailAndLoginType(String email, LoginType loginType);
 
     List<Member> findAllByIsDeletedFalse();
-
-    List<Member> findAllByClosetLastModifiedBetweenOrClosetLastModifiedIsNull(
-            LocalDateTime start, LocalDateTime end);
 }

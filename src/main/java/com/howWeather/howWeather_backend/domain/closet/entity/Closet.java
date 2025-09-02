@@ -4,10 +4,8 @@ import com.howWeather.howWeather_backend.domain.member.entity.Member;
 
 import jakarta.persistence.*;
 import lombok.*;
-import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
-import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -38,6 +36,7 @@ public class Closet {
     private List<Outer> outerList = new ArrayList<>();
 
     @Builder.Default
+    @Column(nullable = false, columnDefinition = "boolean default false")
     private boolean needsCombinationRefresh = false;
 
     public void setMember(Member member) {
