@@ -22,9 +22,8 @@ import java.util.Optional;
 @Slf4j
 public class ClothingCombinationService {
     private final ClothingCombinationRepository repository;
-    private final AiInternalService aiInternalService;
-
     private final ObjectMapper objectMapper;
+    private final ClothingCombinationGenerator generator;
 
     @Transactional
     public List<ClothingCombinationDto> getOrCalculateCombinations(Member member) throws JsonProcessingException {
@@ -34,9 +33,20 @@ public class ClothingCombinationService {
             String json = optional.get().getCombinationsJson();
             return Arrays.asList(objectMapper.readValue(json, ClothingCombinationDto[].class));
         } else {
-            List<ClothingCombinationDto> combinations = aiInternalService.fetchClothingCombinationsForUser(member);
+            List<ClothingCombinationDto> combinations = generator.generate(member);
             saveCombinations(member.getId(), combinations);
             return combinations;
+        }
+    }
+
+    @Transactional
+    public void refreshCombinations(Member member) {
+        try {
+            List<ClothingCombinationDto> combinations = generator.generate(member);
+            saveCombinations(member.getId(), combinations);
+        } catch (Exception e) {
+            log.error("의상 조합 JSON 변환 실패 for memberId {}: {}", member.getId(), e.getMessage(), e);
+            saveCombinations(member.getId(), Collections.emptyList());
         }
     }
 
@@ -54,17 +64,6 @@ public class ClothingCombinationService {
                     .orElse(ClothingCombination.builder().memberId(memberId).build());
             entity.updateCombinations("[]", LocalDate.now());
             repository.save(entity);
-        }
-    }
-
-    @Transactional
-    public void refreshCombinations(Member member) {
-        try {
-            List<ClothingCombinationDto> combinations = aiInternalService.fetchClothingCombinationsForUser(member);
-            saveCombinations(member.getId(), combinations);
-        } catch (Exception e) {
-            log.error("의상 조합 JSON 변환 실패 for memberId {}: {}", member.getId(), e.getMessage(), e);
-            saveCombinations(member.getId(), Collections.emptyList());
         }
     }
 }

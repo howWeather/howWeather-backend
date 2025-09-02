@@ -1,6 +1,7 @@
 package com.howWeather.howWeather_backend.domain.closet.service;
 
 import com.howWeather.howWeather_backend.domain.ai_model.service.ClothingCombinationService;
+import com.howWeather.howWeather_backend.domain.closet.api.ClosetAsyncService;
 import com.howWeather.howWeather_backend.domain.closet.dto.*;
 import com.howWeather.howWeather_backend.domain.closet.entity.Closet;
 import com.howWeather.howWeather_backend.domain.closet.entity.Outer;
@@ -35,7 +36,7 @@ public class ClosetService {
     private final UpperRepository upperRepository;
     private final OuterRepository outerRepository;
     private final ClothingCombinationService combinationService;
-    private final ClosetService self;
+    private final ClosetAsyncService asyncService;
 
     private static final Long MIN_CLOTH_ID = 1L;
     private static final Long MAX_OUTER_ID = 18L;
@@ -68,7 +69,7 @@ public class ClosetService {
         } catch (Exception e) {
             throw new CustomException(ErrorCode.UNKNOWN_ERROR, "의상 등록 중 서버 오류가 발생했습니다.");
         }
-        self.updateClothCombination(member);
+        asyncService.updateClothCombination(member);
     }
 
     @Transactional
@@ -269,7 +270,7 @@ public class ClosetService {
             throw new CustomException(ErrorCode.UNKNOWN_ERROR, "상의 수정 중 오류가 발생했습니다.");
         }
 
-        self.updateClothCombination(member);
+        asyncService.updateClothCombination(member);
     }
 
     @Transactional
@@ -292,7 +293,7 @@ public class ClosetService {
             throw new CustomException(ErrorCode.UNKNOWN_ERROR, "아우터 수정 중 오류가 발생했습니다.");
         }
 
-        self.updateClothCombination(member);
+        asyncService.updateClothCombination(member);
     }
 
     @Transactional
@@ -310,7 +311,7 @@ public class ClosetService {
             throw new CustomException(ErrorCode.UNKNOWN_ERROR, "상의 삭제 중 오류가 발생했습니다.");
         }
 
-        self.updateClothCombination(member);
+        asyncService.updateClothCombination(member);
     }
 
     @Transactional
@@ -328,7 +329,7 @@ public class ClosetService {
             throw new CustomException(ErrorCode.UNKNOWN_ERROR, "아우터 삭제 중 오류가 발생했습니다.");
         }
 
-        self.updateClothCombination(member);
+        asyncService.updateClothCombination(member);
     }
 
     private <T> ClothListDto findActiveClothes(
