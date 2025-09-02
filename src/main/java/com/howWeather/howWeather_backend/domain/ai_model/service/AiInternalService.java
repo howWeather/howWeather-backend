@@ -3,8 +3,6 @@ package com.howWeather.howWeather_backend.domain.ai_model.service;
 import com.howWeather.howWeather_backend.domain.ai_model.dto.AiPredictionRequestDto;
 import com.howWeather.howWeather_backend.domain.ai_model.dto.ClothingCombinationDto;
 import com.howWeather.howWeather_backend.domain.ai_model.dto.WeatherPredictDto;
-import com.howWeather.howWeather_backend.domain.closet.entity.Outer;
-import com.howWeather.howWeather_backend.domain.closet.entity.Upper;
 import com.howWeather.howWeather_backend.domain.member.entity.Member;
 import com.howWeather.howWeather_backend.domain.weather.entity.WeatherForecast;
 import com.howWeather.howWeather_backend.domain.weather.repository.WeatherForecastRepository;
@@ -16,8 +14,6 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDate;
 import java.util.*;
 import java.util.stream.Collectors;
-import java.util.stream.IntStream;
-import java.util.stream.Stream;
 
 @Transactional
 @Service
@@ -77,37 +73,5 @@ public class AiInternalService {
                 .precipitation(forecast.getPrecipitation())
                 .feelsLike(forecast.getFeelsLike())
                 .build();
-    }
-
-    private ClothingCombinationDto createCombination(Integer upperType, Integer outerType) {
-        List<Integer> top = List.of(upperType);
-        List<Integer> outerList = outerType != null ? List.of(outerType) : new ArrayList<>();
-        return ClothingCombinationDto.builder()
-                .top(top)
-                .outer(outerList)
-                .build();
-    }
-
-    private ClothingCombinationDto createCombination(Integer upperType1, Integer upperType2, Integer outerType) {
-        List<Integer> top = List.of(upperType1, upperType2);
-        List<Integer> outerList = outerType != null ? List.of(outerType) : new ArrayList<>();
-        return ClothingCombinationDto.builder()
-                .top(top)
-                .outer(outerList)
-                .build();
-    }
-
-    private List<Map<Long, Integer>> getAllUppersList(List<Upper> upperList) {
-        return upperList.stream()
-                .filter(Upper::isActive)
-                .map(u -> Map.of(u.getUpperType(), u.getWarmthIndex()))
-                .collect(Collectors.toList());
-    }
-
-    private List<Map<Long, Integer>> getAllOutersList(List<Outer> outerList) {
-        return outerList.stream()
-                .filter(Outer::isActive)
-                .map(o -> Map.of(o.getOuterType(), o.getWarmthIndex()))
-                .collect(Collectors.toList());
     }
 }
