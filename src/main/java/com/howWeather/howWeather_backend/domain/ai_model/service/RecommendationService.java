@@ -48,7 +48,10 @@ public class RecommendationService {
         Closet closet = getClosetWithAll(member);
         List<RecommendPredictDto> result = new ArrayList<>();
         for (ClothingRecommendation recommendation : modelPredictList) {
-            result.add(makeResultForPredict(closet, recommendation, member));
+            RecommendPredictDto dto = makeResultForPredict(closet, recommendation, member);
+            if (dto.getUppersTypeList() != null && !dto.getUppersTypeList().isEmpty()) {
+                result.add(dto);
+            }
         }
         return result;
     }
