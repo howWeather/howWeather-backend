@@ -15,6 +15,7 @@ import com.howWeather.howWeather_backend.domain.record_calendar.service.RecordCa
 import com.howWeather.howWeather_backend.global.Response.ApiResponse;
 import com.howWeather.howWeather_backend.global.cipher.AESCipher;
 import com.howWeather.howWeather_backend.global.exception.CustomException;
+import com.howWeather.howWeather_backend.global.exception.ErrorCode;
 import com.howWeather.howWeather_backend.global.exception.ExceptionDto;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -62,7 +63,8 @@ public class AiInternalController {
     }
 
     @PostMapping("/aes-recommendation")
-    public ResponseEntity<ApiResponse<String>> saveRecommendations(@RequestBody Map<String, String> encryptedBody) {
+    public ResponseEntity<ApiResponse<String>> saveRecommendations(
+            @RequestBody Map<String, String> encryptedBody) {
         try {
             String decryptedJson = aesCipher.decrypt(encryptedBody);
 
@@ -74,8 +76,12 @@ public class AiInternalController {
                     decryptedJson,
                     ModelClothingRecommendationDto.class
             );
+            
+            Member member = memberRepository.findById(dto.getUserId())
+                    .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUNT));
 
-            recommendationService.save(dto);
+            recommendationService.save(dto, member);
+
             return ApiResponse.success(HttpStatus.OK, "예측 결과를 성공적으로 저장했습니다.");
         } catch (CustomException e) {
             return ResponseEntity
@@ -92,6 +98,7 @@ public class AiInternalController {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponse);
         }
     }
+
 
     @PostMapping("/aes-history")
     public ResponseEntity<Map<String, String>> getSimilarHistoryEncrypted(@RequestBody HistoryRequestDto dto) {

@@ -20,6 +20,8 @@ public class ClothingRecommendation {
 
     private Long memberId;
 
+    private String regionName;
+
     @ElementCollection
     private List<Integer> tops;
 

@@ -60,7 +60,8 @@ public class RecommendationService {
         try {
             List<Integer> upperTypeList = makeUpperList(closet, recommendation.getTops());
             List<Integer> outerTypeList = makeOuterList(closet, recommendation.getOuters());
-            List<WeatherFeelingDto> weatherFeelingDto = makeWeatherFeeling(recommendation.getPredictionMap(), member);
+
+            List<WeatherFeelingDto> weatherFeelingDto = makeWeatherFeeling(recommendation.getPredictionMap(), recommendation);
 
             return RecommendPredictDto.builder()
                     .feelingList(weatherFeelingDto)
@@ -73,6 +74,7 @@ public class RecommendationService {
             throw new CustomException(ErrorCode.UNKNOWN_ERROR, "예측 데이터를 변환하는 중 오류가 발생하였습니다: " + e.getMessage());
         }
     }
+
 
     private List<Integer> makeOuterList(Closet closet, List<Integer> outers) {
         if (outers.isEmpty()) return new ArrayList<>();
@@ -111,14 +113,15 @@ public class RecommendationService {
         return new ArrayList<>(resultSet);
     }
 
-    private List<WeatherFeelingDto> makeWeatherFeeling(Map<String, Integer> predictionMap, Member member) {
+    private List<WeatherFeelingDto> makeWeatherFeeling(Map<String, Integer> predictionMap,
+                                                       ClothingRecommendation recommendation) {
         List<WeatherFeelingDto> feelingList = new ArrayList<>();
 
         LocalDate today = LocalDate.now();
         LocalTime now = LocalTime.now();
         LocalDate forecastDate = now.isBefore(LocalTime.of(6, 0)) ? today.minusDays(1) : today;
 
-        String regionName = (member.getRegionName() != null) ? member.getRegionName() : "서울특별시 용산구";
+        String regionName = recommendation.getRegionName();
 
         List<Integer> hours = predictionMap.keySet().stream()
                 .map(Integer::parseInt)
@@ -144,16 +147,17 @@ public class RecommendationService {
                         .date(forecast.getForecastDate())
                         .time(hour)
                         .feeling(feeling)
-                        .temperature(forecast.getTemperature())
+                        .temperature(forecast.getTemperature()) // ✅ 예측 당시 지역의 온도
                         .build();
                 feelingList.add(dto);
             } else {
-                throw new CustomException(ErrorCode.WEATHER_DATA_NOT_FOUND);
+                log.warn("날씨 데이터 없음: region={}, hour={}", regionName, hour);
             }
         }
 
         return feelingList;
     }
+
 
     private List<ClothingRecommendation> getModelPrediction(Long id, LocalDate now) {
         List<ClothingRecommendation> list = clothingRecommendationRepository.findByMemberIdAndDate(id, now);
@@ -164,11 +168,12 @@ public class RecommendationService {
     }
 
     @Transactional
-    public void save(ModelClothingRecommendationDto dto) {
+    public void save(ModelClothingRecommendationDto dto, Member member) {
         try {
             for (ModelRecommendationResult result : dto.getResult()) {
                 ClothingRecommendation recommendation = ClothingRecommendation.builder()
                         .memberId(dto.getUserId())
+                        .regionName(member.getRegionName() != null ? member.getRegionName() : "서울특별시 용산구") // ✅ 추가
                         .tops(result.getTops())
                         .outers(result.getOuters())
                         .predictionMap(result.getPredictFeeling())
@@ -182,6 +187,7 @@ public class RecommendationService {
             throw new CustomException(ErrorCode.UNKNOWN_ERROR, "예측 결과 저장 중 오류가 발생했습니다.");
         }
     }
+
     private Closet getClosetWithAll(Member member) {
         Closet closetWithUppers = closetRepository.findClosetWithUppers(member.getId())
                 .orElseThrow(() -> new CustomException(ErrorCode.CLOSET_NOT_FOUND));
