@@ -32,6 +32,7 @@ import java.time.*;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -82,6 +83,7 @@ public class RecordCalendarService {
         List<DayRecord> records = dayRecordRepository.findByMemberAndDate(member, date);
 
         return records.stream()
+                .sorted(Comparator.comparing(DayRecord::getTimeSlot))
                 .map(record -> RecordResponseDto.builder()
                         .timeSlot(record.getTimeSlot())
                         .temperature(record.getTemperature())
