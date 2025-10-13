@@ -3,6 +3,7 @@ package com.howWeather.howWeather_backend.domain.member.service;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.howWeather.howWeather_backend.domain.ai_model.dto.AiPredictionRequestDto;
 import com.howWeather.howWeather_backend.domain.ai_model.dto.ModelClothingRecommendationDto;
+import com.howWeather.howWeather_backend.domain.ai_model.dto.ModelRecommendationResult;
 import com.howWeather.howWeather_backend.domain.ai_model.dto.WeatherPredictDto;
 import com.howWeather.howWeather_backend.domain.ai_model.repository.ClothingRecommendationRepository;
 import com.howWeather.howWeather_backend.domain.ai_model.schedular.DailyCombinationScheduler;
@@ -32,7 +33,8 @@ import java.time.LocalTime;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
+import java.util.Optional;
+import java.util.ArrayList;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -311,15 +313,17 @@ public class MyAccountService {
                 Member member = memberRepository.findById(dto.getUserId())
                         .orElseThrow(() -> new CustomException(ErrorCode.ID_NOT_FOUND));
 
-                boolean hasNewData = dto.getClothingCombinations() != null && !dto.getClothingCombinations().isEmpty();
+                List<ModelRecommendationResult> results = Optional.ofNullable(dto.getResult())
+                        .orElseGet(ArrayList::new);
+
+                boolean hasNewData = !results.isEmpty();
 
                 if (hasNewData) {
-                    // 새로운 데이터가 있으면 기존 데이터 삭제 후 저장
                     recommendationRepository.deleteByMemberIdAndDate(member.getId(), LocalDate.now());
+                    dto.setResult(results);
                     recommendationService.save(dto, member);
                     log.info("[추천 데이터 저장 완료] memberId={}", member.getId());
                 } else {
-                    // 새로운 데이터가 비어 있으면 기존 데이터를 그대로 유지
                     log.info("[예측 데이터 비어 있음] 기존 데이터 유지, memberId={}", member.getId());
                 }
             }
@@ -328,5 +332,4 @@ public class MyAccountService {
             log.error("[추천 데이터 저장 실패] message={}", e.getMessage(), e);
         }
     }
-
 }
