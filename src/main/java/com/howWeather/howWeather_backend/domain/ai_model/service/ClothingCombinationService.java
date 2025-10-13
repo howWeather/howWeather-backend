@@ -40,15 +40,10 @@ public class ClothingCombinationService {
                 createAndSaveEmptyCloset(member);
             }
 
-            LocalDateTime lastModified = repository.findLastModifiedByMemberId(member.getId());
-            LocalDateTime start = LocalDate.now().minusDays(1).atStartOfDay();
-            LocalDateTime end = LocalDate.now().atStartOfDay();
+            List<ClothingCombinationDto> combinations = generator.generate(member);
+            saveCombinations(member.getId(), combinations);
 
-            if (lastModified == null || (lastModified.isAfter(start) && lastModified.isBefore(end))) {
-                List<ClothingCombinationDto> combinations = generator.generate(member);
-                saveCombinations(member.getId(), combinations);
-                log.info("의상 조합 갱신 완료 for memberId {}", member.getId());
-            }
+            log.info("의상 조합 갱신 완료 for memberId {}", member.getId());
         } catch (Exception e) {
             log.error("의상 조합 갱신 실패 for memberId {}: {}", member.getId(), e.getMessage(), e);
         }
@@ -88,9 +83,5 @@ public class ClothingCombinationService {
             log.error("조합 JSON 파싱 실패 for memberId {}: {}", entity.getMemberId(), e.getMessage(), e);
             return Collections.emptyList();
         }
-    }
-
-    public Optional<ClothingCombination> findByMemberId(Long memberId) {
-        return repository.findByMemberId(memberId);
     }
 }

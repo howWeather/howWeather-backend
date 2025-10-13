@@ -20,10 +20,10 @@ import java.util.List;
 public class DailyCombinationScheduler {
 
     private final ClosetRepository closetRepository;
-    private final ClothingCombinationService batchService;
+    private final ClothingCombinationService clothingCombinationService;
 
     /**
-     * 매일 새벽 1시 기준으로 변경이 발생한 옷장을 대상으로 의상 조합을 계산합니다.
+     * 매일 새벽 1시 기준으로 변경이 발생한 전체 옷장을 대상으로 의상 조합을 계산합니다.
      */
     @Scheduled(cron = "0 0 1 * * *")
     @Transactional
@@ -35,21 +35,28 @@ public class DailyCombinationScheduler {
 
         for (Closet closet : closetsToRefresh) {
             Member member = closet.getMember();
-            batchService.refreshDailyCombinations(member);
+            clothingCombinationService.refreshDailyCombinations(member);
             closet.updateFinish();
         }
 
         log.info("조합 갱신 완료");
     }
 
+    /**
+     * 특정 사용자가 모델 학습을 재요청했을 때 의상 변경 여부를 확인하고 의상 조합을 계산합니다.
+     */
     @Transactional
     public void refreshDailyCombinations(Member member) {
         Closet closet = closetRepository.findByMember(member)
                 .orElseThrow(() -> new CustomException(ErrorCode.CLOSET_NOT_FOUND));
 
-        batchService.refreshDailyCombinations(member);
-        closet.updateFinish();
-        log.info("[특정 회원 의상 조합 갱신 완료] memberId={}", member.getId());
+        if (closet.isNeedsCombinationRefresh()) {
+            clothingCombinationService.refreshDailyCombinations(member);
+            closet.updateFinish();
+            log.info("[특정 회원 의상 조합 갱신 완료] memberId={}", member.getId());
+        } else {
+            log.info("[특정 회원 의상 조합 갱신 생략] 변경 없음 memberId={}", member.getId());
+        }
     }
 
 }
