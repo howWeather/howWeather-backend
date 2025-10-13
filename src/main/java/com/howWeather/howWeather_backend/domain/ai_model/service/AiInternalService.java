@@ -58,10 +58,15 @@ public class AiInternalService {
 
     private List<WeatherPredictDto> getWeatherForecast(Member member) {
         List<Integer> targetHours = List.of(9, 12, 15, 18, 21);
+
         String regionName = member.getRegionName() != null ? member.getRegionName() : "서울특별시 용산구";
 
         List<WeatherForecast> forecasts = weatherForecastRepository
                 .findByRegionNameAndForecastDateAndHourIn(regionName, LocalDate.now(), targetHours);
+
+        log.info("[날씨 조회 결과] memberId={}, 지역: {}, 조회된 예보 개수: {}",
+                member.getId(), regionName, forecasts.size());
+
 
         return forecasts.stream()
                 .map(this::convertToDto)
