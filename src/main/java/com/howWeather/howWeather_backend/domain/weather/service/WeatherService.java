@@ -63,15 +63,9 @@ public class WeatherService {
 
     @Transactional
     public void fetchHourlyForecast() {
-        List<Region> regions = regionRepository.findByCurrentUserCountGreaterThan(0);
-        LocalDate baseDate = LocalDate.now();
+        List<Region> regions = regionRepository.findAll();
 
-        String defaultRegionName = "서울특별시 용산구";
-        boolean hasDefaultRegion = regions.stream()
-                .anyMatch(r -> r.getName().equals(defaultRegionName));
-        if (!hasDefaultRegion) {
-            regionRepository.findByName(defaultRegionName).ifPresent(regions::add);
-        }
+        LocalDate baseDate = LocalDate.now();
 
         List<WeatherForecast> allForecasts = new ArrayList<>();
 

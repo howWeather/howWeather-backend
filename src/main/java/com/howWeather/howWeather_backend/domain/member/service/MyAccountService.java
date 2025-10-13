@@ -325,19 +325,9 @@ public class MyAccountService {
                             recommendationRepository.findByMemberIdAndDate(member.getId(), LocalDate.now());
 
                     if (!existingData.isEmpty()) {
-                        List<WeatherPredictDto> weatherForecast = getWeatherForecastForRegion(newRegionName)
-                                .stream()
-                                .sorted(Comparator.comparingInt(WeatherPredictDto::getHour))
-                                .toList();
 
                         for (ClothingRecommendation rec : existingData) {
-                            Map<String, Integer> updatedPrediction = new HashMap<>();
-                            for (WeatherPredictDto w : weatherForecast) {
-                                String hourKey = String.valueOf(w.getHour());
-                                Integer feeling = rec.getPredictionMap().get(hourKey);
-                                updatedPrediction.put(hourKey, feeling);
-                            }
-
+                            Map<String, Integer> updatedPrediction = new HashMap<>(rec.getPredictionMap());
                             ClothingRecommendation updatedEntity = ClothingRecommendation.builder()
                                     .id(rec.getId())
                                     .memberId(rec.getMemberId())
@@ -349,19 +339,19 @@ public class MyAccountService {
                                     .build();
 
                             recommendationRepository.save(updatedEntity);
+                            recommendationRepository.flush();
                         }
 
-                        log.info("[기존 데이터 온도 업데이트 완료] memberId={}", member.getId());
+                        log.info("[기존 데이터 지역명 업데이트 완료] memberId={}", member.getId());
                     }
                 }
             }
 
         } catch (Exception e) {
             log.error("[추천 데이터 처리 실패] message={}", e.getMessage(), e);
-            throw new CustomException(ErrorCode.UNKNOWN_ERROR, "추천 데이터 저장 중 오류가 발생했습니다.");
+            throw new CustomException(ErrorCode.UNKNOWN_ERROR, "지역명 업데이트 중 오류가 발생했습니다.");
         }
     }
-
     private ClothingRecommendation convertToEntityWithBuilder(ModelRecommendationResult dto, Long memberId, String regionName) {
         return ClothingRecommendation.builder()
                 .memberId(memberId)
