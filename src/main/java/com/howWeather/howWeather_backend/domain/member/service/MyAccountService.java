@@ -360,9 +360,11 @@ public class MyAccountService {
                                     feelingList.stream()
                                             .collect(Collectors.toMap(
                                                     f -> String.valueOf(f.getTime()),
-                                                    WeatherFeelingDto::getFeeling
+                                                    WeatherFeelingDto::getFeeling,
+                                                    (v1, v2) -> v2
                                             ))
                             );
+
 
                             updatedResults.add(updatedResult);
                         }
