@@ -11,6 +11,7 @@ import com.howWeather.howWeather_backend.domain.weather.repository.WeatherReposi
 import com.howWeather.howWeather_backend.global.exception.CustomException;
 import com.howWeather.howWeather_backend.global.exception.ErrorCode;
 import lombok.AllArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -20,6 +21,7 @@ import java.util.List;
 
 @Service
 @AllArgsConstructor
+@Slf4j
 public class WeatherService {
     private final WeatherRepository weatherRepository;
     private final WeatherApiClient weatherApiClient;
@@ -64,8 +66,9 @@ public class WeatherService {
     @Transactional
     public void fetchHourlyForecast() {
         List<Region> regions = regionRepository.findAll();
-
         LocalDate baseDate = LocalDate.now();
+
+        weatherForecastRepository.deleteByForecastDateGreaterThanEqual(baseDate);
 
         List<WeatherForecast> allForecasts = new ArrayList<>();
 
@@ -74,7 +77,19 @@ public class WeatherService {
             double lon = region.getLon();
             String regionName = region.getName();
 
-            List<WeatherPredictDto> forecasts = weatherApiClient.fetchForecast(lat, lon);
+            List<WeatherPredictDto> forecasts = null;
+            try {
+                forecasts = weatherApiClient.fetchForecast(lat, lon);
+
+                if (forecasts == null || forecasts.isEmpty()) {
+                    log.warn("[날씨 API 경고] 지역 {}에 대해 유효한 예보 데이터가 없어 저장 생략.", regionName);
+                    continue;
+                }
+
+            } catch (Exception e) {
+                log.error("[날씨 API 오류] 지역 {}의 예보 데이터 가져오기 실패: {}", regionName, e.getMessage());
+                continue;
+            }
 
             int cnt = 0;
             for (WeatherPredictDto dto : forecasts) {
@@ -96,6 +111,12 @@ public class WeatherService {
                 cnt++;
             }
         }
-        weatherForecastRepository.saveAll(allForecasts);
+
+        if (!allForecasts.isEmpty()) {
+            weatherForecastRepository.saveAll(allForecasts);
+            log.info("[날씨 예보 저장 완료] 총 {}개의 예보 데이터가 DB에 저장되었습니다.", allForecasts.size());
+        } else {
+            log.warn("[날씨 예보 저장 실패] 모든 지역에서 API 호출에 실패하여 저장된 데이터가 없습니다.");
+        }
     }
 }
