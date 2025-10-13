@@ -3,7 +3,10 @@ package com.howWeather.howWeather_backend.domain.ai_model.service;
 import com.howWeather.howWeather_backend.domain.ai_model.dto.ClothingCombinationDto;
 import com.howWeather.howWeather_backend.domain.closet.entity.Outer;
 import com.howWeather.howWeather_backend.domain.closet.entity.Upper;
+import com.howWeather.howWeather_backend.domain.closet.repository.OuterRepository;
+import com.howWeather.howWeather_backend.domain.closet.repository.UpperRepository;
 import com.howWeather.howWeather_backend.domain.member.entity.Member;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
 import java.util.ArrayList;
@@ -15,11 +18,18 @@ import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
 @Component
+@RequiredArgsConstructor
 public class ClothingCombinationGenerator {
 
+    private final UpperRepository upperRepository;
+    private final OuterRepository outerRepository;
+
     public List<ClothingCombinationDto> generate(Member member) {
-        List<Map<Long, Integer>> uppers = getAllUppersList(member.getCloset().getUpperList());
-        List<Map<Long, Integer>> outers = getAllOutersList(member.getCloset().getOuterList());
+        Long closetId = member.getCloset().getId();
+
+        // DB에서 최신 리스트 조회
+        List<Map<Long, Integer>> uppers = getAllUppersList(closetId);
+        List<Map<Long, Integer>> outers = getAllOutersList(closetId);
 
         return Stream.concat(
                 generateUpperOneCombinations(uppers, outers),
@@ -86,17 +96,16 @@ public class ClothingCombinationGenerator {
                 .build();
     }
 
-    private List<Map<Long, Integer>> getAllUppersList(List<Upper> upperList) {
-        return upperList.stream()
-                .filter(Upper::isActive)
+    private List<Map<Long, Integer>> getAllUppersList(Long closetId) {
+        return upperRepository.findByClosetIdAndIsActiveTrue(closetId).stream()
                 .map(u -> Map.of(u.getUpperType(), u.getWarmthIndex()))
                 .collect(Collectors.toList());
     }
 
-    private List<Map<Long, Integer>> getAllOutersList(List<Outer> outerList) {
-        return outerList.stream()
-                .filter(Outer::isActive)
+    private List<Map<Long, Integer>> getAllOutersList(Long closetId) {
+        return outerRepository.findByClosetIdAndIsActiveTrue(closetId).stream()
                 .map(o -> Map.of(o.getOuterType(), o.getWarmthIndex()))
                 .collect(Collectors.toList());
     }
+
 }

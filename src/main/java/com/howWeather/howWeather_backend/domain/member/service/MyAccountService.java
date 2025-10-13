@@ -209,13 +209,10 @@ public class MyAccountService {
                 return;
             }
 
-            List<WeatherPredictDto> sortedForecast = dto.getWeatherForecast().stream()
-                    .sorted(Comparator.comparingInt(WeatherPredictDto::getHour))
-                    .collect(Collectors.toList());
-            dto.setWeatherForecast(sortedForecast);
-
-            log.info("[AI 예측 DTO 확인] memberId={}, weatherForecast={}, clothingCombinations={}",
+            log.info("[AI 예측 DTO 확인] memberId={}, bodyType={}, weatherForecast={}, clothingCombinations={}",
                     member.getId(),
+                    dto.getUserId(),
+                    dto.getBodyTypeLabel(),
                     dto.getWeatherForecast(),
                     dto.getClothingCombinations());
 
@@ -306,8 +303,7 @@ public class MyAccountService {
                 Member member = memberRepository.findById(dto.getUserId())
                         .orElseThrow(() -> new CustomException(ErrorCode.ID_NOT_FOUND));
 
-                // recommendationRepository.deleteByMemberIdAndDate(member.getId(), LocalDate.now());
-
+                recommendationRepository.deleteByMemberIdAndDate(member.getId(), LocalDate.now());
                 recommendationService.save(dto, member);
                 log.info("[추천 데이터 저장 완료] memberId={}", member.getId());
             }
