@@ -329,42 +329,31 @@ public class MyAccountService {
                             recommendationRepository.findByMemberIdAndDate(member.getId(), LocalDate.now());
 
                     if (!existingData.isEmpty()) {
-                        List<Integer> targetHours = List.of(9, 12, 15, 18, 21);
                         List<WeatherPredictDto> weatherForecast = getWeatherForecastForRegion(newRegionName)
                                 .stream()
-                                .filter(w -> targetHours.contains(w.getHour()))
                                 .sorted(Comparator.comparingInt(WeatherPredictDto::getHour))
                                 .toList();
 
                         List<ModelRecommendationResult> updatedResults = new ArrayList<>();
 
                         for (ClothingRecommendation rec : existingData) {
-                            Map<String, Integer> predictionMap = rec.getPredictionMap();
+                            ModelRecommendationResult updatedResult = new ModelRecommendationResult();
+                            updatedResult.setTops(new ArrayList<>(rec.getTops()));
+                            updatedResult.setOuters(new ArrayList<>(rec.getOuters()));
+
+                            Map<String, Integer> existingFeeling = rec.getPredictionMap();
 
                             List<WeatherFeelingDto> feelingList = weatherForecast.stream()
                                     .map(w -> WeatherFeelingDto.builder()
                                             .date(LocalDate.now())
                                             .time(w.getHour())
                                             .temperature(w.getTemperature())
-                                            .feeling(predictionMap.getOrDefault(String.valueOf(w.getHour()), 2))
+                                            .feeling(existingFeeling.get(String.valueOf(w.getHour())))
                                             .build())
                                     .toList();
 
-                            ModelRecommendationResult updatedResult = new ModelRecommendationResult();
-                            updatedResult.setTops(new ArrayList<>(rec.getTops()));
-                            updatedResult.setOuters(new ArrayList<>(rec.getOuters()));
-
-                            updatedResult.setPredictFeeling(
-                                    feelingList.stream()
-                                            .collect(Collectors.toMap(
-                                                    f -> String.valueOf(f.getTime()),
-                                                    WeatherFeelingDto::getFeeling,
-                                                    (existing, replacement) -> replacement
-                                            ))
-                            );
-
+                            updatedResult.setPredictFeeling(existingFeeling);
                             updatedResults.add(updatedResult);
-
                         }
 
                         dto.setResult(updatedResults);
@@ -378,6 +367,7 @@ public class MyAccountService {
                         }
                     }
                 }
+
             }
 
         } catch (Exception e) {
