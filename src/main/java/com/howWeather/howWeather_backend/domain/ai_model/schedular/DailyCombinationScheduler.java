@@ -4,6 +4,8 @@ import com.howWeather.howWeather_backend.domain.ai_model.service.ClothingCombina
 import com.howWeather.howWeather_backend.domain.closet.entity.Closet;
 import com.howWeather.howWeather_backend.domain.closet.repository.ClosetRepository;
 import com.howWeather.howWeather_backend.domain.member.entity.Member;
+import com.howWeather.howWeather_backend.global.exception.CustomException;
+import com.howWeather.howWeather_backend.global.exception.ErrorCode;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -38,6 +40,16 @@ public class DailyCombinationScheduler {
         }
 
         log.info("조합 갱신 완료");
+    }
+
+    @Transactional
+    public void refreshDailyCombinations(Member member) {
+        Closet closet = closetRepository.findByMember(member)
+                .orElseThrow(() -> new CustomException(ErrorCode.CLOSET_NOT_FOUND));
+
+        batchService.refreshDailyCombinations(member);
+        closet.updateFinish();
+        log.info("[특정 회원 의상 조합 갱신 완료] memberId={}", member.getId());
     }
 
 }

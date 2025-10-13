@@ -169,10 +169,17 @@ public class RecommendationService {
     @Transactional
     public void save(ModelClothingRecommendationDto dto, Member member) {
         try {
-            for (ModelRecommendationResult result : dto.getResult()) {
+            List<ModelRecommendationResult> results = Optional.ofNullable(dto.getResult())
+                    .orElseGet(ArrayList::new);
+
+            if (results.isEmpty()) {
+                log.info("[INFO] 모델 예측 결과가 없습니다. 빈 리스트로 처리합니다.");
+            }
+
+            for (ModelRecommendationResult result : results) {
                 ClothingRecommendation recommendation = ClothingRecommendation.builder()
                         .memberId(dto.getUserId())
-                        .regionName(member.getRegionName() != null ? member.getRegionName() : "서울특별시 용산구") // ✅ 추가
+                        .regionName(member.getRegionName() != null ? member.getRegionName() : "서울특별시 용산구")
                         .tops(result.getTops())
                         .outers(result.getOuters())
                         .predictionMap(result.getPredictFeeling())
@@ -186,6 +193,7 @@ public class RecommendationService {
             throw new CustomException(ErrorCode.UNKNOWN_ERROR, "예측 결과 저장 중 오류가 발생했습니다.");
         }
     }
+
 
     private Closet getClosetWithAll(Member member) {
         Closet closetWithUppers = closetRepository.findClosetWithUppers(member.getId())
