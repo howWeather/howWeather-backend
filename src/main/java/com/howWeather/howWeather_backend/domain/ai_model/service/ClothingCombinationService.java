@@ -89,8 +89,4 @@ public class ClothingCombinationService {
             return Collections.emptyList();
         }
     }
-
-    public Optional<ClothingCombination> findByMemberId(Long memberId) {
-        return repository.findByMemberId(memberId);
-    }
 }
