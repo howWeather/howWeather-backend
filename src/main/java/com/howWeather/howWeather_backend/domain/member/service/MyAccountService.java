@@ -3,7 +3,8 @@ package com.howWeather.howWeather_backend.domain.member.service;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.howWeather.howWeather_backend.domain.ai_model.dto.AiPredictionRequestDto;
 import com.howWeather.howWeather_backend.domain.ai_model.dto.ModelClothingRecommendationDto;
-import com.howWeather.howWeather_backend.domain.ai_model.dto.ModelRecommendationResult;
+import com.howWeather.howWeather_backend.domain.ai_model.dto.WeatherPredictDto;
+import com.howWeather.howWeather_backend.domain.ai_model.repository.ClothingRecommendationRepository;
 import com.howWeather.howWeather_backend.domain.ai_model.schedular.DailyCombinationScheduler;
 import com.howWeather.howWeather_backend.domain.ai_model.service.AiInternalService;
 import com.howWeather.howWeather_backend.domain.ai_model.service.RecommendationService;
@@ -25,9 +26,14 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.time.LocalDate;
 import java.time.LocalTime;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
+
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.client.RestTemplate;
@@ -37,6 +43,7 @@ import org.springframework.web.client.RestTemplate;
 @RequiredArgsConstructor
 public class MyAccountService {
     private final MemberRepository memberRepository;
+    private final ClothingRecommendationRepository recommendationRepository;
     private final RecommendationService recommendationService;
     private final DailyCombinationScheduler dailyCombinationScheduler;
     private final AiInternalService aiInternalService;
@@ -202,6 +209,11 @@ public class MyAccountService {
                 return;
             }
 
+            List<WeatherPredictDto> sortedForecast = dto.getWeatherForecast().stream()
+                    .sorted(Comparator.comparingInt(WeatherPredictDto::getHour))
+                    .collect(Collectors.toList());
+            dto.setWeatherForecast(sortedForecast);
+
             log.info("[AI 예측 DTO 확인] memberId={}, weatherForecast={}, clothingCombinations={}",
                     member.getId(),
                     dto.getWeatherForecast(),
@@ -293,6 +305,8 @@ public class MyAccountService {
             for (ModelClothingRecommendationDto dto : dtoArray) {
                 Member member = memberRepository.findById(dto.getUserId())
                         .orElseThrow(() -> new CustomException(ErrorCode.ID_NOT_FOUND));
+
+                // recommendationRepository.deleteByMemberIdAndDate(member.getId(), LocalDate.now());
 
                 recommendationService.save(dto, member);
                 log.info("[추천 데이터 저장 완료] memberId={}", member.getId());
