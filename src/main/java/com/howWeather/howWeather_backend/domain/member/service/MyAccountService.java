@@ -204,10 +204,17 @@ public class MyAccountService {
             }
 
             AiPredictionRequestDto dto = aiInternalService.makePredictRequest(member);
+
             if (dto == null) {
                 log.warn("[AI 예측 데이터 없음] memberId={}", member.getId());
                 return;
             }
+
+            List<WeatherPredictDto> sortedWeather = dto.getWeatherForecast().stream()
+                    .sorted(Comparator.comparingInt(WeatherPredictDto::getHour))
+                    .limit(5) 
+                    .toList();
+            dto.setWeatherForecast(sortedWeather);
 
             log.info("[AI 예측 DTO 확인] memberId={}, bodyType={}, weatherForecast={}, clothingCombinations={}",
                     member.getId(),
@@ -237,6 +244,7 @@ public class MyAccountService {
             log.error("[AI 예측 처리 실패] memberId={}, message={}", member.getId(), e.getMessage(), e);
         }
     }
+
 
     private void validateTimeForRegionChange() {
         LocalTime now = LocalTime.now();
@@ -303,13 +311,22 @@ public class MyAccountService {
                 Member member = memberRepository.findById(dto.getUserId())
                         .orElseThrow(() -> new CustomException(ErrorCode.ID_NOT_FOUND));
 
-                recommendationRepository.deleteByMemberIdAndDate(member.getId(), LocalDate.now());
-                recommendationService.save(dto, member);
-                log.info("[추천 데이터 저장 완료] memberId={}", member.getId());
+                boolean hasNewData = dto.getClothingCombinations() != null && !dto.getClothingCombinations().isEmpty();
+
+                if (hasNewData) {
+                    // 새로운 데이터가 있으면 기존 데이터 삭제 후 저장
+                    recommendationRepository.deleteByMemberIdAndDate(member.getId(), LocalDate.now());
+                    recommendationService.save(dto, member);
+                    log.info("[추천 데이터 저장 완료] memberId={}", member.getId());
+                } else {
+                    // 새로운 데이터가 비어 있으면 기존 데이터를 그대로 유지
+                    log.info("[예측 데이터 비어 있음] 기존 데이터 유지, memberId={}", member.getId());
+                }
             }
 
         } catch (Exception e) {
             log.error("[추천 데이터 저장 실패] message={}", e.getMessage(), e);
         }
     }
+
 }

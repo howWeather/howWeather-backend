@@ -40,7 +40,7 @@ public class RecommendationService {
     public List<RecommendPredictDto> getRecommendList(Member member) {
         LocalDate today = LocalDate.now();
         LocalTime now = LocalTime.now();
-        
+
         LocalDate targetDate = now.isBefore(LocalTime.of(6, 0)) ? today.minusDays(1) : today;
 
         List<ClothingRecommendation> modelPredictList = getModelPrediction(member.getId(), targetDate);
@@ -173,7 +173,8 @@ public class RecommendationService {
                     .orElseGet(ArrayList::new);
 
             if (results.isEmpty()) {
-                log.info("[INFO] 모델 예측 결과가 없습니다. 빈 리스트로 처리합니다.");
+                log.info("[INFO] 모델 예측 결과가 없습니다. 기존 데이터 유지, memberId={}", member.getId());
+                return;
             }
 
             for (ModelRecommendationResult result : results) {
