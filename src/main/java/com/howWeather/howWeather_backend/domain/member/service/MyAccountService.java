@@ -150,7 +150,7 @@ public class MyAccountService {
     }
 
     @Transactional(readOnly = true)
-    public String getLoccation(Member member) {
+    public String getLocation(Member member) {
         try {
             String region = member.getRegionName();
 
@@ -309,6 +309,9 @@ public class MyAccountService {
                 Member member = memberRepository.findById(dto.getUserId())
                         .orElseThrow(() -> new CustomException(ErrorCode.ID_NOT_FOUND));
 
+                String finalRegionName = newRegionName != null ? newRegionName : member.getRegionName();
+
+
                 List<ModelRecommendationResult> results = Optional.ofNullable(dto.getResult())
                         .orElseGet(ArrayList::new);
 
@@ -326,23 +329,14 @@ public class MyAccountService {
                             recommendationRepository.findByMemberIdAndDate(member.getId(), LocalDate.now());
 
                     if (!existingData.isEmpty()) {
-                        List<WeatherPredictDto> weatherForecast = getWeatherForecastForRegion(newRegionName)
-                                .stream()
-                                .sorted(Comparator.comparingInt(WeatherPredictDto::getHour))
-                                .toList();
 
                         for (ClothingRecommendation rec : existingData) {
-                            Map<String, Integer> updatedPrediction = new HashMap<>();
-                            for (WeatherPredictDto w : weatherForecast) {
-                                String hourKey = String.valueOf(w.getHour());
-                                Integer feeling = rec.getPredictionMap().get(hourKey);
-                                updatedPrediction.put(hourKey, feeling);
-                            }
+                            Map<String, Integer> updatedPrediction = new HashMap<>(rec.getPredictionMap());
 
                             ClothingRecommendation updatedEntity = ClothingRecommendation.builder()
                                     .id(rec.getId())
                                     .memberId(rec.getMemberId())
-                                    .regionName(newRegionName)
+                                    .regionName(finalRegionName)
                                     .tops(new ArrayList<>(rec.getTops()))
                                     .outers(new ArrayList<>(rec.getOuters()))
                                     .predictionMap(updatedPrediction)
