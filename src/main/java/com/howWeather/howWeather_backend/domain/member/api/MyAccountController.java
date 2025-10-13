@@ -78,10 +78,18 @@ public class MyAccountController {
 
     @PatchMapping("/update-location")
     @CheckAuthenticatedUser
-    public ResponseEntity<ApiResponse<String>> updateLocation(@RequestHeader("Authorization") String accessTokenHeader,
-                                                              @Valid @RequestBody RegionDto regionDto,
-                                                              @AuthenticationPrincipal Member member) {
-        myAccountService.updateLocation(member, regionDto);
-        return ApiResponse.success(HttpStatus.OK, "지역을 성공적으로 수정하였습니다.");
+    public ResponseEntity<ApiResponse<String>> updateLocation(
+            @RequestHeader("Authorization") String accessTokenHeader,
+            @Valid @RequestBody RegionDto regionDto,
+            @AuthenticationPrincipal Member member) {
+
+        try {
+            myAccountService.updateLocation(member, regionDto);
+            return ApiResponse.success(HttpStatus.OK, "지역을 성공적으로 수정하였습니다.");
+        } catch (Exception e) {
+            log.error("[지역 수정 실패] memberId={}, message={}", member != null ? member.getId() : null, e.getMessage(), e);
+            return ApiResponse.success(HttpStatus.OK, "지역 수정 중 문제가 발생했습니다. 기존 데이터를 유지합니다.");
+        }
     }
+
 }
