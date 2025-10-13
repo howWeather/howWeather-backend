@@ -1,5 +1,6 @@
 package com.howWeather.howWeather_backend.domain.member.service;
 
+import com.howWeather.howWeather_backend.domain.ai_model.service.AiInternalService;
 import com.howWeather.howWeather_backend.domain.member.dto.NicknameDto;
 import com.howWeather.howWeather_backend.domain.member.dto.ProfileChangeIntDto;
 import com.howWeather.howWeather_backend.domain.member.dto.ProfileDto;
@@ -22,6 +23,7 @@ import java.time.LocalTime;
 @RequiredArgsConstructor
 public class MyAccountService {
     private final MemberRepository memberRepository;
+    private final AiInternalService aiInternalService;
     private final RegionRepository regionRepository;
 
     @Transactional(readOnly = true)
@@ -160,6 +162,14 @@ public class MyAccountService {
                         .orElseThrow(() -> new CustomException(ErrorCode.REGION_NOT_FOUND));
                 newRegion.incrementCurrentUserCount();
                 persistedMember.changeRegion(newRegionName);
+
+                try {
+                    aiInternalService.makePredictRequest(persistedMember);
+                    log.info("[지역 변경 후 AI 예측 완료] memberId={}, newRegion={}", persistedMember.getId(), newRegionName);
+                } catch (Exception e) {
+                    log.error("[AI 예측 실패] memberId={}, region={}, message={}",
+                            persistedMember.getId(), newRegionName, e.getMessage(), e);
+                }
             }
         } catch (CustomException e) {
             throw e;

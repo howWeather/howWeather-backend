@@ -75,7 +75,6 @@ public class RecommendationService {
         }
     }
 
-
     private List<Integer> makeOuterList(Closet closet, List<Integer> outers) {
         if (outers.isEmpty()) return new ArrayList<>();
 
@@ -147,7 +146,7 @@ public class RecommendationService {
                         .date(forecast.getForecastDate())
                         .time(hour)
                         .feeling(feeling)
-                        .temperature(forecast.getTemperature()) // ✅ 예측 당시 지역의 온도
+                        .temperature(forecast.getTemperature())
                         .build();
                 feelingList.add(dto);
             } else {
