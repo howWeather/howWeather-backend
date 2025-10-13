@@ -351,18 +351,20 @@ public class MyAccountService {
                                     .toList();
 
                             ModelRecommendationResult updatedResult = new ModelRecommendationResult();
-                            updatedResult.setTops(rec.getTops());
-                            updatedResult.setOuters(rec.getOuters());
+                            updatedResult.setTops(new ArrayList<>(rec.getTops()));
+                            updatedResult.setOuters(new ArrayList<>(rec.getOuters()));
+
                             updatedResult.setPredictFeeling(
                                     feelingList.stream()
                                             .collect(Collectors.toMap(
                                                     f -> String.valueOf(f.getTime()),
                                                     WeatherFeelingDto::getFeeling,
-                                                    (existing, replacement) -> replacement // 중복 키는 최신 값으로 덮어쓰기
+                                                    (existing, replacement) -> replacement
                                             ))
                             );
 
                             updatedResults.add(updatedResult);
+
                         }
 
                         dto.setResult(updatedResults);
