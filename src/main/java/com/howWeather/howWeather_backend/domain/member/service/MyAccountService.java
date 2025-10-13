@@ -160,63 +160,6 @@ public class MyAccountService {
         }
     }
 
-//    @Transactional
-//    public void updateLocation(Member member, RegionDto regionDto) {
-//        try {
-//            LocalTime now = LocalTime.now();
-//            if (!now.isBefore(LocalTime.of(4, 00)) && now.isBefore(LocalTime.of(7, 0))) {
-//                throw new CustomException(ErrorCode.TIME_RESTRICTED_FOR_REGION_CHANGE);
-//            }
-//            validateRegion(regionDto.getRegionName());
-//
-//            Member persistedMember = memberRepository.findById(member.getId())
-//                    .orElseThrow(() -> new CustomException(ErrorCode.ID_NOT_FOUND, "회원 정보를 찾을 수 없습니다."));
-//
-//            String oldRegionName = persistedMember.getRegionName();
-//            String newRegionName = regionDto.getRegionName();
-//
-//            if (oldRegionName == null || !newRegionName.equals(oldRegionName)) {
-//                // 기존 카운트 처리
-//                if (oldRegionName != null) {
-//                    regionRepository.findByName(oldRegionName).ifPresent(Region::decrementCurrentUserCount);
-//                }
-//
-//                Region newRegion = regionRepository.findByName(newRegionName)
-//                        .orElseThrow(() -> new CustomException(ErrorCode.REGION_NOT_FOUND));
-//                newRegion.incrementCurrentUserCount();
-//                persistedMember.changeRegion(newRegionName);
-//
-//                try {
-//                    dailyCombinationScheduler.refreshDailyCombinations(persistedMember);
-//                } catch (Exception e) {
-//                    log.error("[스케줄러 호출 실패] memberId={}, message={}", persistedMember.getId(), e.getMessage(), e);
-//                }
-//
-//                try {
-//                    AiPredictionRequestDto predictionDto = aiInternalService.makePredictRequest(persistedMember);
-//                    if (predictionDto != null) {
-//                        String jsonData = objectMapper.writeValueAsString(List.of(predictionDto));
-//                        Map<String, String> encryptedData = aesCipher.encrypt(jsonData);
-//                        saveRecommendationsInternal(encryptedData);
-//                        log.info("[AI 예측 및 저장 완료] memberId={}, newRegion={}", persistedMember.getId(), newRegionName);
-//                    } else {
-//                        log.warn("[AI 예측 데이터 없음] memberId={}", persistedMember.getId());
-//                    }
-//                } catch (Exception e) {
-//                    log.error("[AI 예측 저장 실패] memberId={}, region={}, message={}",
-//                            persistedMember.getId(), newRegionName, e.getMessage(), e);
-//                }
-//            }
-//
-//        } catch (CustomException e) {
-//            throw e;
-//        } catch (Exception e) {
-//            log.error("지역 수정 중 에러 발생: {}", e.getMessage(), e);
-//            throw new CustomException(ErrorCode.UNKNOWN_ERROR, "지역 수정 중 오류가 발생했습니다.");
-//        }
-//    }
-
-
     @Transactional
     public void updateLocation(Member member, RegionDto regionDto) {
         try {
@@ -232,7 +175,7 @@ public class MyAccountService {
                 persistedMember.changeRegion(newRegionName);
 
                 runDailyCombinationScheduler(persistedMember);
-                handleAiPrediction(persistedMember, newRegionName);
+                pushPredictionForSingleMember(persistedMember);
             }
 
         } catch (CustomException e) {
@@ -240,6 +183,49 @@ public class MyAccountService {
         } catch (Exception e) {
             log.error("지역 수정 중 에러 발생: {}", e.getMessage(), e);
             throw new CustomException(ErrorCode.UNKNOWN_ERROR, "지역 수정 중 오류가 발생했습니다.");
+        }
+    }
+
+    /**
+     * 단일 회원에 대해 스케줄러 AI 예측 전송 로직 재사용
+     */
+    private void pushPredictionForSingleMember(Member member) {
+        try {
+            if (member.getCloset() == null) {
+                log.warn("[AI 예측 생략] memberId={} 클로젯 정보 없음", member.getId());
+                return;
+            }
+
+            AiPredictionRequestDto dto = aiInternalService.makePredictRequest(member);
+            if (dto == null) {
+                log.warn("[AI 예측 데이터 없음] memberId={}", member.getId());
+                return;
+            }
+
+            log.info("[AI 예측 DTO 확인] memberId={}, weatherForecast={}, clothingCombinations={}",
+                    member.getId(),
+                    dto.getWeatherForecast(),
+                    dto.getClothingCombinations());
+
+            Map<String, String> encryptedData = encryptPredictionData(List.of(dto));
+            if (encryptedData == null || encryptedData.isEmpty()) return;
+
+            HttpHeaders headers = new HttpHeaders();
+            headers.setContentType(MediaType.APPLICATION_JSON);
+            HttpEntity<Map<String, String>> requestEntity = new HttpEntity<>(encryptedData, headers);
+            ResponseEntity<String> response = restTemplate.postForEntity(aiServerUrl, requestEntity, String.class);
+
+            if (response.getStatusCode().is2xxSuccessful()) {
+                log.info("[AI 예측 전송 완료] memberId={}, 응답={}", member.getId(), response.getStatusCode());
+            } else {
+                log.warn("[AI 서버 응답 실패] memberId={}, 상태코드={}, 본문={}",
+                        member.getId(), response.getStatusCode(), response.getBody());
+            }
+
+            saveRecommendationsInternal(encryptedData);
+
+        } catch (Exception e) {
+            log.error("[AI 예측 처리 실패] memberId={}, message={}", member.getId(), e.getMessage(), e);
         }
     }
 
@@ -282,30 +268,6 @@ public class MyAccountService {
         }
     }
 
-    private void handleAiPrediction(Member member, String newRegionName) {
-        if (member.getCloset() == null) {
-            log.warn("[AI 예측 생략] memberId={} 클로젯 정보 없음", member.getId());
-            return;
-        }
-
-        try {
-            AiPredictionRequestDto dto = aiInternalService.makePredictRequest(member);
-            if (dto == null) {
-                log.warn("[AI 예측 데이터 없음] memberId={}", member.getId());
-                return;
-            }
-
-            Map<String, String> encryptedData = encryptPredictionData(List.of(dto));
-            sendToAiServer(encryptedData);
-            saveRecommendationsInternal(encryptedData);
-
-            log.info("[AI 예측 데이터 전송 + 저장 완료] memberId={}, newRegion={}", member.getId(), newRegionName);
-
-        } catch (Exception e) {
-            log.error("[AI 예측 처리 실패] memberId={}, message={}", member.getId(), e.getMessage(), e);
-        }
-    }
-
     private Map<String, String> encryptPredictionData(List<AiPredictionRequestDto> dtos) {
         try {
             String jsonData = objectMapper.writeValueAsString(dtos);
@@ -313,22 +275,6 @@ public class MyAccountService {
         } catch (Exception e) {
             log.error("[암호화 실패] message={}", e.getMessage(), e);
             return Map.of();
-        }
-    }
-
-    private void sendToAiServer(Map<String, String> encryptedData) {
-        try {
-            HttpHeaders headers = new HttpHeaders();
-            headers.setContentType(MediaType.APPLICATION_JSON);
-            HttpEntity<Map<String, String>> requestEntity = new HttpEntity<>(encryptedData, headers);
-
-            ResponseEntity<String> response = restTemplate.postForEntity(aiServerUrl, requestEntity, String.class);
-
-            if (!response.getStatusCode().is2xxSuccessful()) {
-                log.warn("[AI 서버 전송 실패] status={}, body={}", response.getStatusCode(), response.getBody());
-            }
-        } catch (Exception e) {
-            log.error("[AI 서버 전송 실패] message={}", e.getMessage(), e);
         }
     }
 
@@ -356,5 +302,4 @@ public class MyAccountService {
             log.error("[추천 데이터 저장 실패] message={}", e.getMessage(), e);
         }
     }
-
 }
