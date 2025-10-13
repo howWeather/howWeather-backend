@@ -204,7 +204,6 @@ public class MyAccountService {
             }
 
             AiPredictionRequestDto dto = aiInternalService.makePredictRequest(member);
-
             if (dto == null) {
                 log.warn("[AI 예측 데이터 없음] memberId={}", member.getId());
                 return;
@@ -243,7 +242,6 @@ public class MyAccountService {
             log.error("[AI 예측 처리 실패] memberId={}, message={}", member.getId(), e.getMessage(), e);
         }
     }
-
 
     private void validateTimeForRegionChange() {
         LocalTime now = LocalTime.now();
@@ -294,10 +292,11 @@ public class MyAccountService {
         }
     }
 
-    private void saveRecommendationsInternal(Map<String, String> encryptedData, String newRegionName) {
-        try {
-            if (encryptedData == null || encryptedData.isEmpty()) return;
+    @Transactional
+    public void saveRecommendationsInternal(Map<String, String> encryptedData, String newRegionName) {
+        if (encryptedData == null || encryptedData.isEmpty()) return;
 
+        try {
             String decryptedJson = aesCipher.decrypt(encryptedData);
             if (decryptedJson.startsWith("\"") && decryptedJson.endsWith("\"")) {
                 decryptedJson = objectMapper.readValue(decryptedJson, String.class);
@@ -313,11 +312,14 @@ public class MyAccountService {
                 List<ModelRecommendationResult> results = Optional.ofNullable(dto.getResult())
                         .orElseGet(ArrayList::new);
 
-                boolean hasNewData = !results.isEmpty();
-
-                if (hasNewData) {
+                if (!results.isEmpty()) {
                     recommendationRepository.deleteByMemberIdAndDate(member.getId(), LocalDate.now());
-                    recommendationService.save(dto, member);
+
+                    for (ModelRecommendationResult r : results) {
+                        ClothingRecommendation entity = convertToEntityWithBuilder(r, member.getId(), newRegionName);
+                        recommendationRepository.save(entity);
+                    }
+
                     log.info("[추천 데이터 저장 완료] memberId={}", member.getId());
                 } else {
                     List<ClothingRecommendation> existingData =
@@ -329,26 +331,27 @@ public class MyAccountService {
                                 .sorted(Comparator.comparingInt(WeatherPredictDto::getHour))
                                 .toList();
 
-                        List<ModelRecommendationResult> updatedResults = new ArrayList<>();
-
                         for (ClothingRecommendation rec : existingData) {
-                            ModelRecommendationResult updatedResult = new ModelRecommendationResult();
-                            updatedResult.setTops(new ArrayList<>(rec.getTops()));
-                            updatedResult.setOuters(new ArrayList<>(rec.getOuters()));
-
-                            Map<String, Integer> updatedFeeling = new HashMap<>();
+                            Map<String, Integer> updatedPrediction = new HashMap<>();
                             for (WeatherPredictDto w : weatherForecast) {
                                 String hourKey = String.valueOf(w.getHour());
                                 Integer feeling = rec.getPredictionMap().get(hourKey);
-                                updatedFeeling.put(hourKey, feeling);
+                                updatedPrediction.put(hourKey, feeling);
                             }
 
-                            updatedResult.setPredictFeeling(updatedFeeling);
-                            updatedResults.add(updatedResult);
+                            ClothingRecommendation updatedEntity = ClothingRecommendation.builder()
+                                    .id(rec.getId())
+                                    .memberId(rec.getMemberId())
+                                    .regionName(newRegionName)
+                                    .tops(new ArrayList<>(rec.getTops()))
+                                    .outers(new ArrayList<>(rec.getOuters()))
+                                    .predictionMap(updatedPrediction)
+                                    .date(LocalDate.now())
+                                    .build();
+
+                            recommendationRepository.save(updatedEntity);
                         }
 
-                        dto.setResult(updatedResults);
-                        recommendationService.save(dto, member);
                         log.info("[기존 데이터 온도 업데이트 완료] memberId={}", member.getId());
                     }
                 }
@@ -356,9 +359,20 @@ public class MyAccountService {
 
         } catch (Exception e) {
             log.error("[추천 데이터 처리 실패] message={}", e.getMessage(), e);
+            throw new CustomException(ErrorCode.UNKNOWN_ERROR, "추천 데이터 저장 중 오류가 발생했습니다.");
         }
     }
 
+    private ClothingRecommendation convertToEntityWithBuilder(ModelRecommendationResult dto, Long memberId, String regionName) {
+        return ClothingRecommendation.builder()
+                .memberId(memberId)
+                .regionName(regionName)
+                .tops(new ArrayList<>(dto.getTops()))
+                .outers(new ArrayList<>(dto.getOuters()))
+                .predictionMap(new HashMap<>(dto.getPredictFeeling()))
+                .date(LocalDate.now())
+                .build();
+    }
 
     private List<WeatherPredictDto> getWeatherForecastForRegion(String regionName) {
         List<Integer> targetHours = List.of(9, 12, 15, 18, 21);
@@ -377,5 +391,4 @@ public class MyAccountService {
                         .build())
                 .collect(Collectors.toList());
     }
-
 }
