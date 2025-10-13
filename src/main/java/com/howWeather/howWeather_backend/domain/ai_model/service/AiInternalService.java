@@ -40,6 +40,11 @@ public class AiInternalService {
 
     @Transactional
     public AiPredictionRequestDto makePredictRequest(Member member) {
+        if (member.getCloset().isNeedsCombinationRefresh()) {
+            combinationService.refreshDailyCombinations(member);
+            member.getCloset().updateFinish();
+        }
+
         List<WeatherPredictDto> weather = getWeatherForecast(member);
         List<ClothingCombinationDto> combinations = combinationService.fetchPrecomputedCombinations(member);
 
