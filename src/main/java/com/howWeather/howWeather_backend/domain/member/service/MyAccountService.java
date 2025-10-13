@@ -320,14 +320,11 @@ public class MyAccountService {
                 boolean hasNewData = !results.isEmpty();
 
                 if (hasNewData) {
-                    // 새로운 데이터가 있으면 기존 데이터 삭제 후 저장
                     recommendationRepository.deleteByMemberIdAndDate(member.getId(), LocalDate.now());
                     dto.setResult(results);
                     recommendationService.save(dto, member);
                     log.info("[추천 데이터 저장 완료] memberId={}", member.getId());
                 } else {
-                    log.info("memberId={}", member.getId());
-
                     List<ClothingRecommendation> existingData =
                             recommendationRepository.findByMemberIdAndDate(member.getId(), LocalDate.now());
 
@@ -361,25 +358,31 @@ public class MyAccountService {
                                             .collect(Collectors.toMap(
                                                     f -> String.valueOf(f.getTime()),
                                                     WeatherFeelingDto::getFeeling,
-                                                    (v1, v2) -> v2
+                                                    (existing, replacement) -> replacement // 중복 키는 최신 값으로 덮어쓰기
                                             ))
                             );
-
 
                             updatedResults.add(updatedResult);
                         }
 
                         dto.setResult(updatedResults);
-                        recommendationService.save(dto, member);
-                        log.info("[새 위치 날씨 저장 완료] memberId={}", member.getId());
+
+                        try {
+                            recommendationService.save(dto, member);
+                            log.info("[새 위치 날씨 저장 완료] memberId={}", member.getId());
+                        } catch (Exception saveEx) {
+                            log.error("[추천 데이터 저장 중 예외 발생, 기존 데이터 유지] memberId={}, message={}",
+                                    member.getId(), saveEx.getMessage(), saveEx);
+                        }
                     }
                 }
             }
 
         } catch (Exception e) {
-            log.error("[추천 데이터 저장 실패] message={}", e.getMessage(), e);
+            log.error("[추천 데이터 처리 실패] message={}", e.getMessage(), e);
         }
     }
+
 
     private List<WeatherPredictDto> getWeatherForecastForRegion(String regionName) {
         List<Integer> targetHours = List.of(9, 12, 15, 18, 21);
