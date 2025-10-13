@@ -72,7 +72,7 @@ public class MyAccountController {
     @CheckAuthenticatedUser
     public ResponseEntity<ApiResponse<String>> getLocation(@RequestHeader("Authorization") String accessTokenHeader,
                                                            @AuthenticationPrincipal Member member) {
-        String location = myAccountService.getLoccation(member);
+        String location = myAccountService.getLocation(member);
         return ApiResponse.success(HttpStatus.OK, location);
     }
 
