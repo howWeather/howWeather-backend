@@ -317,7 +317,6 @@ public class MyAccountService {
 
                 if (hasNewData) {
                     recommendationRepository.deleteByMemberIdAndDate(member.getId(), LocalDate.now());
-                    dto.setResult(results);
                     recommendationService.save(dto, member);
                     log.info("[추천 데이터 저장 완료] memberId={}", member.getId());
                 } else {
@@ -337,33 +336,22 @@ public class MyAccountService {
                             updatedResult.setTops(new ArrayList<>(rec.getTops()));
                             updatedResult.setOuters(new ArrayList<>(rec.getOuters()));
 
-                            Map<String, Integer> existingFeeling = rec.getPredictionMap();
+                            Map<String, Integer> updatedFeeling = new HashMap<>();
+                            for (WeatherPredictDto w : weatherForecast) {
+                                String hourKey = String.valueOf(w.getHour());
+                                Integer feeling = rec.getPredictionMap().get(hourKey);
+                                updatedFeeling.put(hourKey, feeling);
+                            }
 
-                            List<WeatherFeelingDto> feelingList = weatherForecast.stream()
-                                    .map(w -> WeatherFeelingDto.builder()
-                                            .date(LocalDate.now())
-                                            .time(w.getHour())
-                                            .temperature(w.getTemperature())
-                                            .feeling(existingFeeling.get(String.valueOf(w.getHour())))
-                                            .build())
-                                    .toList();
-
-                            updatedResult.setPredictFeeling(new HashMap<>(existingFeeling));
+                            updatedResult.setPredictFeeling(updatedFeeling);
                             updatedResults.add(updatedResult);
                         }
 
                         dto.setResult(updatedResults);
-
-                        try {
-                            recommendationService.save(dto, member);
-                            log.info("[새 위치 날씨 저장 완료] memberId={}", member.getId());
-                        } catch (Exception saveEx) {
-                            log.error("[추천 데이터 저장 중 예외 발생, 기존 데이터 유지] memberId={}, message={}",
-                                    member.getId(), saveEx.getMessage(), saveEx);
-                        }
+                        recommendationService.save(dto, member);
+                        log.info("[기존 데이터 온도 업데이트 완료] memberId={}", member.getId());
                     }
                 }
-
             }
 
         } catch (Exception e) {
