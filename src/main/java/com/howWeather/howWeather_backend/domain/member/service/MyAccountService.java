@@ -3,6 +3,7 @@ package com.howWeather.howWeather_backend.domain.member.service;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.howWeather.howWeather_backend.domain.ai_model.dto.AiPredictionRequestDto;
 import com.howWeather.howWeather_backend.domain.ai_model.dto.ModelClothingRecommendationDto;
+import com.howWeather.howWeather_backend.domain.ai_model.dto.ModelRecommendationResult;
 import com.howWeather.howWeather_backend.domain.ai_model.dto.WeatherPredictDto;
 import com.howWeather.howWeather_backend.domain.ai_model.repository.ClothingRecommendationRepository;
 import com.howWeather.howWeather_backend.domain.ai_model.schedular.DailyCombinationScheduler;
@@ -32,7 +33,8 @@ import java.time.LocalTime;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
+import java.util.Optional;
+import java.util.ArrayList;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -204,10 +206,17 @@ public class MyAccountService {
             }
 
             AiPredictionRequestDto dto = aiInternalService.makePredictRequest(member);
+
             if (dto == null) {
                 log.warn("[AI 예측 데이터 없음] memberId={}", member.getId());
                 return;
             }
+
+            List<WeatherPredictDto> sortedWeather = dto.getWeatherForecast().stream()
+                    .sorted(Comparator.comparingInt(WeatherPredictDto::getHour))
+                    .limit(5) 
+                    .toList();
+            dto.setWeatherForecast(sortedWeather);
 
             log.info("[AI 예측 DTO 확인] memberId={}, bodyType={}, weatherForecast={}, clothingCombinations={}",
                     member.getId(),
@@ -237,6 +246,7 @@ public class MyAccountService {
             log.error("[AI 예측 처리 실패] memberId={}, message={}", member.getId(), e.getMessage(), e);
         }
     }
+
 
     private void validateTimeForRegionChange() {
         LocalTime now = LocalTime.now();
@@ -303,9 +313,19 @@ public class MyAccountService {
                 Member member = memberRepository.findById(dto.getUserId())
                         .orElseThrow(() -> new CustomException(ErrorCode.ID_NOT_FOUND));
 
-                recommendationRepository.deleteByMemberIdAndDate(member.getId(), LocalDate.now());
-                recommendationService.save(dto, member);
-                log.info("[추천 데이터 저장 완료] memberId={}", member.getId());
+                List<ModelRecommendationResult> results = Optional.ofNullable(dto.getResult())
+                        .orElseGet(ArrayList::new);
+
+                boolean hasNewData = !results.isEmpty();
+
+                if (hasNewData) {
+                    recommendationRepository.deleteByMemberIdAndDate(member.getId(), LocalDate.now());
+                    dto.setResult(results);
+                    recommendationService.save(dto, member);
+                    log.info("[추천 데이터 저장 완료] memberId={}", member.getId());
+                } else {
+                    log.info("[예측 데이터 비어 있음] 기존 데이터 유지, memberId={}", member.getId());
+                }
             }
 
         } catch (Exception e) {
