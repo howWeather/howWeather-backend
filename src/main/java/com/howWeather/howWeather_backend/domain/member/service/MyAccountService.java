@@ -20,6 +20,7 @@ import com.howWeather.howWeather_backend.domain.weather.repository.WeatherForeca
 import com.howWeather.howWeather_backend.global.cipher.AESCipher;
 import com.howWeather.howWeather_backend.global.exception.CustomException;
 import com.howWeather.howWeather_backend.global.exception.ErrorCode;
+import jakarta.persistence.EntityManager;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
@@ -41,10 +42,10 @@ import org.springframework.web.client.RestTemplate;
 @Service
 @RequiredArgsConstructor
 public class MyAccountService {
+    private final EntityManager entityManager;
     private final WeatherForecastRepository weatherForecastRepository;
     private final MemberRepository memberRepository;
     private final ClothingRecommendationRepository recommendationRepository;
-    private final RecommendationService recommendationService;
     private final DailyCombinationScheduler dailyCombinationScheduler;
     private final AiInternalService aiInternalService;
     private final RestTemplate restTemplate;
@@ -320,6 +321,8 @@ public class MyAccountService {
                     }
 
                     log.info("[추천 데이터 저장 완료] memberId={}", member.getId());
+                    recommendationRepository.flush();
+                    entityManager.clear();
                 } else {
                     List<ClothingRecommendation> existingData =
                             recommendationRepository.findByMemberIdAndDate(member.getId(), LocalDate.now());
@@ -339,8 +342,9 @@ public class MyAccountService {
                                     .build();
 
                             recommendationRepository.save(updatedEntity);
-                            recommendationRepository.flush();
                         }
+                        recommendationRepository.flush();
+                        entityManager.clear();
 
                         log.info("[기존 데이터 지역명 업데이트 완료] memberId={}", member.getId());
                     }
@@ -352,6 +356,7 @@ public class MyAccountService {
             throw new CustomException(ErrorCode.UNKNOWN_ERROR, "지역명 업데이트 중 오류가 발생했습니다.");
         }
     }
+
     private ClothingRecommendation convertToEntityWithBuilder(ModelRecommendationResult dto, Long memberId, String regionName) {
         return ClothingRecommendation.builder()
                 .memberId(memberId)

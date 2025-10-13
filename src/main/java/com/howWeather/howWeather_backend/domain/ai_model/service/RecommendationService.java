@@ -49,7 +49,11 @@ public class RecommendationService {
         List<RecommendPredictDto> result = new ArrayList<>();
         for (ClothingRecommendation recommendation : modelPredictList) {
             RecommendPredictDto dto = makeResultForPredict(closet, recommendation, member);
-            if (dto.getUppersTypeList() != null && !dto.getUppersTypeList().isEmpty()) {
+
+            boolean isUppersExist = dto.getUppersTypeList() != null && !dto.getUppersTypeList().isEmpty();
+            boolean isFeelingExist = dto.getFeelingList() != null && !dto.getFeelingList().isEmpty();
+
+            if (isUppersExist && isFeelingExist) {
                 result.add(dto);
             }
         }
