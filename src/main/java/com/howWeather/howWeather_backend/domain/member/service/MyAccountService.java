@@ -1,10 +1,8 @@
 package com.howWeather.howWeather_backend.domain.member.service;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.howWeather.howWeather_backend.domain.ai_model.dto.AiPredictionRequestDto;
-import com.howWeather.howWeather_backend.domain.ai_model.dto.ModelClothingRecommendationDto;
-import com.howWeather.howWeather_backend.domain.ai_model.dto.ModelRecommendationResult;
-import com.howWeather.howWeather_backend.domain.ai_model.dto.WeatherPredictDto;
+import com.howWeather.howWeather_backend.domain.ai_model.dto.*;
+import com.howWeather.howWeather_backend.domain.ai_model.entity.ClothingRecommendation;
 import com.howWeather.howWeather_backend.domain.ai_model.repository.ClothingRecommendationRepository;
 import com.howWeather.howWeather_backend.domain.ai_model.schedular.DailyCombinationScheduler;
 import com.howWeather.howWeather_backend.domain.ai_model.service.AiInternalService;
@@ -16,7 +14,9 @@ import com.howWeather.howWeather_backend.domain.member.dto.RegionDto;
 import com.howWeather.howWeather_backend.domain.member.entity.Member;
 import com.howWeather.howWeather_backend.domain.member.repository.MemberRepository;
 import com.howWeather.howWeather_backend.domain.weather.entity.Region;
+import com.howWeather.howWeather_backend.domain.weather.entity.WeatherForecast;
 import com.howWeather.howWeather_backend.domain.weather.repository.RegionRepository;
+import com.howWeather.howWeather_backend.domain.weather.repository.WeatherForecastRepository;
 import com.howWeather.howWeather_backend.global.cipher.AESCipher;
 import com.howWeather.howWeather_backend.global.exception.CustomException;
 import com.howWeather.howWeather_backend.global.exception.ErrorCode;
@@ -35,6 +35,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.ArrayList;
+import java.util.stream.Collectors;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -44,6 +45,7 @@ import org.springframework.web.client.RestTemplate;
 @Service
 @RequiredArgsConstructor
 public class MyAccountService {
+    private final WeatherForecastRepository weatherForecastRepository;
     private final MemberRepository memberRepository;
     private final ClothingRecommendationRepository recommendationRepository;
     private final RecommendationService recommendationService;
@@ -184,7 +186,7 @@ public class MyAccountService {
                 persistedMember.changeRegion(newRegionName);
 
                 runDailyCombinationScheduler(persistedMember);
-                pushPredictionForSingleMember(persistedMember);
+                pushPredictionForSingleMember(persistedMember, newRegionName);
             }
 
         } catch (CustomException e) {
@@ -198,7 +200,7 @@ public class MyAccountService {
     /**
      * 단일 회원에 대해 스케줄러 AI 예측 전송 로직 재사용
      */
-    private void pushPredictionForSingleMember(Member member) {
+    private void pushPredictionForSingleMember(Member member, String region) {
         try {
             if (member.getCloset() == null) {
                 log.warn("[AI 예측 생략] memberId={} 클로젯 정보 없음", member.getId());
@@ -214,7 +216,6 @@ public class MyAccountService {
 
             List<WeatherPredictDto> sortedWeather = dto.getWeatherForecast().stream()
                     .sorted(Comparator.comparingInt(WeatherPredictDto::getHour))
-                    .limit(5) 
                     .toList();
             dto.setWeatherForecast(sortedWeather);
 
@@ -240,7 +241,7 @@ public class MyAccountService {
                         member.getId(), response.getStatusCode(), response.getBody());
             }
 
-            saveRecommendationsInternal(encryptedData);
+            saveRecommendationsInternal(encryptedData, region);
 
         } catch (Exception e) {
             log.error("[AI 예측 처리 실패] memberId={}, message={}", member.getId(), e.getMessage(), e);
@@ -297,7 +298,7 @@ public class MyAccountService {
         }
     }
 
-    private void saveRecommendationsInternal(Map<String, String> encryptedData) {
+    private void saveRecommendationsInternal(Map<String, String> encryptedData, String newRegionName) {
         try {
             if (encryptedData == null || encryptedData.isEmpty()) return;
 
@@ -319,12 +320,57 @@ public class MyAccountService {
                 boolean hasNewData = !results.isEmpty();
 
                 if (hasNewData) {
+                    // 새로운 데이터가 있으면 기존 데이터 삭제 후 저장
                     recommendationRepository.deleteByMemberIdAndDate(member.getId(), LocalDate.now());
                     dto.setResult(results);
                     recommendationService.save(dto, member);
                     log.info("[추천 데이터 저장 완료] memberId={}", member.getId());
                 } else {
-                    log.info("[예측 데이터 비어 있음] 기존 데이터 유지, memberId={}", member.getId());
+                    log.info("memberId={}", member.getId());
+
+                    List<ClothingRecommendation> existingData =
+                            recommendationRepository.findByMemberIdAndDate(member.getId(), LocalDate.now());
+
+                    if (!existingData.isEmpty()) {
+                        List<Integer> targetHours = List.of(9, 12, 15, 18, 21);
+                        List<WeatherPredictDto> weatherForecast = getWeatherForecastForRegion(newRegionName)
+                                .stream()
+                                .filter(w -> targetHours.contains(w.getHour()))
+                                .sorted(Comparator.comparingInt(WeatherPredictDto::getHour))
+                                .toList();
+
+                        List<ModelRecommendationResult> updatedResults = new ArrayList<>();
+
+                        for (ClothingRecommendation rec : existingData) {
+                            Map<String, Integer> predictionMap = rec.getPredictionMap();
+
+                            List<WeatherFeelingDto> feelingList = weatherForecast.stream()
+                                    .map(w -> WeatherFeelingDto.builder()
+                                            .date(LocalDate.now())
+                                            .time(w.getHour())
+                                            .temperature(w.getTemperature())
+                                            .feeling(predictionMap.getOrDefault(String.valueOf(w.getHour()), 2))
+                                            .build())
+                                    .toList();
+
+                            ModelRecommendationResult updatedResult = new ModelRecommendationResult();
+                            updatedResult.setTops(rec.getTops());
+                            updatedResult.setOuters(rec.getOuters());
+                            updatedResult.setPredictFeeling(
+                                    feelingList.stream()
+                                            .collect(Collectors.toMap(
+                                                    f -> String.valueOf(f.getTime()),
+                                                    WeatherFeelingDto::getFeeling
+                                            ))
+                            );
+
+                            updatedResults.add(updatedResult);
+                        }
+
+                        dto.setResult(updatedResults);
+                        recommendationService.save(dto, member);
+                        log.info("[새 위치 날씨 저장 완료] memberId={}", member.getId());
+                    }
                 }
             }
 
@@ -332,4 +378,23 @@ public class MyAccountService {
             log.error("[추천 데이터 저장 실패] message={}", e.getMessage(), e);
         }
     }
+
+    private List<WeatherPredictDto> getWeatherForecastForRegion(String regionName) {
+        List<Integer> targetHours = List.of(9, 12, 15, 18, 21);
+        List<WeatherForecast> forecasts = weatherForecastRepository
+                .findByRegionNameAndForecastDateAndHourIn(regionName, LocalDate.now(), targetHours);
+
+        return forecasts.stream()
+                .map(f -> WeatherPredictDto.builder()
+                        .hour(f.getHour())
+                        .temperature(f.getTemperature())
+                        .humidity(f.getHumidity())
+                        .windSpeed(f.getWindSpeed())
+                        .precipitation(f.getPrecipitation())
+                        .cloudAmount(f.getCloudAmount())
+                        .feelsLike(f.getFeelsLike())
+                        .build())
+                .collect(Collectors.toList());
+    }
+
 }
