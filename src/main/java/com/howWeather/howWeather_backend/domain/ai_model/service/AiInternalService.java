@@ -58,20 +58,41 @@ public class AiInternalService {
 
     private List<WeatherPredictDto> getWeatherForecast(Member member) {
         List<Integer> targetHours = List.of(9, 12, 15, 18, 21);
-
         String regionName = member.getRegionName() != null ? member.getRegionName() : "서울특별시 용산구";
 
+        LocalDate today = LocalDate.now();
+
         List<WeatherForecast> forecasts = weatherForecastRepository
-                .findByRegionNameAndForecastDateAndHourIn(regionName, LocalDate.now(), targetHours);
+                .findByRegionNameAndForecastDateAndHourInOrderByCreatedAtDesc(regionName, today, targetHours);
+
+        if (forecasts.isEmpty()) {
+            LocalDate yesterday = today.minusDays(1);
+            log.warn("[날씨 조회 재시도] 지역 {}에 대해 오늘({}) 데이터가 없어 어제({}) 날짜로 재시도합니다.",
+                    regionName, today, yesterday);
+
+            forecasts = weatherForecastRepository
+                    .findByRegionNameAndForecastDateAndHourInOrderByCreatedAtDesc(regionName, yesterday, targetHours);
+
+            if (forecasts.isEmpty()) {
+                log.error("[날씨 조회 최종 실패] 지역 {}에 대해 어제, 오늘 모두 예보 데이터가 없습니다.", regionName);
+            }
+        }
 
         log.info("[날씨 조회 결과] memberId={}, 지역: {}, 조회된 예보 개수: {}",
                 member.getId(), regionName, forecasts.size());
 
+        Map<Integer, WeatherForecast> hourToForecastMap = forecasts.stream()
+                .collect(Collectors.toMap(
+                        WeatherForecast::getHour,
+                        forecast -> forecast,
+                        (oldVal, newVal) -> oldVal
+                ));
 
-        return forecasts.stream()
+        return hourToForecastMap.values().stream()
                 .map(this::convertToDto)
                 .collect(Collectors.toList());
     }
+
 
     private WeatherPredictDto convertToDto(WeatherForecast forecast) {
         return WeatherPredictDto.builder()

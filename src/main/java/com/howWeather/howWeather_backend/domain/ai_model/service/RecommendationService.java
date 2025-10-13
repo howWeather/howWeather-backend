@@ -116,9 +116,7 @@ public class RecommendationService {
                                                        ClothingRecommendation recommendation) {
         List<WeatherFeelingDto> feelingList = new ArrayList<>();
 
-        LocalDate today = LocalDate.now();
-        LocalTime now = LocalTime.now();
-        LocalDate forecastDate = now.isBefore(LocalTime.of(6, 0)) ? today.minusDays(1) : today;
+        LocalDate forecastDate = recommendation.getDate();
 
         String regionName = recommendation.getRegionName();
 
@@ -127,13 +125,13 @@ public class RecommendationService {
                 .collect(Collectors.toList());
 
         List<WeatherForecast> forecasts = weatherForecastRepository
-                .findByRegionNameAndForecastDateAndHourIn(regionName, forecastDate, hours);
+                .findByRegionNameAndForecastDateAndHourInOrderByCreatedAtDesc(regionName, forecastDate, hours);
 
         Map<Integer, WeatherForecast> hourToForecastMap = forecasts.stream()
                 .collect(Collectors.toMap(
                         WeatherForecast::getHour,
                         forecast -> forecast,
-                        (oldVal, newVal) -> newVal
+                        (oldVal, newVal) -> oldVal
                 ));
 
         for (Map.Entry<String, Integer> entry : predictionMap.entrySet()) {
@@ -150,10 +148,9 @@ public class RecommendationService {
                         .build();
                 feelingList.add(dto);
             } else {
-                log.warn("날씨 데이터 없음: region={}, hour={}", regionName, hour);
+                log.warn("날씨 데이터 없음: region={}, date={}, hour={}", regionName, forecastDate, hour);
             }
         }
-
         return feelingList;
     }
 
