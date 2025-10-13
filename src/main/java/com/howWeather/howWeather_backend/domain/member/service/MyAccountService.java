@@ -1,6 +1,12 @@
 package com.howWeather.howWeather_backend.domain.member.service;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.howWeather.howWeather_backend.domain.ai_model.dto.AiPredictionRequestDto;
+import com.howWeather.howWeather_backend.domain.ai_model.dto.ModelClothingRecommendationDto;
+import com.howWeather.howWeather_backend.domain.ai_model.dto.ModelRecommendationResult;
+import com.howWeather.howWeather_backend.domain.ai_model.schedular.DailyCombinationScheduler;
 import com.howWeather.howWeather_backend.domain.ai_model.service.AiInternalService;
+import com.howWeather.howWeather_backend.domain.ai_model.service.RecommendationService;
 import com.howWeather.howWeather_backend.domain.member.dto.NicknameDto;
 import com.howWeather.howWeather_backend.domain.member.dto.ProfileChangeIntDto;
 import com.howWeather.howWeather_backend.domain.member.dto.ProfileDto;
@@ -9,22 +15,38 @@ import com.howWeather.howWeather_backend.domain.member.entity.Member;
 import com.howWeather.howWeather_backend.domain.member.repository.MemberRepository;
 import com.howWeather.howWeather_backend.domain.weather.entity.Region;
 import com.howWeather.howWeather_backend.domain.weather.repository.RegionRepository;
+import com.howWeather.howWeather_backend.global.cipher.AESCipher;
 import com.howWeather.howWeather_backend.global.exception.CustomException;
 import com.howWeather.howWeather_backend.global.exception.ErrorCode;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
 import java.time.LocalTime;
+import java.util.List;
+import java.util.Map;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.web.client.RestTemplate;
 
 @Slf4j
 @Service
 @RequiredArgsConstructor
 public class MyAccountService {
     private final MemberRepository memberRepository;
+    private final RecommendationService recommendationService;
+    private final DailyCombinationScheduler dailyCombinationScheduler;
     private final AiInternalService aiInternalService;
+    private final RestTemplate restTemplate;
+    private final ObjectMapper objectMapper;
     private final RegionRepository regionRepository;
+    private final AESCipher aesCipher;
+
+    @Value("${ai.server.url}")
+    private String aiServerUrl;
 
     @Transactional(readOnly = true)
     public ProfileDto getProfile(Member member) {
@@ -138,39 +160,81 @@ public class MyAccountService {
         }
     }
 
+//    @Transactional
+//    public void updateLocation(Member member, RegionDto regionDto) {
+//        try {
+//            LocalTime now = LocalTime.now();
+//            if (!now.isBefore(LocalTime.of(4, 00)) && now.isBefore(LocalTime.of(7, 0))) {
+//                throw new CustomException(ErrorCode.TIME_RESTRICTED_FOR_REGION_CHANGE);
+//            }
+//            validateRegion(regionDto.getRegionName());
+//
+//            Member persistedMember = memberRepository.findById(member.getId())
+//                    .orElseThrow(() -> new CustomException(ErrorCode.ID_NOT_FOUND, "회원 정보를 찾을 수 없습니다."));
+//
+//            String oldRegionName = persistedMember.getRegionName();
+//            String newRegionName = regionDto.getRegionName();
+//
+//            if (oldRegionName == null || !newRegionName.equals(oldRegionName)) {
+//                // 기존 카운트 처리
+//                if (oldRegionName != null) {
+//                    regionRepository.findByName(oldRegionName).ifPresent(Region::decrementCurrentUserCount);
+//                }
+//
+//                Region newRegion = regionRepository.findByName(newRegionName)
+//                        .orElseThrow(() -> new CustomException(ErrorCode.REGION_NOT_FOUND));
+//                newRegion.incrementCurrentUserCount();
+//                persistedMember.changeRegion(newRegionName);
+//
+//                try {
+//                    dailyCombinationScheduler.refreshDailyCombinations(persistedMember);
+//                } catch (Exception e) {
+//                    log.error("[스케줄러 호출 실패] memberId={}, message={}", persistedMember.getId(), e.getMessage(), e);
+//                }
+//
+//                try {
+//                    AiPredictionRequestDto predictionDto = aiInternalService.makePredictRequest(persistedMember);
+//                    if (predictionDto != null) {
+//                        String jsonData = objectMapper.writeValueAsString(List.of(predictionDto));
+//                        Map<String, String> encryptedData = aesCipher.encrypt(jsonData);
+//                        saveRecommendationsInternal(encryptedData);
+//                        log.info("[AI 예측 및 저장 완료] memberId={}, newRegion={}", persistedMember.getId(), newRegionName);
+//                    } else {
+//                        log.warn("[AI 예측 데이터 없음] memberId={}", persistedMember.getId());
+//                    }
+//                } catch (Exception e) {
+//                    log.error("[AI 예측 저장 실패] memberId={}, region={}, message={}",
+//                            persistedMember.getId(), newRegionName, e.getMessage(), e);
+//                }
+//            }
+//
+//        } catch (CustomException e) {
+//            throw e;
+//        } catch (Exception e) {
+//            log.error("지역 수정 중 에러 발생: {}", e.getMessage(), e);
+//            throw new CustomException(ErrorCode.UNKNOWN_ERROR, "지역 수정 중 오류가 발생했습니다.");
+//        }
+//    }
+
+
     @Transactional
     public void updateLocation(Member member, RegionDto regionDto) {
         try {
-            LocalTime now = LocalTime.now();
-            if (!now.isBefore(LocalTime.of(4, 00)) && now.isBefore(LocalTime.of(7, 0))) {
-                throw new CustomException(ErrorCode.TIME_RESTRICTED_FOR_REGION_CHANGE);
-            }
+            validateTimeForRegionChange();
             validateRegion(regionDto.getRegionName());
 
-            Member persistedMember = memberRepository.findById(member.getId())
-                    .orElseThrow(() -> new CustomException(ErrorCode.ID_NOT_FOUND, "회원 정보를 찾을 수 없습니다."));
-
+            Member persistedMember = findMemberOrThrow(member.getId());
             String oldRegionName = persistedMember.getRegionName();
             String newRegionName = regionDto.getRegionName();
 
-            if (oldRegionName == null || !newRegionName.equals(oldRegionName)) {
-                if (oldRegionName != null) {
-                    regionRepository.findByName(oldRegionName).ifPresent(Region::decrementCurrentUserCount);
-                }
-
-                Region newRegion = regionRepository.findByName(newRegionName)
-                        .orElseThrow(() -> new CustomException(ErrorCode.REGION_NOT_FOUND));
-                newRegion.incrementCurrentUserCount();
+            if (shouldUpdateRegion(oldRegionName, newRegionName)) {
+                updateRegionCount(persistedMember, oldRegionName, newRegionName);
                 persistedMember.changeRegion(newRegionName);
 
-                try {
-                    aiInternalService.makePredictRequest(persistedMember);
-                    log.info("[지역 변경 후 AI 예측 완료] memberId={}, newRegion={}", persistedMember.getId(), newRegionName);
-                } catch (Exception e) {
-                    log.error("[AI 예측 실패] memberId={}, region={}, message={}",
-                            persistedMember.getId(), newRegionName, e.getMessage(), e);
-                }
+                runDailyCombinationScheduler(persistedMember);
+                handleAiPrediction(persistedMember, newRegionName);
             }
+
         } catch (CustomException e) {
             throw e;
         } catch (Exception e) {
@@ -179,9 +243,118 @@ public class MyAccountService {
         }
     }
 
+    private void validateTimeForRegionChange() {
+        LocalTime now = LocalTime.now();
+        if (!now.isBefore(LocalTime.of(4, 0)) && now.isBefore(LocalTime.of(7, 0))) {
+            throw new CustomException(ErrorCode.TIME_RESTRICTED_FOR_REGION_CHANGE);
+        }
+    }
+
     private void validateRegion(String regionName) {
-        if (regionName == null || regionName.isEmpty() || !regionRepository.existsByName(regionName)) {
+        if (regionName == null || regionName.isBlank()) {
             throw new CustomException(ErrorCode.REGION_NOT_FOUND);
         }
     }
+
+    private Member findMemberOrThrow(Long memberId) {
+        return memberRepository.findById(memberId)
+                .orElseThrow(() -> new CustomException(ErrorCode.ID_NOT_FOUND, "회원 정보를 찾을 수 없습니다."));
+    }
+
+    private boolean shouldUpdateRegion(String oldRegionName, String newRegionName) {
+        return oldRegionName == null || !oldRegionName.equals(newRegionName);
+    }
+
+    private void updateRegionCount(Member member, String oldRegionName, String newRegionName) {
+        if (oldRegionName != null) {
+            regionRepository.findByName(oldRegionName).ifPresent(Region::decrementCurrentUserCount);
+        }
+        Region newRegion = regionRepository.findByName(newRegionName)
+                .orElseThrow(() -> new CustomException(ErrorCode.REGION_NOT_FOUND));
+        newRegion.incrementCurrentUserCount();
+    }
+
+    private void runDailyCombinationScheduler(Member member) {
+        try {
+            dailyCombinationScheduler.refreshDailyCombinations(member);
+        } catch (Exception e) {
+            log.error("[스케줄러 호출 실패] memberId={}, message={}", member.getId(), e.getMessage(), e);
+        }
+    }
+
+    private void handleAiPrediction(Member member, String newRegionName) {
+        if (member.getCloset() == null) {
+            log.warn("[AI 예측 생략] memberId={} 클로젯 정보 없음", member.getId());
+            return;
+        }
+
+        try {
+            AiPredictionRequestDto dto = aiInternalService.makePredictRequest(member);
+            if (dto == null) {
+                log.warn("[AI 예측 데이터 없음] memberId={}", member.getId());
+                return;
+            }
+
+            Map<String, String> encryptedData = encryptPredictionData(List.of(dto));
+            sendToAiServer(encryptedData);
+            saveRecommendationsInternal(encryptedData);
+
+            log.info("[AI 예측 데이터 전송 + 저장 완료] memberId={}, newRegion={}", member.getId(), newRegionName);
+
+        } catch (Exception e) {
+            log.error("[AI 예측 처리 실패] memberId={}, message={}", member.getId(), e.getMessage(), e);
+        }
+    }
+
+    private Map<String, String> encryptPredictionData(List<AiPredictionRequestDto> dtos) {
+        try {
+            String jsonData = objectMapper.writeValueAsString(dtos);
+            return aesCipher.encrypt(jsonData);
+        } catch (Exception e) {
+            log.error("[암호화 실패] message={}", e.getMessage(), e);
+            return Map.of();
+        }
+    }
+
+    private void sendToAiServer(Map<String, String> encryptedData) {
+        try {
+            HttpHeaders headers = new HttpHeaders();
+            headers.setContentType(MediaType.APPLICATION_JSON);
+            HttpEntity<Map<String, String>> requestEntity = new HttpEntity<>(encryptedData, headers);
+
+            ResponseEntity<String> response = restTemplate.postForEntity(aiServerUrl, requestEntity, String.class);
+
+            if (!response.getStatusCode().is2xxSuccessful()) {
+                log.warn("[AI 서버 전송 실패] status={}, body={}", response.getStatusCode(), response.getBody());
+            }
+        } catch (Exception e) {
+            log.error("[AI 서버 전송 실패] message={}", e.getMessage(), e);
+        }
+    }
+
+    private void saveRecommendationsInternal(Map<String, String> encryptedData) {
+        try {
+            if (encryptedData == null || encryptedData.isEmpty()) return;
+
+            String decryptedJson = aesCipher.decrypt(encryptedData);
+            if (decryptedJson.startsWith("\"") && decryptedJson.endsWith("\"")) {
+                decryptedJson = objectMapper.readValue(decryptedJson, String.class);
+            }
+
+            ModelClothingRecommendationDto[] dtoArray = objectMapper.readValue(
+                    decryptedJson, ModelClothingRecommendationDto[].class);
+
+            for (ModelClothingRecommendationDto dto : dtoArray) {
+                Member member = memberRepository.findById(dto.getUserId())
+                        .orElseThrow(() -> new CustomException(ErrorCode.ID_NOT_FOUND));
+
+                recommendationService.save(dto, member);
+                log.info("[추천 데이터 저장 완료] memberId={}", member.getId());
+            }
+
+        } catch (Exception e) {
+            log.error("[추천 데이터 저장 실패] message={}", e.getMessage(), e);
+        }
+    }
+
 }
