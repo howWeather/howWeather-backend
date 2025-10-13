@@ -375,8 +375,23 @@ public class MyAccountService {
 
     private List<WeatherPredictDto> getWeatherForecastForRegion(String regionName) {
         List<Integer> targetHours = List.of(9, 12, 15, 18, 21);
+        LocalDate today = LocalDate.now();
+
         List<WeatherForecast> forecasts = weatherForecastRepository
-                .findByRegionNameAndForecastDateAndHourIn(regionName, LocalDate.now(), targetHours);
+                .findByRegionNameAndForecastDateAndHourIn(regionName, today, targetHours);
+
+        if (forecasts.isEmpty()) {
+            LocalDate yesterday = today.minusDays(1);
+            log.warn("[날씨 조회 재시도] 지역 {}에 대해 오늘({}) 데이터가 없어 어제({}) 날짜로 재시도합니다.",
+                    regionName, today, yesterday);
+
+            forecasts = weatherForecastRepository
+                    .findByRegionNameAndForecastDateAndHourIn(regionName, yesterday, targetHours);
+
+            if (forecasts.isEmpty()) {
+                log.error("[날씨 조회 최종 실패] 지역 {}에 대해 어제, 오늘 모두 예보 데이터가 없습니다.", regionName);
+            }
+        }
 
         return forecasts.stream()
                 .map(f -> WeatherPredictDto.builder()
