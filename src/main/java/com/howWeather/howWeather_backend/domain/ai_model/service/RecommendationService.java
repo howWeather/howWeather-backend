@@ -44,20 +44,110 @@ public class RecommendationService {
         LocalDate targetDate = now.isBefore(LocalTime.of(6, 0)) ? today.minusDays(1) : today;
 
         List<ClothingRecommendation> modelPredictList = getModelPrediction(member.getId(), targetDate);
-
-        Closet closet = getClosetWithAll(member);
         List<RecommendPredictDto> result = new ArrayList<>();
-        for (ClothingRecommendation recommendation : modelPredictList) {
-            RecommendPredictDto dto = makeResultForPredict(closet, recommendation, member);
-
-            boolean isUppersExist = dto.getUppersTypeList() != null && !dto.getUppersTypeList().isEmpty();
-            boolean isFeelingExist = dto.getFeelingList() != null && !dto.getFeelingList().isEmpty();
-
-            if (isUppersExist && isFeelingExist) {
-                result.add(dto);
+        Closet closet = getClosetWithAll(member);
+        if (!modelPredictList.isEmpty()) {
+            log.info("[AI 추천] memberId={} AI 예측 결과 사용 ({}개)", member.getId(), modelPredictList.size());
+            for (ClothingRecommendation recommendation : modelPredictList) {
+                RecommendPredictDto dto = makeResultForPredict(closet, recommendation, member);
+                boolean isUppersExist = dto.getUppersTypeList() != null && !dto.getUppersTypeList().isEmpty();
+                boolean isFeelingExist = dto.getFeelingList() != null && !dto.getFeelingList().isEmpty();
+                if (isUppersExist && isFeelingExist) {
+                    result.add(dto);
+                }
             }
+        } else {
+            result.addAll(generateFallbackRecommendation(member, targetDate, closet));
         }
+
         return result;
+    }
+
+    private List<RecommendPredictDto> generateFallbackRecommendation(Member member, LocalDate targetDate, Closet closet) {
+        log.warn("[Fallback 추천] memberId={} AI 예측 결과 없음. 대체 추천 로직 시작.", member.getId());
+        List<RecommendPredictDto> fallbackResult = new ArrayList<>();
+
+        try {
+            final Long MIN_OUTER_TYPE = 10L;
+            final Long MAX_OUTER_TYPE = 25L;
+            final Long MIN_UPPER_TYPE = 3L;
+            final Long MAX_UPPER_TYPE = 9L;
+
+            List<Integer> fallbackOuterTypes = closet.getOuterList().stream()
+                    .filter(Outer::isActive)
+                    .filter(outer -> outer.getOuterType() != null &&
+                            outer.getOuterType() >= MIN_OUTER_TYPE &&
+                            outer.getOuterType() <= MAX_OUTER_TYPE)
+                    .map(outer -> outer.getOuterType().intValue())
+                    .distinct()
+                    .collect(Collectors.toList());
+
+            List<Integer> fallbackUpperTypes = closet.getUpperList().stream()
+                    .filter(Upper::isActive)
+                    .filter(upper -> upper.getUpperType() != null &&
+                            upper.getUpperType() >= MIN_UPPER_TYPE &&
+                            upper.getUpperType() <= MAX_UPPER_TYPE)
+                    .map(upper -> upper.getUpperType().intValue())
+                    .distinct()
+                    .collect(Collectors.toList());
+
+            if (fallbackOuterTypes.isEmpty() && fallbackUpperTypes.isEmpty()) {
+                log.info("[Fallback 추천] memberId={} 추천할 활성 상의 또는 아우터 없음 (기준: Upper {}-{}, Outer {}-{}). 예외 발생.",
+                        member.getId(), MIN_UPPER_TYPE, MAX_UPPER_TYPE, MIN_OUTER_TYPE, MAX_OUTER_TYPE);
+                throw new CustomException(ErrorCode.NO_PREDICT_DATA);
+            }
+
+            List<WeatherFeelingDto> fallbackFeelingList = createFallbackFeelingList(member, targetDate);
+
+            RecommendPredictDto fallbackDto = RecommendPredictDto.builder()
+                    .feelingList(fallbackFeelingList)
+                    .uppersTypeList(fallbackUpperTypes)
+                    .outersTypeList(fallbackOuterTypes)
+                    .build();
+            fallbackResult.add(fallbackDto);
+            log.info("[Fallback 추천] memberId={} 최종 추천 결과: Uppers={}, Outers={}, FeelingsGenerated={}",
+                    member.getId(), fallbackUpperTypes, fallbackOuterTypes, !fallbackFeelingList.isEmpty());
+
+        } catch (CustomException e) {
+            log.error("[Fallback 추천 실패] memberId={} 처리 중 Custom 오류: {}", member.getId(), e.getMessage());
+            throw new CustomException(ErrorCode.NO_PREDICT_DATA);
+        } catch (Exception e) {
+            log.error("[Fallback 추천 실패] memberId={} 알 수 없는 오류 발생: {}", member.getId(), e.getMessage(), e);
+            throw new CustomException(ErrorCode.NO_PREDICT_DATA);
+        }
+
+        return fallbackResult;
+    }
+
+    private List<WeatherFeelingDto> createFallbackFeelingList(Member member, LocalDate targetDate) {
+        List<WeatherFeelingDto> fallbackFeelingList = new ArrayList<>();
+        String regionName = member.getRegionName() != null ? member.getRegionName() : "서울특별시 용산구";
+        List<Integer> targetHours = List.of(9, 12, 15, 18, 21);
+        final int DEFAULT_FEELING = 2;
+
+        try {
+            List<WeatherForecast> forecasts = weatherForecastRepository
+                    .findByRegionNameAndForecastDateAndHourInOrderByHourAsc(regionName, targetDate, targetHours);
+
+            if (!forecasts.isEmpty()) {
+                for (WeatherForecast forecast : forecasts) {
+                    WeatherFeelingDto dto = WeatherFeelingDto.builder()
+                            .date(forecast.getForecastDate())
+                            .time(forecast.getHour())
+                            .feeling(DEFAULT_FEELING)
+                            .temperature(forecast.getTemperature())
+                            .build();
+                    fallbackFeelingList.add(dto);
+                }
+                log.info("[Fallback 추천] memberId={} 기본 체감온도(2)로 그래프 생성 완료 ({}개 시간대)", member.getId(), fallbackFeelingList.size());
+            } else {
+                log.warn("[Fallback 추천] memberId={} 날씨 예보 데이터가 없어 체감온도 그래프를 생성할 수 없습니다. region={}, date={}, hours={}",
+                        member.getId(), regionName, targetDate, targetHours);
+            }
+        } catch (Exception e) {
+            log.error("[Fallback 추천] memberId={} 날씨 예보 조회 중 오류 발생: {}", member.getId(), e.getMessage(), e);
+        }
+        return fallbackFeelingList;
     }
 
     private RecommendPredictDto makeResultForPredict(Closet closet, ClothingRecommendation recommendation, Member member) {
@@ -83,7 +173,9 @@ public class RecommendationService {
         if (outers.isEmpty()) return new ArrayList<>();
 
         Set<Long> ownedClothTypes = closet.getOuterList().stream()
+                .filter(Outer::isActive)
                 .map(Outer::getOuterType)
+                .filter(Objects::nonNull)
                 .collect(Collectors.toSet());
 
         Set<Integer> resultSet = new HashSet<>();
@@ -101,7 +193,9 @@ public class RecommendationService {
 
     private List<Integer> makeUpperList(Closet closet, List<Integer> tops) {
         Set<Long> ownedClothTypes = closet.getUpperList().stream()
+                .filter(Upper::isActive)
                 .map(Upper::getUpperType)
+                .filter(Objects::nonNull)
                 .collect(Collectors.toSet());
 
         Set<Integer> resultSet = new HashSet<>();
@@ -119,52 +213,42 @@ public class RecommendationService {
     private List<WeatherFeelingDto> makeWeatherFeeling(Map<String, Integer> predictionMap,
                                                        ClothingRecommendation recommendation) {
         List<WeatherFeelingDto> feelingList = new ArrayList<>();
-
         LocalDate forecastDate = recommendation.getDate();
-
         String regionName = recommendation.getRegionName();
 
-        List<Integer> hours = predictionMap.keySet().stream()
-                .map(Integer::parseInt)
-                .collect(Collectors.toList());
+        List<Integer> targetHours = List.of(9, 12, 15, 18, 21);
 
         List<WeatherForecast> forecasts = weatherForecastRepository
-                .findByRegionNameAndForecastDateAndHourInOrderByCreatedAtDesc(regionName, forecastDate, hours);
+                .findByRegionNameAndForecastDateAndHourInOrderByHourAsc(regionName, forecastDate, targetHours);
 
-        Map<Integer, WeatherForecast> hourToForecastMap = forecasts.stream()
-                .collect(Collectors.toMap(
-                        WeatherForecast::getHour,
-                        forecast -> forecast,
-                        (oldVal, newVal) -> oldVal
-                ));
+        Map<String, Integer> safePredictionMap = Optional.ofNullable(predictionMap).orElseGet(Collections::emptyMap);
+        final int DEFAULT_FEELING = 2;
 
-        for (Map.Entry<String, Integer> entry : predictionMap.entrySet()) {
-            int hour = Integer.parseInt(entry.getKey());
-            int feeling = entry.getValue();
-            WeatherForecast forecast = hourToForecastMap.get(hour);
+        for (WeatherForecast forecast : forecasts) {
+            int hour = forecast.getHour();
+            int feeling = safePredictionMap.getOrDefault(String.valueOf(hour), DEFAULT_FEELING);
 
-            if (forecast != null) {
-                WeatherFeelingDto dto = WeatherFeelingDto.builder()
-                        .date(forecast.getForecastDate())
-                        .time(hour)
-                        .feeling(feeling)
-                        .temperature(forecast.getTemperature())
-                        .build();
-                feelingList.add(dto);
-            } else {
-                log.warn("날씨 데이터 없음: region={}, date={}, hour={}", regionName, forecastDate, hour);
+            WeatherFeelingDto dto = WeatherFeelingDto.builder()
+                    .date(forecast.getForecastDate())
+                    .time(hour)
+                    .feeling(feeling)
+                    .temperature(forecast.getTemperature())
+                    .build();
+            feelingList.add(dto);
+
+            if (feeling == DEFAULT_FEELING && !safePredictionMap.containsKey(String.valueOf(hour))) {
+                log.debug("AI 체감온도 예측값 없음. 기본값(2) 사용: region={}, date={}, hour={}", regionName, forecastDate, hour);
             }
+        }
+
+        if (forecasts.isEmpty()) {
+            log.warn("날씨 예보 데이터 없음: region={}, date={}, hours={}", regionName, forecastDate, targetHours);
         }
         return feelingList;
     }
 
-
     private List<ClothingRecommendation> getModelPrediction(Long id, LocalDate now) {
-        List<ClothingRecommendation> list = clothingRecommendationRepository.findByMemberIdAndDate(id, now);
-        if (list.isEmpty()) {
-            throw new CustomException(ErrorCode.NO_PREDICT_DATA);
-        }
-        return list;
+        return clothingRecommendationRepository.findByMemberIdAndDate(id, now);
     }
 
     @Transactional
@@ -195,7 +279,6 @@ public class RecommendationService {
             throw new CustomException(ErrorCode.UNKNOWN_ERROR, "예측 결과 저장 중 오류가 발생했습니다.");
         }
     }
-
 
     private Closet getClosetWithAll(Member member) {
         Closet closetWithUppers = closetRepository.findClosetWithUppers(member.getId())
