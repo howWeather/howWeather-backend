@@ -303,10 +303,26 @@ public class MyAccountService {
 
     @Transactional
     public void saveRecommendationsInternal(Map<String, String> encryptedData, String newRegionName) {
-        if (encryptedData == null || encryptedData.isEmpty()) return;
+        if (encryptedData == null || encryptedData.isEmpty()) {
+            log.warn("[추천 데이터 처리 중단] 전달된 데이터 맵이 null이거나 비어있습니다.");
+            return;
+        }
+
+        if (!encryptedData.containsKey("iv") || !encryptedData.containsKey("payload")) {
+            log.warn("[추천 데이터 처리 중단] AI 응답 Map에 복호화에 필요한 'iv' 또는 'payload' 키가 없습니다. 응답: {}", encryptedData);
+            return;
+        }
+
+        String iv = encryptedData.get("iv");
+        String payload = encryptedData.get("payload");
+        if (iv == null || iv.isBlank() || payload == null || payload.isBlank()) {
+            log.warn("[추천 데이터 처리 중단] AI 응답 Map의 'iv' 또는 'payload' 값이 null이거나 비어있습니다. 응답: {}", encryptedData);
+            return;
+        }
 
         try {
             String decryptedJson = aesCipher.decrypt(encryptedData);
+
             if (decryptedJson.startsWith("\"") && decryptedJson.endsWith("\"")) {
                 decryptedJson = objectMapper.readValue(decryptedJson, String.class);
             }
@@ -330,6 +346,7 @@ public class MyAccountService {
                     }
 
                     log.info("[추천 데이터 저장 완료] memberId={}", member.getId());
+
                     recommendationRepository.flush();
                     entityManager.clear();
                 } else {
@@ -337,9 +354,9 @@ public class MyAccountService {
                             recommendationRepository.findByMemberIdAndDate(member.getId(), LocalDate.now());
 
                     if (!existingData.isEmpty()) {
-
                         for (ClothingRecommendation rec : existingData) {
                             Map<String, Integer> updatedPrediction = new HashMap<>(rec.getPredictionMap());
+
                             ClothingRecommendation updatedEntity = ClothingRecommendation.builder()
                                     .id(rec.getId())
                                     .memberId(rec.getMemberId())
@@ -356,12 +373,17 @@ public class MyAccountService {
                         entityManager.clear();
 
                         log.info("[기존 데이터 지역명 업데이트 완료] memberId={}", member.getId());
+                    } else {
+                        log.info("[기존 데이터 없음] AI 결과가 비어있고 업데이트할 기존 데이터도 없습니다. memberId={}", member.getId());
                     }
                 }
             }
 
+        } catch (CustomException e) {
+            log.error("[추천 데이터 처리 실패] KNOWN_ERROR - memberId={} message={}", encryptedData.get("userId"), e.getMessage(), e);
+            throw e;
         } catch (Exception e) {
-            log.error("[추천 데이터 처리 실패] message={}", e.getMessage(), e);
+            log.error("[추천 데이터 처리 실패] UNKNOWN_ERROR - message={}", e.getMessage(), e);
             throw new CustomException(ErrorCode.UNKNOWN_ERROR, "지역명 업데이트 중 오류가 발생했습니다.");
         }
     }
