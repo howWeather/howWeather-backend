@@ -239,6 +239,12 @@ public class MyAccountService {
             }
 
             Map<String, String> encryptedResponseData = response.getBody();
+
+            log.info("[AI 서버 응답 본문] memberId={}, body={}", member.getId(), encryptedResponseData);
+            if (encryptedResponseData == null || encryptedResponseData.isEmpty()) {
+                log.warn("[AI 서버 응답 없음] memberId={}, 응답 본문이 null이거나 비어있습니다.", member.getId());
+                return;
+            }
             saveRecommendationsInternal(encryptedResponseData, region);
 
         } catch (Exception e) {
