@@ -68,8 +68,8 @@ public class RecommendationService {
         List<RecommendPredictDto> fallbackResult = new ArrayList<>();
 
         try {
-            final Long MIN_OUTER_TYPE = 10L;
-            final Long MAX_OUTER_TYPE = 25L;
+            final Long MIN_OUTER_TYPE = 4L;
+            final Long MAX_OUTER_TYPE = 17L;
             final Long MIN_UPPER_TYPE = 3L;
             final Long MAX_UPPER_TYPE = 9L;
 
