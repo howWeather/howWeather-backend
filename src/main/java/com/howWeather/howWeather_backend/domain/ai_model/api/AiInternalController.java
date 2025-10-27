@@ -39,8 +39,6 @@ public class AiInternalController {
     private final AESCipher aesCipher;
     private final ObjectMapper objectMapper;
 
-    private final ClosetRepository closetRepository;
-
     @PostMapping("/aes-prediction")
     public ResponseEntity<Map<String, String>> sendAllUsersPredictionDataSecure() {
         try {
