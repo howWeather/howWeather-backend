@@ -227,16 +227,19 @@ public class MyAccountService {
             HttpHeaders headers = new HttpHeaders();
             headers.setContentType(MediaType.APPLICATION_JSON);
             HttpEntity<Map<String, String>> requestEntity = new HttpEntity<>(encryptedData, headers);
-            ResponseEntity<String> response = restTemplate.postForEntity(aiServerUrl, requestEntity, String.class);
+
+            ResponseEntity<Map> response = restTemplate.postForEntity(aiServerUrl, requestEntity, Map.class);
 
             if (response.getStatusCode().is2xxSuccessful()) {
                 log.info("[AI 예측 전송 완료] memberId={}, 응답={}", member.getId(), response.getStatusCode());
             } else {
                 log.warn("[AI 서버 응답 실패] memberId={}, 상태코드={}, 본문={}",
                         member.getId(), response.getStatusCode(), response.getBody());
+                return;
             }
 
-            saveRecommendationsInternal(encryptedData, region);
+            Map<String, String> encryptedResponseData = response.getBody();
+            saveRecommendationsInternal(encryptedResponseData, region);
 
         } catch (Exception e) {
             log.error("[AI 예측 처리 실패] memberId={}, message={}", member.getId(), e.getMessage(), e);
