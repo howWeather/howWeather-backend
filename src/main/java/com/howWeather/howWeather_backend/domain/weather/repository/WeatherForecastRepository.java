@@ -22,4 +22,6 @@ public interface WeatherForecastRepository extends JpaRepository<WeatherForecast
     void deleteByForecastDateGreaterThanEqual(LocalDate baseDate);
 
     List<WeatherForecast> findByRegionNameAndForecastDateAndHourIn(String regionName, LocalDate now, List<Integer> targetHours);
+
+    List<WeatherForecast> findByRegionNameAndForecastDateAndHourInOrderByHourAsc(String regionName, LocalDate forecastDate, List<Integer> targetHours);
 }
