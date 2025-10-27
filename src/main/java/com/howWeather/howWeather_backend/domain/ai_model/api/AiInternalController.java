@@ -126,18 +126,6 @@ public class AiInternalController {
     }
 
     // TODO : 테스트용 추후 삭제
-    @GetMapping("/refresh-mark")
-    @Transactional
-    public ResponseEntity<String> refreshClosetMark() {
-        List<Closet> closets = closetRepository.findAll();
-        for (Closet closet : closets) {
-            closet.markNeedsRefresh();
-        }
-        log.info("모든 Closet의 needsCombinationRefresh를 true로 초기화 완료");
-        return ResponseEntity.ok("모든 Closet의 needsCombinationRefresh가 true로 초기화되었습니다.");
-    }
-
-    // TODO : 테스트용 추후 삭제
     @GetMapping("/test-prediction-data")
     public ResponseEntity<List<AiPredictionRequestDto>> getAllUsersPredictionDataForTest() {
         try {
