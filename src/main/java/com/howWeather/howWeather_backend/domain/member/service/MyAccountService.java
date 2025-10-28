@@ -194,10 +194,8 @@ public class MyAccountService {
         }
     }
 
-    /**
-     * 단일 회원에 대해 스케줄러 AI 예측 전송 로직 재사용
-     */
     private void pushPredictionForSingleMember(Member member, String region) {
+        log.info("[Service pushPrediction START] memberId={}, region={}", member.getId(), region);
         try {
             if (member.getCloset() == null) {
                 log.warn("[AI 예측 생략] memberId={} 클로젯 정보 없음", member.getId());
@@ -222,17 +220,20 @@ public class MyAccountService {
                     dto.getClothingCombinations());
 
             Map<String, String> encryptedData = encryptPredictionData(List.of(dto));
-            if (encryptedData == null || encryptedData.isEmpty()) return;
+            if (encryptedData == null || encryptedData.isEmpty()) {
+                log.warn("[Service pushPrediction] 암호화된 예측 데이터가 비어있어 전송 중단. memberId={}", member.getId());
+                return;
+            }
 
             HttpHeaders headers = new HttpHeaders();
             headers.setContentType(MediaType.APPLICATION_JSON);
             HttpEntity<Map<String, String>> requestEntity = new HttpEntity<>(encryptedData, headers);
 
+            log.info("[Service pushPrediction] AI 서버({})로 예측 요청 전송 시작. memberId={}", aiServerUrl, member.getId());
             ResponseEntity<Map> response = restTemplate.postForEntity(aiServerUrl, requestEntity, Map.class);
+            log.info("[Service pushPrediction] AI 서버 응답 수신 완료. memberId={}, statusCode={}", member.getId(), response.getStatusCode());
 
-            if (response.getStatusCode().is2xxSuccessful()) {
-                log.info("[AI 예측 전송 완료] memberId={}, 응답={}", member.getId(), response.getStatusCode());
-            } else {
+            if (!response.getStatusCode().is2xxSuccessful()) {
                 log.warn("[AI 서버 응답 실패] memberId={}, 상태코드={}, 본문={}",
                         member.getId(), response.getStatusCode(), response.getBody());
                 return;
@@ -245,10 +246,16 @@ public class MyAccountService {
                 log.warn("[AI 서버 응답 없음] memberId={}, 응답 본문이 null이거나 비어있습니다.", member.getId());
                 return;
             }
+
+
+            log.info("[Service pushPrediction] saveRecommendationsInternal 호출 시작. memberId={}", member.getId());
             saveRecommendationsInternal(encryptedResponseData, region);
+            log.info("[Service pushPrediction] saveRecommendationsInternal 호출 완료. memberId={}", member.getId());
+            log.info("[Service pushPrediction END] memberId={}", member.getId());
 
         } catch (Exception e) {
-            log.error("[AI 예측 처리 실패] memberId={}, message={}", member.getId(), e.getMessage(), e);
+            log.error("[Service pushPrediction ERROR] memberId={}, message={}", member.getId(), e.getMessage(), e);
+
         }
     }
 
@@ -303,16 +310,19 @@ public class MyAccountService {
 
     @Transactional
     public void saveRecommendationsInternal(Map<String, String> encryptedData, String newRegionName) {
+        log.info("[Service saveInternal START] region={}, encryptedData keys={}, iv_present={}, payload_present={}",
+                newRegionName, encryptedData != null ? encryptedData.keySet() : "null",
+                encryptedData != null && encryptedData.containsKey("iv"),
+                encryptedData != null && encryptedData.containsKey("payload"));
+
         if (encryptedData == null || encryptedData.isEmpty()) {
             log.warn("[추천 데이터 처리 중단] 전달된 데이터 맵이 null이거나 비어있습니다.");
             return;
         }
-
         if (!encryptedData.containsKey("iv") || !encryptedData.containsKey("payload")) {
             log.warn("[추천 데이터 처리 중단] AI 응답 Map에 복호화에 필요한 'iv' 또는 'payload' 키가 없습니다. 응답: {}", encryptedData);
             return;
         }
-
         String iv = encryptedData.get("iv");
         String payload = encryptedData.get("payload");
         if (iv == null || iv.isBlank() || payload == null || payload.isBlank()) {
@@ -320,15 +330,22 @@ public class MyAccountService {
             return;
         }
 
+        String decryptedJson = null;
         try {
-            String decryptedJson = aesCipher.decrypt(encryptedData);
+            log.debug("[Service saveInternal] 복호화 시도...");
+            decryptedJson = aesCipher.decrypt(encryptedData);
+            log.info("[Service saveInternal] 복호화 성공. JSON 길이={}", decryptedJson != null ? decryptedJson.length() : "null");
 
-            if (decryptedJson.startsWith("\"") && decryptedJson.endsWith("\"")) {
+            if (decryptedJson != null && decryptedJson.startsWith("\"") && decryptedJson.endsWith("\"")) {
+                log.debug("[Service saveInternal] 이중 따옴표 제거 처리...");
                 decryptedJson = objectMapper.readValue(decryptedJson, String.class);
+                log.debug("[Service saveInternal] 이중 따옴표 제거 완료. JSON 길이={}", decryptedJson != null ? decryptedJson.length() : "null");
             }
 
+            log.info("[Service saveInternal] JSON 파싱 시도 (ModelClothingRecommendationDto[])...");
             ModelClothingRecommendationDto[] dtoArray = objectMapper.readValue(
                     decryptedJson, ModelClothingRecommendationDto[].class);
+            log.info("[Service saveInternal] JSON 파싱 성공. DTO 개수={}", dtoArray != null ? dtoArray.length : 0);
 
             for (ModelClothingRecommendationDto dto : dtoArray) {
                 Member member = memberRepository.findById(dto.getUserId())
@@ -338,22 +355,24 @@ public class MyAccountService {
                         .orElseGet(ArrayList::new);
 
                 if (!results.isEmpty()) {
+                    log.info("[Service saveInternal] memberId={} 에 대한 새 추천 결과 {}개 발견. 기존 데이터 삭제 후 저장 시작.", member.getId(), results.size());
                     recommendationRepository.deleteByMemberIdAndDate(member.getId(), LocalDate.now());
 
                     for (ModelRecommendationResult r : results) {
                         ClothingRecommendation entity = convertToEntityWithBuilder(r, member.getId(), newRegionName);
                         recommendationRepository.save(entity);
                     }
-
                     log.info("[추천 데이터 저장 완료] memberId={}", member.getId());
-
                     recommendationRepository.flush();
                     entityManager.clear();
-                } else {
+                }
+                else {
+                    log.info("[Service saveInternal] memberId={} 에 대한 AI 결과 없음. 기존 데이터 지역명 업데이트 시도.", member.getId());
                     List<ClothingRecommendation> existingData =
                             recommendationRepository.findByMemberIdAndDate(member.getId(), LocalDate.now());
 
                     if (!existingData.isEmpty()) {
+                        log.info("[Service saveInternal] memberId={} 기존 데이터 {}개 발견. 지역명 업데이트 시작.", member.getId(), existingData.size());
                         for (ClothingRecommendation rec : existingData) {
                             Map<String, Integer> updatedPrediction = new HashMap<>(rec.getPredictionMap());
 
@@ -366,24 +385,24 @@ public class MyAccountService {
                                     .predictionMap(updatedPrediction)
                                     .date(LocalDate.now())
                                     .build();
-
                             recommendationRepository.save(updatedEntity);
                         }
                         recommendationRepository.flush();
                         entityManager.clear();
-
                         log.info("[기존 데이터 지역명 업데이트 완료] memberId={}", member.getId());
                     } else {
                         log.info("[기존 데이터 없음] AI 결과가 비어있고 업데이트할 기존 데이터도 없습니다. memberId={}", member.getId());
                     }
                 }
             }
+            log.info("[Service saveInternal END] region={}", newRegionName);
 
         } catch (CustomException e) {
-            log.error("[추천 데이터 처리 실패] KNOWN_ERROR - memberId={} message={}", encryptedData.get("userId"), e.getMessage(), e);
+            log.warn("[Service saveInternal WARN] region={}, CustomException: {}", newRegionName, e.getMessage());
             throw e;
         } catch (Exception e) {
-            log.error("[추천 데이터 처리 실패] UNKNOWN_ERROR - message={}", e.getMessage(), e);
+            log.error("[Service saveInternal ERROR] region={}, Unexpected Exception: {}", newRegionName, e.getMessage(), e);
+            log.error("[Service saveInternal ERROR] Failed to parse JSON (first 200 chars): {}", decryptedJson != null && decryptedJson.length() > 200 ? decryptedJson.substring(0, 200) : decryptedJson);
             throw new CustomException(ErrorCode.UNKNOWN_ERROR, "지역명 업데이트 중 오류가 발생했습니다.");
         }
     }
@@ -397,38 +416,5 @@ public class MyAccountService {
                 .predictionMap(new HashMap<>(dto.getPredictFeeling()))
                 .date(LocalDate.now())
                 .build();
-    }
-
-    private List<WeatherPredictDto> getWeatherForecastForRegion(String regionName) {
-        List<Integer> targetHours = List.of(9, 12, 15, 18, 21);
-        LocalDate today = LocalDate.now();
-
-        List<WeatherForecast> forecasts = weatherForecastRepository
-                .findByRegionNameAndForecastDateAndHourIn(regionName, today, targetHours);
-
-        if (forecasts.isEmpty()) {
-            LocalDate yesterday = today.minusDays(1);
-            log.warn("[날씨 조회 재시도] 지역 {}에 대해 오늘({}) 데이터가 없어 어제({}) 날짜로 재시도합니다.",
-                    regionName, today, yesterday);
-
-            forecasts = weatherForecastRepository
-                    .findByRegionNameAndForecastDateAndHourIn(regionName, yesterday, targetHours);
-
-            if (forecasts.isEmpty()) {
-                log.error("[날씨 조회 최종 실패] 지역 {}에 대해 어제, 오늘 모두 예보 데이터가 없습니다.", regionName);
-            }
-        }
-
-        return forecasts.stream()
-                .map(f -> WeatherPredictDto.builder()
-                        .hour(f.getHour())
-                        .temperature(f.getTemperature())
-                        .humidity(f.getHumidity())
-                        .windSpeed(f.getWindSpeed())
-                        .precipitation(f.getPrecipitation())
-                        .cloudAmount(f.getCloudAmount())
-                        .feelsLike(f.getFeelsLike())
-                        .build())
-                .collect(Collectors.toList());
     }
 }
