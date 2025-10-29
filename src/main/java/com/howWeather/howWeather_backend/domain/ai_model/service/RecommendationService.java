@@ -120,12 +120,17 @@ public class RecommendationService {
     }
 
     private List<WeatherFeelingDto> createFallbackFeelingList(Member member, LocalDate targetDate) {
+        String currentMemberRegion = member.getRegionName() != null ? member.getRegionName() : "기본지역(예:서울시 용산구)"; // 실제 기본값 사용
+        log.info("[Fallback Feeling] createFallbackFeelingList 시작. memberId={}, targetDate={}, currentMemberRegion={}",
+                member.getId(), targetDate, currentMemberRegion);
         List<WeatherFeelingDto> fallbackFeelingList = new ArrayList<>();
         String regionName = member.getRegionName() != null ? member.getRegionName() : "서울특별시 용산구";
         List<Integer> targetHours = List.of(9, 12, 15, 18, 21);
         final int DEFAULT_FEELING = 2;
 
         try {
+            log.info("[Fallback Feeling] 날씨 예보 DB 조회 시도. 조회 지역명='{}', 조회 날짜={}, 조회 시간={}",
+                    regionName, targetDate, targetHours);
             List<WeatherForecast> forecasts = weatherForecastRepository
                     .findByRegionNameAndForecastDateAndHourInOrderByHourAsc(regionName, targetDate, targetHours);
 
