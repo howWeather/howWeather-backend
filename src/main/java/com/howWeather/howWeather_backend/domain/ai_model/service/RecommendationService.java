@@ -269,6 +269,11 @@ public class RecommendationService {
                 return;
             }
 
+            LocalDate today = LocalDate.now();
+            log.info("[AI 저장] memberId={} 오늘({}) 데이터 삭제 시도.", member.getId(), today);
+            clothingRecommendationRepository.deleteByMemberIdAndDate(member.getId(), today);
+            log.info("[AI 저장] memberId={} 오늘({}) 데이터 삭제 완료.", member.getId(), today);
+
             for (ModelRecommendationResult result : results) {
                 ClothingRecommendation recommendation = ClothingRecommendation.builder()
                         .memberId(dto.getUserId())
