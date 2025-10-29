@@ -221,6 +221,7 @@ public class RecommendationService {
         List<WeatherFeelingDto> feelingList = new ArrayList<>();
         LocalDate forecastDate = recommendation.getDate();
         String regionName = recommendation.getRegionName();
+        log.info("현재 모델 반환에서 사용하는 위치 : " + regionName);
 
         List<Integer> targetHours = List.of(9, 12, 15, 18, 21);
 
