@@ -42,10 +42,11 @@ public class RecommendationService {
         LocalTime now = LocalTime.now();
 
         LocalDate targetDate = now.isBefore(LocalTime.of(6, 0)) ? today.minusDays(1) : today;
-
         List<ClothingRecommendation> modelPredictList = getModelPrediction(member.getId(), targetDate);
         List<RecommendPredictDto> result = new ArrayList<>();
         Closet closet = getClosetWithAll(member);
+
+        log.info("현재 사용자 위치 : " + member.getRegionName());
         if (!modelPredictList.isEmpty()) {
             log.info("[AI 추천] memberId={} AI 예측 결과 사용 ({}개)", member.getId(), modelPredictList.size());
             for (ClothingRecommendation recommendation : modelPredictList) {
