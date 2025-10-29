@@ -161,7 +161,10 @@ public class RecommendationService {
             List<Integer> upperTypeList = makeUpperList(closet, recommendation.getTops());
             List<Integer> outerTypeList = makeOuterList(closet, recommendation.getOuters());
 
-            List<WeatherFeelingDto> weatherFeelingDto = makeWeatherFeeling(recommendation.getPredictionMap(), recommendation);
+            String currentRegionName = member.getRegionName() != null ? member.getRegionName() : "서울특별시 용산구";
+            LocalDate forecastDate = recommendation.getDate();
+            Map<String, Integer> predictionMap = recommendation.getPredictionMap();
+            List<WeatherFeelingDto> weatherFeelingDto = makeWeatherFeeling(predictionMap, forecastDate, currentRegionName);
 
             return RecommendPredictDto.builder()
                     .feelingList(weatherFeelingDto)
@@ -217,16 +220,18 @@ public class RecommendationService {
     }
 
     private List<WeatherFeelingDto> makeWeatherFeeling(Map<String, Integer> predictionMap,
-                                                       ClothingRecommendation recommendation) {
+                                                       LocalDate forecastDate, String regionName) {
+        log.info("makeWeatherFeeling 호출됨: 조회 regionName={}, forecastDate={}", regionName, forecastDate);
+
         List<WeatherFeelingDto> feelingList = new ArrayList<>();
-        LocalDate forecastDate = recommendation.getDate();
-        String regionName = recommendation.getRegionName();
-        log.info("현재 모델 반환에서 사용하는 위치 : " + regionName);
 
         List<Integer> targetHours = List.of(9, 12, 15, 18, 21);
 
         List<WeatherForecast> forecasts = weatherForecastRepository
                 .findByRegionNameAndForecastDateAndHourInOrderByHourAsc(regionName, forecastDate, targetHours);
+
+        log.info("날씨 예보 DB 조회 결과: regionName={}, date={}, count={}", regionName, forecastDate, forecasts.size());
+
 
         Map<String, Integer> safePredictionMap = Optional.ofNullable(predictionMap).orElseGet(Collections::emptyMap);
         final int DEFAULT_FEELING = 2;
